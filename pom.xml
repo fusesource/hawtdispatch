@@ -18,17 +18,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   
-  <groupId>org.fusesource.hawttasks</groupId>
-  <artifactId>hawttasks-pom</artifactId>
+  <groupId>org.fusesource.hawtdispatch</groupId>
+  <artifactId>hawtdispatch-project</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   
-  <name>HawtTasks :: Pom</name>
-  <description>HawtTasks is a library for asynchronous execution of concurrent tasks</description>
+  <name>HawtDispatch :: Project</name>
+  <description>HawtDispatch is a library for asynchronous execution of concurrent tasks</description>
 
   <properties>
-    <forge-project-id>hawttasks</forge-project-id>
-    <forge-project-id-uc>HAWTTASKS</forge-project-id-uc>
+    <forge-project-id>hawtdispatch</forge-project-id>
+    <forge-project-id-uc>HAWTDISPATCH</forge-project-id-uc>
     
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <release-altGitURL>scm:git:ssh://git@forge.fusesource.com/${forge-project-id}.git</release-altGitURL>
@@ -315,8 +315,8 @@
   </profiles>
 
   <modules>
-    <module>hawttasks</module>
-    <module>hawttasks-scala</module>
+    <module>hawtdispatch</module>
+    <module>hawtdispatch-scala</module>
   </modules>
 
 </project>
