@@ -32,7 +32,19 @@
     
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <release-altGitURL>scm:git:ssh://git@forge.fusesource.com/${forge-project-id}.git</release-altGitURL>
+    
+    <junit-version>4.7</junit-version>
+    <log4j-version>1.2.14</log4j-version>
+    <scala-version>2.8.0.Beta1</scala-version>
+    <scalatest-version>1.0.1-for-scala-2.8.0.Beta1-RC7-with-test-interfaces-0.3-SNAPSHOT</scalatest-version>
+    <scala-plugin-version>2.9.1</scala-plugin-version>
+    <compiler.fork>false</compiler.fork>
+    
   </properties>
+
+  <prerequisites>
+    <maven>2.0.9</maven>
+  </prerequisites>
 
   <url>http://${forge-project-id}.fusesource.org</url>
   <inceptionYear>2010</inceptionYear>
@@ -317,6 +329,7 @@
   <modules>
     <module>hawtdispatch</module>
     <module>hawtdispatch-scala</module>
+    <module>hawtdispatch-example</module>
   </modules>
 
 </project>

@@ -24,17 +24,17 @@
   </parent>
 
   <groupId>org.fusesource.hawtdispatch</groupId>
-  <artifactId>hawtdispatch-scala</artifactId>
+  <artifactId>hawtdispatch-example</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>HawtDispatch :: Scala</name>
-  <description>The HawtDispatch Scala Interface</description>
-
+  <name>HawtDispatch :: Example</name>
+  <description>Examples Uses of HawtDispatch</description>
+  
   <dependencies>
     
     <dependency>
       <groupId>org.fusesource.hawtdispatch</groupId>
-      <artifactId>hawtdispatch</artifactId>
+      <artifactId>hawtdispatch-scala</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
 
@@ -72,65 +72,6 @@
     </dependency>
   </dependencies>
 
-  <repositories>
-
-    <repository>
-      <id>scala-tools.org</id>
-      <name>Scala Tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </repository>
-    <repository>
-      <id>scala-tools-snapshots.org</id>
-      <name>Scala Tools Maven2 Snapshot Repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-    </repository>
-
-    <repository>
-      <id>scala</id>
-      <name>Scala Tools</name>
-      <url>http://scala-tools.org/repo-releases/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    
-    <repository>
-      <id>snapshots.scala-tools.org</id>
-      <name>Scala-Tools Maven2 Snapshot Repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-        <!--updatePolicy>never</updatePolicy-->
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-      <releases>
-        <enabled>true</enabled>
-        <!--updatePolicy>never</updatePolicy-->
-        <checksumPolicy>fail</checksumPolicy>
-      </releases>
-    </repository>
-    
-    <repository>
-      <id>nexus.snapshots.scala-tools.org</id>
-      <name>Scala-Tools Maven2 Snapshot Repository</name>
-      <url>http://nexus.scala-tools.org/content/repositories/snapshots/</url>
-      <snapshots>
-        <enabled>true</enabled>
-        <!--updatePolicy>never</updatePolicy-->
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-      <releases>
-        <enabled>true</enabled>
-        <!--updatePolicy>never</updatePolicy-->
-        <checksumPolicy>fail</checksumPolicy>
-      </releases>
-    </repository>
-
-  </repositories>
-
   <build>
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src/main/scala</sourceDirectory>
@@ -155,7 +96,6 @@
             <jvmArg>-Xmx1024m</jvmArg>
           </jvmArgs>
           <args>
-            <!-- arg>-unchecked</arg -->
             <arg>-deprecation</arg>
             <arg>-Xno-varargs-conversion</arg>
           </args>
@@ -177,37 +117,6 @@
 
     </plugins>
   </build>
-  
-  <!--
-  <reporting>
-    <plugins>
-      
-      <plugin>
-        <groupId>org.scala-tools</groupId>
-        <artifactId>maven-scala-plugin</artifactId>
-        <version>2.13.1</version>
-        <configuration>
-          <vscaladocVersion>1.1</vscaladocVersion>
-          <scalaVersion>${scala-version}</scalaVersion>
-        </configuration>        
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-changes-plugin</artifactId>
-        <version>2.3</version>
-        <reportSets>
-          <reportSet>
-            <reports>
-              <report>jira-report</report>
-            </reports>
-          </reportSet>
-        </reportSets>
-        <configuration>
-          <filteringChanges>true</filteringChanges>
-        </configuration>
-      </plugin>
-    </plugins>
-  </reporting>
-  -->
+
   
 </project>

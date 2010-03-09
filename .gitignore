@@ -7,3 +7,4 @@
 webgen/out
 webgen/webgen.cache
 target
+.DS_Store
