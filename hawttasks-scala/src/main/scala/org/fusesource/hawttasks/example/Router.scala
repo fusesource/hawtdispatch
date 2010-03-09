@@ -31,7 +31,7 @@ import org.fusesource.hawttasks.scala._
  * to the destination. 
  *
  */
-class Router[D, T <: RefCounted](var queue:TaskQueue) extends Queued {
+class Router[D, T <: Retained](var queue:TaskQueue) extends Queued {
 
   class DestinationNode {
     var targets = List[T]()
@@ -85,9 +85,16 @@ class Router[D, T <: RefCounted](var queue:TaskQueue) extends Queued {
       }
     } ->: queue
 
-  def connect(route:Route[D,T]) = retaining(route) {
-      get(route.destination).on_connect(route)
+  def connect(destination:D, routeQueue:TaskQueue)(completed: (Route[D,T])=>Unit) = {
+    val route = new Route[D,T](destination, routeQueue) {
+      override def on_connected = {
+        completed(this);
+      }
+    }
+    ^ {
+      get(destination).on_connect(route)
     } ->: queue
+  }
 
   def disconnect(route:Route[D,T]) = releasing(route) {
       get(route.destination).on_disconnect(route)
@@ -96,7 +103,7 @@ class Router[D, T <: RefCounted](var queue:TaskQueue) extends Queued {
 }
 
 
-class Route[D, T <: RefCounted ](val destination:D, var queue:TaskQueue) extends QueuedRefCounted {
+class Route[D, T <: Retained ](val destination:D, var queue:TaskQueue) extends QueuedRetained {
 
   var targets = List[T]()
 

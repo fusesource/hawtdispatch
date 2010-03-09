@@ -17,7 +17,7 @@
 package org.fusesource.hawttasks.scala
 
 import java.util.concurrent.atomic.AtomicInteger
-import org.fusesource.hawttasks.{RefCounted, DispatchQueue, DispatchSystem}
+import org.fusesource.hawttasks.{Retained, DispatchQueue, DispatchSystem}
 
 trait Service {
   def startup() = {}
@@ -25,7 +25,7 @@ trait Service {
   def shutdown() = {}
 }
 
-trait ServiceRetainer extends RefCounted {
+trait ServiceRetainer extends Retained {
 
   protected def retainedService: Service = new Service {}
   protected var releaseWatchers = List[Runnable]()
@@ -83,7 +83,7 @@ object TaskQueue {
   }
 }
 
-trait TaskQueue extends Function1[Runnable, Unit] with RefCounted {
+trait TaskQueue extends Function1[Runnable, Unit] with Retained {
   def <<(task: Runnable) = {apply(task); this}
 
   def ->:(task: Runnable) = {apply(task); this}
@@ -92,31 +92,31 @@ trait TaskQueue extends Function1[Runnable, Unit] with RefCounted {
 trait Queued {
   var queue: TaskQueue
 
-  protected def using(resource: RefCounted): (=> Unit) => Runnable = {
+  protected def using(resource: Retained): (=> Unit) => Runnable = {
     using(resource, resource) _
   }
 
-  protected def using(resources: Seq[RefCounted]): (=> Unit) => Runnable = {
+  protected def using(resources: Seq[Retained]): (=> Unit) => Runnable = {
     using(resources, resources) _
   }
 
-  protected def retaining(resource: RefCounted): (=> Unit) => Runnable = {
+  protected def retaining(resource: Retained): (=> Unit) => Runnable = {
     using(resource, null) _
   }
 
-  protected def retaining(resources: Seq[RefCounted]): (=> Unit) => Runnable = {
+  protected def retaining(resources: Seq[Retained]): (=> Unit) => Runnable = {
     using(resources, null) _
   }
 
-  protected def releasing(resource: RefCounted): (=> Unit) => Runnable = {
+  protected def releasing(resource: Retained): (=> Unit) => Runnable = {
     using(null, resource) _
   }
 
-  protected def releasing(resources: Seq[RefCounted]): (=> Unit) => Runnable = {
+  protected def releasing(resources: Seq[Retained]): (=> Unit) => Runnable = {
     using(null, resources) _
   }
 
-  protected def retain(retainedResources: Seq[RefCounted]) = {
+  protected def retain(retainedResources: Seq[Retained]) = {
     if (retainedResources != null) {
       for (resource <- retainedResources) {
         resource.retain
@@ -124,7 +124,7 @@ trait Queued {
     }
   }
 
-  protected def release(releasedResources: Seq[RefCounted]) = {
+  protected def release(releasedResources: Seq[Retained]) = {
     if (releasedResources != null) {
       for (resource <- releasedResources) {
         resource.release
@@ -138,7 +138,7 @@ trait Queued {
     }
   }
 
-  private def using(retainedResource: RefCounted, releasedResource: RefCounted)(proc: => Unit): Runnable = {
+  private def using(retainedResource: Retained, releasedResource: Retained)(proc: => Unit): Runnable = {
     if (retainedResource != null) {
       retainedResource.retain
     }
@@ -155,7 +155,7 @@ trait Queued {
     }
   }
 
-  private def using(retainedResources: Seq[RefCounted], releasedResources: Seq[RefCounted])(proc: => Unit): Runnable = {
+  private def using(retainedResources: Seq[Retained], releasedResources: Seq[Retained])(proc: => Unit): Runnable = {
     retain(retainedResources)
     new Runnable() {
       def run = {
@@ -183,7 +183,7 @@ trait QueuedService extends Queued with Service {
   protected def onShutdown() = {}
 }
 
-trait QueuedRefCounted extends Queued with ServiceRetainer {
+trait QueuedRetained extends Queued with ServiceRetainer {
   protected override def retainedService = new Service {
     override def startup() = {
       queue.retain

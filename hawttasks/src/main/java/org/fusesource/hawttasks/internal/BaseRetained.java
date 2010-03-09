@@ -19,7 +19,7 @@ package org.fusesource.hawttasks.internal;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.fusesource.hawttasks.Retainable;
+import org.fusesource.hawttasks.Retained;
 
 import static java.lang.String.*;
 
@@ -27,12 +27,12 @@ import static java.lang.String.*;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class BaseRetainable implements Retainable{
+public class BaseRetained implements Retained {
 
     final protected AtomicInteger retained = new AtomicInteger(1);
     final protected ArrayList<Runnable> shutdownHandlers = new ArrayList<Runnable>(1);
 
-    public void addShutdownWatcher(Runnable shutdownHandler) {
+    public void addReleaseWatcher(Runnable shutdownHandler) {
         assertRetained();
         synchronized (shutdownHandlers) {
             shutdownHandlers.add(shutdownHandler);
@@ -59,7 +59,7 @@ public class BaseRetainable implements Retainable{
 //        assert retained.get() > 0 : format("%s: Use of object not allowed after it has been released", this.toString());
     }
 
-    public boolean isShutdown() {
+    public boolean isReleased() {
         return retained.get() <= 0;
     }
 

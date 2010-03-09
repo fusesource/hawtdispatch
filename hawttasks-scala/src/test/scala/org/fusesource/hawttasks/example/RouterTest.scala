@@ -34,64 +34,44 @@ class RouterTest extends FunSuite {
 
   def useRouter() {
     var latch = new CountDownLatch(3);
-    class Consumer(var queue:TaskQueue) extends QueuedRefCounted {
-      def deliver(msg:String) = queue << ^ {
+
+    class Consumer(var queue:TaskQueue) extends QueuedRetained {
+      def deliver(msg:String) = ^ {
         println("Consumer got: "+msg)
         latch.countDown
-      }
+      } ->: queue
     }
 
-    class Producer(var queue:TaskQueue) extends QueuedRefCounted {
-
-      // Route is also a reactor.. the Router object will be sending
-      // it messages for it to update it's target list.
-      val route = new Route[String,Consumer]("FOO.QUEUE", queue) {
-
-        // This event is fired once the router is
-        // has connected the route.
-        override def on_connected = {
-          send_function();
-        }
-      }
-
-      var send_function: ()=>Unit = null;
-
-      def send(msg:String) = queue << ^ {
+    class Producer(var route:Route[String,Consumer], var queue:TaskQueue) extends QueuedRetained {
+      def send(msg:String) = ^ {
         route.targets.foreach(t=>{
           t.deliver(msg)
         })
-      }
-
-
-      override def onShutdown = {
-        route.release;
-      }
+      }  ->: queue
     }
 
     val router = new Router[String,Consumer](TaskQueue("router"))
     val consumer = new Consumer(TaskQueue("consumer"));
-
     router.bind("FOO.QUEUE", consumer::Nil )
     consumer.release
 
+    var producer:Producer=null;
+    val producerQueue = TaskQueue("producer")
+    router.connect("FOO.QUEUE", producerQueue) {
+      route:Route[String, Consumer] =>
 
-    // Producer is a reactor.. which uses a
-    // nested reactor sharing the same dispatch queue.
-    val producer = new Producer(TaskQueue("producer"))
-
-    // the following gets called once the producer
-    // is 'connected' to the router.
-    producer.send_function = { ()=>
+      producer = new Producer(route, producerQueue)
       producer send "message 1"
       producer send "message 2"
       producer send "message 3"
+      producer.release;
+
+      assert( !producer.route.isReleased )
+      router.disconnect(route);
     }
 
-    router.connect(producer.route)
-
     // wait for all messages to be sent and received..
-    assert(latch.await(1, TimeUnit.SECONDS))
-
+    assert(latch.await(2, TimeUnit.SECONDS))
 
     // consumer should not be released until it gets unbound.
     assert( !consumer.isReleased )
@@ -102,14 +82,10 @@ class RouterTest extends FunSuite {
       consumer.isReleased
     }
 
-    // producer should not be released until it gets unbound.
-    producer.release;
-    assert( !producer.route.isReleased )
-    router.disconnect(producer.route)
     assertWithin(2, TimeUnit.SECONDS) {
       producer.route.isReleased
     }
-    
+
 
   }
 

@@ -25,7 +25,7 @@ import org.fusesource.hawttasks.Suspendable;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class BaseSuspendable extends BaseRefCounted implements Suspendable {
+public class BaseSuspendable extends BaseRetained implements Suspendable {
 
     protected final AtomicBoolean startup = new AtomicBoolean(true);
     protected final AtomicInteger suspended = new AtomicInteger();

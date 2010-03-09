@@ -17,13 +17,37 @@
 package org.fusesource.hawttasks;
 
 /**
- * 
+ * Implemented by objects which use a reference counted life cycle.
+ *
+ * Objects start with a ref count of one.  Retaining the object increments the counter,
+ * releasing, decrements the counter.  When the counter reaches zero, the object should
+ * not longer be accessed as it will release any resources it needed to perform normal
+ * processing.
+ *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public interface Retainable {
-    
+public interface Retained {
+
+    /**
+     * Increments the reference counter
+     */
     public void retain();
+
+    /**
+     * Decrements the reference counter
+     */
     public void release();
-    public void addShutdownWatcher(Runnable shutdownWatcher);
-    public boolean isShutdown();
+
+    /**
+     * @return true if the reference counter is zero
+     */
+    public boolean isReleased();
+
+    /**
+     * adds a runnable which will be executed once this object's
+     * reference counter reaches zero.
+     * @param onRelease
+     */
+    public void addReleaseWatcher(Runnable onRelease);
+
 }
