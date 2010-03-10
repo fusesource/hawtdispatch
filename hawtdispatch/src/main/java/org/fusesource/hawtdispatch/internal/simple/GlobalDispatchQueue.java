@@ -121,6 +121,10 @@ final public class GlobalDispatchQueue implements SimpleQueue {
         throw new UnsupportedOperationException();
     }
 
+    public boolean isSuspended() {
+        throw new UnsupportedOperationException();
+    }
+
     public <Context> Context getContext() {
         throw new UnsupportedOperationException();
     }

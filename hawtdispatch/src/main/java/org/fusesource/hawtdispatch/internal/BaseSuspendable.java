@@ -30,6 +30,10 @@ public class BaseSuspendable extends BaseRetained implements Suspendable {
     protected final AtomicBoolean startup = new AtomicBoolean(true);
     protected final AtomicInteger suspended = new AtomicInteger();
 
+    public boolean isSuspended() {
+        return suspended.get() > 0;
+    }
+
     public void resume() {
         assertRetained();
         if (suspended.decrementAndGet() == 0) {

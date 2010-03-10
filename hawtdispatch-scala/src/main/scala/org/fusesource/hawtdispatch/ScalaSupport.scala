@@ -176,8 +176,7 @@ object ScalaSupport {
 
     protected override def retainedService = new Service {
       override def startup() = {
-        val t = queue
-        t.retain
+        queue.retain
       }
 
       override def shutdown() = {

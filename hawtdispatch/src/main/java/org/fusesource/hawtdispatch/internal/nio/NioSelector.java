@@ -73,13 +73,16 @@ public class NioSelector {
                 selector.selectNow();
             }
             return processSelected();
-
         } catch (CancelledKeyException ignore) {
             return 0;
         }
     }
 
     private int processSelected() {
+        
+        if( selector.keys().isEmpty() ) {
+            return 0;
+        }
 
         // Walk the set of ready keys servicing each ready context:
         Set<SelectionKey> selectedKeys = selector.selectedKeys();
@@ -88,11 +91,12 @@ public class NioSelector {
             debug("selected: %d",size);
             for (Iterator<SelectionKey> i = selectedKeys.iterator(); i.hasNext();) {
                 SelectionKey key = i.next();
-                boolean valid = key.isValid();
                 i.remove();
-                if (valid) {
+                if (key.isValid()) {
                     key.interestOps(key.interestOps() & ~key.readyOps());
-                    ((Runnable) key.attachment()).run();
+                    ((Attachment) key.attachment()).selected(key);
+                } else {
+                    ((Attachment) key.attachment()).cancel(key);
                 }
             }
         }

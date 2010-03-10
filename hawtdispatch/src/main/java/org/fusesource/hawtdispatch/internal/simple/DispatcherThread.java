@@ -36,6 +36,7 @@ final public class DispatcherThread extends Thread {
     final IntegerCounter executionCounter = new IntegerCounter();
     ThreadDispatchQueue currentThreadQueue;
     private NioSelector selector;
+    final IntegerCounter localWork = new IntegerCounter();
 
     public DispatcherThread(SimpleDispatcher dispatcher, int ordinal) {
         this.dispatcher = dispatcher;
@@ -134,6 +135,11 @@ final public class DispatcherThread extends Thread {
                     }
                 }
 
+                if (executionCounter.get() != MAX_LOCAL_DISPATCH_BEFORE_CHECKING_GLOBAL && localWork.get() > 0) {
+                    continue start;
+                }
+
+
                 // Process the global synchronized queues.
                 // most contention
                 for (int i = 0; i < processGlobalQueueCount; i++) {
@@ -203,13 +209,13 @@ final public class DispatcherThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        while (threadQueuedRunnables.get() == 0 && dispatcher.globalQueuedRunnables.get() == 0) {
+        while (localWork.get()==0 && threadQueuedRunnables.get() == 0 && dispatcher.globalQueuedRunnables.get() == 0 ) {
             if (inWaitingList.compareAndSet(false, true)) {
                 dispatcher.addWaitingDispatcher(this);
             }
             try {
                 // If the selector found some work...
-                if( this.selector.select(100) != 0 ) {
+                if( this.selector.select(-1) != 0 ) {
                     return;
                 }
             } catch (IOException e) {

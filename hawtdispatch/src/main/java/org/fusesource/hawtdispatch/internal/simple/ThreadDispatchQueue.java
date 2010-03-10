@@ -36,7 +36,7 @@ final public class ThreadDispatchQueue implements SimpleQueue {
 
     final String label;
     final LinkedList<Runnable> localRunnables = new LinkedList<Runnable>();
-    final ConcurrentLinkedQueue<Runnable> globalRunnables = new ConcurrentLinkedQueue<Runnable>();
+    final ConcurrentLinkedQueue<Runnable> sharedRunnables = new ConcurrentLinkedQueue<Runnable>();
     final DispatcherThread thread;
     final AtomicLong counter;
     final GlobalDispatchQueue globalQueue;
@@ -70,17 +70,18 @@ final public class ThreadDispatchQueue implements SimpleQueue {
     }
 
     void localEnqueue(Runnable runnable) {
+        thread.localWork.incrementAndGet();
         localRunnables.add(runnable);
     }
 
     void globalEnqueue(Runnable runnable) {
         counter.incrementAndGet();
-        globalRunnables.add(runnable);
+        sharedRunnables.add(runnable);
         thread.wakeup();
     }
 
     public Runnable pollShared() {
-        Runnable rc = globalRunnables.poll();
+        Runnable rc = sharedRunnables.poll();
         if( rc !=null ) {
             counter.decrementAndGet();
         }
@@ -88,7 +89,11 @@ final public class ThreadDispatchQueue implements SimpleQueue {
     }
 
     public Runnable pollLocal() {
-        return localRunnables.poll();
+        Runnable rc = localRunnables.poll();
+        if( rc !=null ) {
+            thread.localWork.decrementAndGet();
+        }
+        return rc;
     }
 
     public void dispatchAfter(Runnable runnable, long delay, TimeUnit unit) {
@@ -108,6 +113,10 @@ final public class ThreadDispatchQueue implements SimpleQueue {
     }
 
     public void suspend() {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean isSuspended() {
         throw new UnsupportedOperationException();
     }
 

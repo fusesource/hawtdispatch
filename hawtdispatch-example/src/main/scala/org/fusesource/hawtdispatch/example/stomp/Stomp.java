@@ -35,8 +35,8 @@ public interface Stomp {
         AsciiBuffer CONNECT = new AsciiBuffer("CONNECT");
         AsciiBuffer SEND = new AsciiBuffer("SEND");
         AsciiBuffer DISCONNECT = new AsciiBuffer("DISCONNECT");
-        AsciiBuffer SUBSCRIBE = new AsciiBuffer("SUB");
-        AsciiBuffer UNSUBSCRIBE = new AsciiBuffer("UNSUB");
+        AsciiBuffer SUBSCRIBE = new AsciiBuffer("SUBSCRIBE");
+        AsciiBuffer UNSUBSCRIBE = new AsciiBuffer("UNSUBSCRIBE");
 
         AsciiBuffer BEGIN_TRANSACTION = new AsciiBuffer("BEGIN");
         AsciiBuffer COMMIT_TRANSACTION = new AsciiBuffer("COMMIT");

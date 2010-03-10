@@ -18,7 +18,6 @@ package org.fusesource.hawtdispatch.example.stomp
 import java.nio.channels.SelectionKey._
 import org.fusesource.hawtdispatch.ScalaSupport._
 
-import java.nio.channels.{SocketChannel, ServerSocketChannel}
 import java.net.{InetAddress, InetSocketAddress}
 
 import java.util.{LinkedList}
@@ -27,6 +26,9 @@ import AsciiBuffer._
 import org.fusesource.hawtdispatch.example.stomp.Stomp._
 import org.fusesource.hawtdispatch.example.{Router, Route}
 import collection.mutable.HashMap
+import java.util.concurrent.atomic.AtomicLong
+import java.nio.channels.{ClosedChannelException, SocketChannel, ServerSocketChannel}
+import java.io.{IOException, EOFException}
 
 object StompBroker {
   def main(args:Array[String]) = {
@@ -83,12 +85,17 @@ class StompBroker extends Queued {
     queue.release
   }
 
+  object StompConnection {
+    val connectionCounter = new AtomicLong();
+  }
   class StompConnection(val socket:SocketChannel) extends Queued {
+    import StompConnection._
 
-    val queue = createSerialQueue("connection")
+    val queue = createSerialQueue("connection:"+connectionCounter.incrementAndGet)
+
     val wireFormat = new StompWireFormat()
     val outbound = new LinkedList[StompFrame]()
-    var read_suspended = false;
+    var closed = false;
 
     def send(frame:StompFrame) = {
       outbound.addLast(frame);
@@ -98,26 +105,36 @@ class StompBroker extends Queued {
     }
     val write_source = createSource(socket, OP_WRITE, queue);
     write_source.setEventHandler(^{
-      val drained = wireFormat.drain_to_socket(socket) {
-        outbound.poll
+      try {
+
+        val drained = wireFormat.drain_to_socket(socket) {
+          outbound.poll
+        }
+        // Once drained, we don't need write events..
+        if( drained ) {
+          write_source.suspend
+        }
+
+      } catch {
+        case e:IOException=>
+          // The peer closed on us..
+          close
       }
-      // Once drained, we don't need write events..
-      if( drained ) {
-        write_source.suspend
-      }
+
     });
 
     val read_source = createSource(socket, OP_READ, queue);
     read_source.setEventHandler(^{
-      wireFormat.read_socket(socket) {
-        frame:StompFrame=>
-          on_frame(frame)
-          // this lets the wireformat know if we need to stop reading frames.
-          read_suspended
-      }
-      if( read_suspended ) {
-        read_suspended = false
-        read_source.suspend
+      try {
+        wireFormat.read_socket(socket) {
+          frame:StompFrame=>
+            on_frame(frame)
+            read_source.isSuspended
+        }
+      } catch {
+        case e:IOException =>
+          // The peer disconnected..
+          close
       }
     });
     read_source.setCancelHandler(^{
@@ -127,9 +144,20 @@ class StompBroker extends Queued {
 
 
     def close = {
-      write_source.cancel
-      read_source.cancel
-      queue.release
+      if( !closed ) {
+        if( producerRoute!=null ) {
+          router.disconnect(producerRoute)
+          producerRoute=null
+        }
+        if( consumer!=null ) {
+          router.unbind(consumer.dest, consumer::Nil)
+          consumer=null
+        }
+        closed=true;
+        write_source.cancel
+        read_source.cancel
+        queue.release
+      }
     }
 
     def on_frame(frame:StompFrame) = {
@@ -140,6 +168,10 @@ class StompBroker extends Queued {
           on_stomp_send(headers, content)
         case StompFrame(Commands.SUBSCRIBE, headers, content) =>
           on_stomp_subscribe(headers)
+        case StompFrame(Commands.ACK, headers, content) =>
+          // TODO:
+        case StompFrame(Commands.DISCONNECT, headers, content) =>
+          close
         case StompFrame(unknown, _, _) =>
           die("Unsupported STOMP command: "+unknown);
       }
@@ -170,7 +202,7 @@ class StompBroker extends Queued {
             }
 
             // don't process frames until we are connected..
-            read_suspended = true
+            read_source.suspend
             router.connect(dest, queue) {
               read_source.resume
               route:Route[AsciiBuffer, Consumer] =>
@@ -192,19 +224,24 @@ class StompBroker extends Queued {
       })
     }
 
+    class SimpleConsumer(val dest:AsciiBuffer, override val queue:DispatchQueue) extends Consumer {
+      override def deliver(headers:HeaderMap, content:Buffer) = ^ {
+        send(StompFrame(Responses.MESSAGE, headers, content))
+      } ->: queue
+    }
+
+    var consumer:SimpleConsumer = null
+
     def on_stomp_subscribe(headers:HeaderMap) = {
       headers.get(Headers.Subscribe.DESTINATION) match {
         case Some(dest)=>
+          if( consumer !=null ) {
+            die("Only one subscription supported.")
 
-          class SimpleConsumer(override val queue:DispatchQueue) extends Consumer {
-            override def deliver(headers:HeaderMap, content:Buffer) = ^ {
-              send(StompFrame(Responses.MESSAGE, headers, content))
-            } ->: queue
+          } else {
+            consumer = new SimpleConsumer(dest, queue);
+            router.bind(dest, consumer :: Nil)
           }
-          
-          router.bind(dest, new SimpleConsumer(queue) :: Nil)
-          // TODO: track consumer so he can be 'unbound'
-
         case None=>
           die("destination not set.")
       }
@@ -212,7 +249,8 @@ class StompBroker extends Queued {
     }
 
     private def die(msg:String) = {
-      read_suspended = true
+      println("Shutting connection down due to: "+msg)
+      read_source.suspend
       send(StompFrame(Responses.ERROR, new HashMap(), ascii(msg)))
       ^ {
         close

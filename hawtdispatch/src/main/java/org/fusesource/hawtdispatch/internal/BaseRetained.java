@@ -16,6 +16,8 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,6 +30,8 @@ import static java.lang.String.*;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class BaseRetained implements Retained {
+
+    public static final boolean TRACE = false;
 
     final protected AtomicInteger retained = new AtomicInteger(1);
     final protected ArrayList<Runnable> shutdownHandlers = new ArrayList<Runnable>(1);
@@ -42,6 +46,7 @@ public class BaseRetained implements Retained {
     public void retain() {
         assertRetained();
         retained.getAndIncrement();
+        trace("retained at:");
     }
 
     public void release() {
@@ -49,14 +54,17 @@ public class BaseRetained implements Retained {
         if (retained.decrementAndGet() == 0) {
             onShutdown();
         }
+        trace("released at:");
     }
 
     final protected void assertRetained() {
-        if( retained.get() <= 0 ) {
-//            System.out.println(format("!!!!!!!! %s: Use of object not allowed after it has been released", this.toString()));
-            throw new IllegalStateException(format("%s: Use of object not allowed after it has been released", this.toString()));
+        if( TRACE ){
+            if( retained.get() <= 0 ) {
+                throw new IllegalStateException(format("%s: Use of object not allowed after it has been released.  "+traces, this.toString()));
+            }
+        } else {
+            assert retained.get() > 0 : format("%s: Use of object not allowed after it has been released", this.toString());
         }
-//        assert retained.get() > 0 : format("%s: Use of object not allowed after it has been released", this.toString());
     }
 
     public boolean isReleased() {
@@ -77,4 +85,17 @@ public class BaseRetained implements Retained {
         }
     }
 
+
+    final protected ArrayList<String> traces = TRACE ? new ArrayList<String>() : null;
+    private void trace(final String message) {
+        if( TRACE ) {
+            StringWriter sw = new StringWriter();
+            new Exception() {
+                public String toString() {
+                    return "Trace "+(traces.size()+1)+": "+message+", retain counter: "+retained.get();
+                }
+            }.printStackTrace(new PrintWriter(sw));
+            traces.add("\n"+sw);
+        }
+    }
 }

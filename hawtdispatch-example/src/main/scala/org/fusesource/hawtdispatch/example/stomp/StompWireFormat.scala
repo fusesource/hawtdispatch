@@ -19,12 +19,12 @@ import java.nio.channels.{SocketChannel}
 import java.nio.ByteBuffer
 import buffer._
 import AsciiBuffer._
-import java.io.IOException
 import org.fusesource.hawtdispatch.example.stomp.Stomp._
 import org.fusesource.hawtdispatch.example.stomp.Stomp.Headers._
 import java.util.{ArrayList}
 
-import collection.mutable.HashMap;
+import collection.mutable.HashMap
+import java.io.{EOFException, IOException};
 object StompWireFormat {
     val MAX_COMMAND_LENGTH = 1024;
     val MAX_HEADER_LENGTH = 1024 * 10;
@@ -97,7 +97,9 @@ class StompWireFormat {
     }
 
     def fill_buffer() = {
-      socket.read(socket_buffer);
+      if( socket.read(socket_buffer) == -1 ) {
+        throw new EOFException();
+      }
       socket_buffer.flip
       socket_buffer.remaining==0
     }

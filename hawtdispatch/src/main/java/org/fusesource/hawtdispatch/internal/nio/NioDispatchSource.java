@@ -34,19 +34,19 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     public static final boolean DEBUG = false;
 
     private final SelectableChannel channel;
-    private final int interestOps;
     private final DispatchQueue selectorQueue;
     private final AtomicBoolean canceled = new AtomicBoolean();
+    final int interestOps;
 
     private DispatchQueue targetQueue;
     private Runnable cancelHandler;
     private Runnable eventHandler;
     private Object context;
 
-    // These feilds are only accessed by the selector's thread.
-    private int readyOps;
-    private SelectionKey key;
-    private Attachment attachment;
+    // These fields are only accessed by the selector's thread.
+    int readyOps;
+    SelectionKey key;
+    Attachment attachment;
 
     public NioDispatchSource(Dispatcher dispatcher, SelectableChannel channel, int interestOps) {
         if( interestOps == 0 ) {
@@ -58,31 +58,15 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
         this.selectorQueue = dispatcher.createSerialQueue(getClass().getName(), DispatchOption.STICK_TO_DISPATCH_THREAD);
     }
 
-    /**
-     * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
-     */
-    static final class Attachment implements Runnable {
-        private final SelectionKey key;
-        private final ArrayList<NioDispatchSource> sources = new ArrayList<NioDispatchSource>(2);
-
-        public Attachment(SelectionKey key) {
-            this.key = key;
-        }
-        
-        public void run() {
-            int readyOps = key.readyOps();
-            for(NioDispatchSource source: sources) {
-                int ops = source.interestOps & readyOps;
-                if( ops !=0 ) {
-                    source.readyOps |= readyOps;
-                    source.fire();
-                }
-            }
-        }
-    }
 
     @Override
     protected void onStartup() {
+        if( targetQueue==null ) {
+            throw new IllegalArgumentException("targetQueue must be set");
+        }
+        if( eventHandler==null ) {
+            throw new IllegalArgumentException("eventHandler must be set");
+        }
 
         // Register the selection key...
         selectorQueue.dispatchAsync(new Runnable(){
@@ -92,7 +76,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
                     key = channel.keyFor(selector);
                     if( key==null ) {
                         key = channel.register(selector, interestOps);
-                        attachment = new Attachment(key);
+                        attachment = new Attachment();
                         key.attach(attachment);
                     } else {
                         attachment = (Attachment)key.attachment();
@@ -108,48 +92,60 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
 
     public void cancel() {
+        selectorQueue.dispatchAsync(new Runnable(){
+            public void run() {
+                internal_cancel();
+            }
+        });
+    }
+
+    void internal_cancel() {
         if( canceled.compareAndSet(false, true) ) {
             // Deregister...
-            selectorQueue.dispatchAsync(new Runnable(){
-                public void run() {
-                    if (key != null) {
-                        attachment.sources.remove(NioDispatchSource.this);
+            if (key != null) {
 
-                        if( attachment.sources.isEmpty() && key.isValid() ) {
-                            debug("canceling key.");
-                            // This will make sure that the key is removed
-                            // from the selector.
-                            key.cancel();
-                            try {
-                                // Running a select to remove the canceled key.
-                                Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
-                                selector.selectNow();
-                            } catch (IOException e) {
-                                debug(e, "Error canceling");
-                            }
-                        }
+                debug("canceling source");
+                attachment.sources.remove(this);
 
-                    }
-                    if( cancelHandler!=null ) {
-                        cancelHandler.run();
+                if( attachment.sources.isEmpty() && key.isValid() ) {
+                    debug("canceling key.");
+                    // This will make sure that the key is removed
+                    // from the selector.
+                    key.cancel();
+
+                    // Running a select to remove the canceled key.
+                    Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
+                    try {
+                        selector.selectNow();
+                    } catch (IOException e) {
+                        debug(e, "Error canceling");
                     }
                 }
-            });
+
+            }
+            targetQueue.release();
+            if( cancelHandler!=null ) {
+                cancelHandler.run();
+            }
         }
     }
 
     public void fire() {
-        if( readyOps!=0 && suspended.get() <= 0) {
+        if( readyOps!=0 && suspended.get() <= 0 && !isCanceled()) {
             final int dispatchedOps = readyOps;
             readyOps = 0;
-            debug("dispatching for ops: %d", dispatchedOps);
+            debug("<< fired for ops: %d", dispatchedOps);
             targetQueue.dispatchAsync(new Runnable() {
                 public void run() {
+                    debug(">> fired for ops: %d", dispatchedOps);
                     eventHandler.run();
+                    debug("<< adding interest: %d", dispatchedOps);
                     selectorQueue.dispatchAsync(new Runnable(){
                         public void run() {
-                            debug("adding interest: %d", dispatchedOps);
-                            key.interestOps(key.interestOps()|dispatchedOps);
+                            debug(">> adding interest: %d", dispatchedOps);
+                            if( key.isValid() ) {
+                                key.interestOps(key.interestOps()|dispatchedOps);
+                            }
                         }
                     });
                 }
@@ -157,12 +153,18 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
         }
     }
 
-
+    @Override
+    protected void onSuspend() {
+        debug("onSuspend");
+        super.onSuspend();
+    }
 
     @Override
     protected void onResume() {
+        debug("onResume");
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
+                debug(">> fire");
                 fire();
             }
         });
@@ -171,8 +173,13 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     @Override
     protected void onShutdown() {
         cancel();
-        this.selectorQueue.release();
-        super.onShutdown();
+        selectorQueue.dispatchAsync(new Runnable(){
+            public void run() {
+                internal_cancel();
+                NioDispatchSource.super.onShutdown();
+                selectorQueue.release();
+            }
+        });
     }
 
     public boolean isCanceled() {
@@ -197,7 +204,13 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     }
 
     public void setTargetQueue(DispatchQueue targetQueue) {
+        if( this.targetQueue !=null ) {
+            this.targetQueue.release();
+        }
         this.targetQueue = targetQueue;
+        if( this.targetQueue !=null ) {
+            this.targetQueue.retain();
+        }
     }
 
     public DispatchQueue getTargetQueue() {
