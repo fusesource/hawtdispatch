@@ -166,7 +166,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.4.3</version>
         <configuration>
-          <!-- we must turn off the use of system class loader so our tests can find stuff - otherwise scala compiler can't find stuff -->
+          <!-- we must turn off the use of system class loader so our tests can find stuff - otherwise ScalaSupport compiler can't find stuff -->
           <useSystemClassLoader>false</useSystemClassLoader>
           <!--forkMode>pertest</forkMode-->
           <childDelegation>false</childDelegation>
@@ -183,12 +183,12 @@
     <plugins>
       
       <plugin>
-        <groupId>org.scala-tools</groupId>
-        <artifactId>maven-scala-plugin</artifactId>
+        <groupId>org.ScalaSupport-tools</groupId>
+        <artifactId>maven-ScalaSupport-plugin</artifactId>
         <version>2.13.1</version>
         <configuration>
           <vscaladocVersion>1.1</vscaladocVersion>
-          <scalaVersion>${scala-version}</scalaVersion>
+          <scalaVersion>${ScalaSupport-version}</scalaVersion>
         </configuration>        
       </plugin>
       <plugin>

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.actor;
+package org.fusesource.hawtdispatch;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -33,12 +33,12 @@ import static org.objectweb.asm.Type.*;
 import static org.objectweb.asm.ClassWriter.*;
 
 /**
- * This class creates proxy objects that allow you to easily implement the 
- * actor pattern in java using a {@link DispatchQueue}.
+ * This class creates proxy objects that allow you to easily service all
+ * method calls to an interface via a {@link DispatchQueue}.
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class ActorProxy {
+public class DispachQueueProxy {
 
     public static <T> T create(Class<T> interfaceClass, T target, DispatchQueue queue) throws IllegalArgumentException {
         return create(target.getClass().getClassLoader(), interfaceClass, target, queue);

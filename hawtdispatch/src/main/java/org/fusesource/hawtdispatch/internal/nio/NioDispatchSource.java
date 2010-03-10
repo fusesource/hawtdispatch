@@ -11,13 +11,11 @@ import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.fusesource.hawtdispatch.DispatchOption;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.DispatchSource;
-import org.fusesource.hawtdispatch.Dispatcher;
-import org.fusesource.hawtdispatch.actor.ActorProxy;
+import org.fusesource.hawtdispatch.*;
 import org.fusesource.hawtdispatch.internal.BaseSuspendable;
 
 import static java.lang.String.*;
@@ -35,23 +33,20 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
     public static final boolean DEBUG = false;
 
-    interface KeyActor {
-        public void register();
-        public void resume();
-        public void addInterest(int ops);
-        public void cancel();
-    }
-
     private final SelectableChannel channel;
     private final int interestOps;
-    private final DispatchQueue actorQueue;
-    private final KeyActor actor;
+    private final DispatchQueue selectorQueue;
     private final AtomicBoolean canceled = new AtomicBoolean();
 
-    private volatile DispatchQueue targetQueue;
-    private volatile Runnable cancelHandler;
-    private volatile Runnable eventHandler;
-    private volatile Object context;
+    private DispatchQueue targetQueue;
+    private Runnable cancelHandler;
+    private Runnable eventHandler;
+    private Object context;
+
+    // These feilds are only accessed by the selector's thread.
+    private int readyOps;
+    private SelectionKey key;
+    private Attachment attachment;
 
     public NioDispatchSource(Dispatcher dispatcher, SelectableChannel channel, int interestOps) {
         if( interestOps == 0 ) {
@@ -60,99 +55,124 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
         this.channel = channel;
         this.interestOps = interestOps;
         this.suspended.incrementAndGet();
-        this.actorQueue = dispatcher.createSerialQueue(getClass().getName(), DispatchOption.STICK_TO_DISPATCH_THREAD);
-        this.actor = ActorProxy.create(KeyActor.class, new KeyActorImpl(), actorQueue);
+        this.selectorQueue = dispatcher.createSerialQueue(getClass().getName(), DispatchOption.STICK_TO_DISPATCH_THREAD);
+    }
+
+    /**
+     * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+     */
+    static final class Attachment implements Runnable {
+        private final SelectionKey key;
+        private final ArrayList<NioDispatchSource> sources = new ArrayList<NioDispatchSource>(2);
+
+        public Attachment(SelectionKey key) {
+            this.key = key;
+        }
+        
+        public void run() {
+            int readyOps = key.readyOps();
+            for(NioDispatchSource source: sources) {
+                int ops = source.interestOps & readyOps;
+                if( ops !=0 ) {
+                    source.readyOps |= readyOps;
+                    source.fire();
+                }
+            }
+        }
     }
 
     @Override
     protected void onStartup() {
-        actor.register();
-    }
-    
 
-    /**
-     * All operations on this object are serialized via a serial queue and actor proxy.
-     * Additional synchronization is not required. 
-     *  
-     * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
-     */
-    final class KeyActorImpl implements KeyActor {
-        
-        private SelectionKey key;
-        private int readyOps;
-
-        public void register() {
-            NioSelector selector = NioSelector.CURRENT_SELECTOR.get();
-            try {
-                key = channel.register(selector.getSelector(), interestOps);
-                key.attach(new Runnable() {
-                    public void run() {
-                        int ops = key.readyOps();
-                        debug("selector found ready ops: %d", ops);
-                        readyOps |= ops;
-                        resume();
-                    }
-                });
-            } catch (ClosedChannelException e) {
-                debug(e, "could not register selector");
-            }
-        }
-        
-        public void resume() {
-            if( readyOps!=0 && suspended.get() <= 0) {
-                final int dispatchedOps = readyOps;
-                readyOps = 0;
-                debug("dispatching for ops: %d", dispatchedOps);
-                targetQueue.dispatchAsync(new Runnable() {
-                    public void run() {
-                        eventHandler.run();
-                        actor.addInterest(dispatchedOps);
-                    }
-                });
-            }
-        }
-        
-        public void addInterest(int ops) {
-            debug("adding interest: %d", ops);
-            key.interestOps(key.interestOps()|ops);
-        }
-        
-        public void cancel() {
-            if (key != null && key.isValid()) {
-                debug("canceling key.");
-                // This will make sure that the key is removed
-                // from the selector.
-                key.cancel();
+        // Register the selection key...
+        selectorQueue.dispatchAsync(new Runnable(){
+            public void run() {
+                Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
                 try {
-                    NioSelector selector = NioSelector.CURRENT_SELECTOR.get();
-                    selector.getSelector().selectNow();
-                } catch (IOException e) {
-                    debug(e, "Error in close");
-                }
-                
-                if( cancelHandler!=null ) {
-                    cancelHandler.run();
+                    key = channel.keyFor(selector);
+                    if( key==null ) {
+                        key = channel.register(selector, interestOps);
+                        attachment = new Attachment(key);
+                        key.attach(attachment);
+                    } else {
+                        attachment = (Attachment)key.attachment();
+                    }
+                    key.interestOps(key.interestOps()|interestOps);
+                    attachment.sources.add(NioDispatchSource.this);
+                } catch (ClosedChannelException e) {
+                    debug(e, "could not register selector");
                 }
             }
+        });
+    }
+
+
+    public void cancel() {
+        if( canceled.compareAndSet(false, true) ) {
+            // Deregister...
+            selectorQueue.dispatchAsync(new Runnable(){
+                public void run() {
+                    if (key != null) {
+                        attachment.sources.remove(NioDispatchSource.this);
+
+                        if( attachment.sources.isEmpty() && key.isValid() ) {
+                            debug("canceling key.");
+                            // This will make sure that the key is removed
+                            // from the selector.
+                            key.cancel();
+                            try {
+                                // Running a select to remove the canceled key.
+                                Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
+                                selector.selectNow();
+                            } catch (IOException e) {
+                                debug(e, "Error canceling");
+                            }
+                        }
+
+                    }
+                    if( cancelHandler!=null ) {
+                        cancelHandler.run();
+                    }
+                }
+            });
         }
     }
+
+    public void fire() {
+        if( readyOps!=0 && suspended.get() <= 0) {
+            final int dispatchedOps = readyOps;
+            readyOps = 0;
+            debug("dispatching for ops: %d", dispatchedOps);
+            targetQueue.dispatchAsync(new Runnable() {
+                public void run() {
+                    eventHandler.run();
+                    selectorQueue.dispatchAsync(new Runnable(){
+                        public void run() {
+                            debug("adding interest: %d", dispatchedOps);
+                            key.interestOps(key.interestOps()|dispatchedOps);
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+
 
     @Override
     protected void onResume() {
-        actor.resume();
+        selectorQueue.dispatchAsync(new Runnable(){
+            public void run() {
+                fire();
+            }
+        });
     }
 
     @Override
     protected void onShutdown() {
         cancel();
-        this.actorQueue.release();
+        this.selectorQueue.release();
         super.onShutdown();
-    }
-
-    public void cancel() {
-        if( canceled.compareAndSet(false, true) ) {
-            actor.cancel();
-        }
     }
 
     public boolean isCanceled() {

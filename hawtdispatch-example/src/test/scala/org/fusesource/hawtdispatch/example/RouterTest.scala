@@ -18,8 +18,8 @@ package org.fusesource.hawtdispatch.example
 import org.scalatest.FunSuite
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import org.fusesource.hawtdispatch.scala._
 import java.util.concurrent.{TimeUnit, CountDownLatch}
+import org.fusesource.hawtdispatch.ScalaSupport._
 
 /**
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
@@ -35,14 +35,14 @@ class RouterTest extends FunSuite {
   def useRouter() {
     var latch = new CountDownLatch(3);
 
-    class Consumer(var queue:TaskQueue) extends QueuedRetained {
+    class Consumer(val queue:DispatchQueue) extends QueuedRetained {
       def deliver(msg:String) = ^ {
         println("Consumer got: "+msg)
         latch.countDown
       } ->: queue
     }
 
-    class Producer(var route:Route[String,Consumer], var queue:TaskQueue) extends QueuedRetained {
+    class Producer(val route:Route[String,Consumer], val queue:DispatchQueue) extends QueuedRetained {
       def send(msg:String) = ^ {
         route.targets.foreach(t=>{
           t.deliver(msg)
@@ -50,13 +50,13 @@ class RouterTest extends FunSuite {
       }  ->: queue
     }
 
-    val router = new Router[String,Consumer](TaskQueue("router"))
-    val consumer = new Consumer(TaskQueue("consumer"));
+    val router = new Router[String,Consumer](createSerialQueue("router"))
+    val consumer = new Consumer(createSerialQueue("consumer"));
     router.bind("FOO.QUEUE", consumer::Nil )
     consumer.release
 
     var producer:Producer=null;
-    val producerQueue = TaskQueue("producer")
+    val producerQueue = createSerialQueue("producer")
     router.connect("FOO.QUEUE", producerQueue) {
       route:Route[String, Consumer] =>
 

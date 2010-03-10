@@ -42,13 +42,13 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala-version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-compiler</artifactId>
       <version>${scala-version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
 
     <!-- Testing -->
@@ -106,7 +106,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.4.3</version>
         <configuration>
-          <!-- we must turn off the use of system class loader so our tests can find stuff - otherwise scala compiler can't find stuff -->
+          <!-- we must turn off the use of system class loader so our tests can find stuff - otherwise ScalaSupport compiler can't find stuff -->
           <useSystemClassLoader>false</useSystemClassLoader>
           <!--forkMode>pertest</forkMode-->
           <childDelegation>false</childDelegation>

@@ -16,8 +16,7 @@
 package org.fusesource.hawtdispatch.example
 
 import java.util.HashMap
-import org.fusesource.hawtdispatch._
-import org.fusesource.hawtdispatch.scala._
+import org.fusesource.hawtdispatch.ScalaSupport._
 
 /**
  * Provides a non-blocking concurrent producer to consumer
@@ -31,7 +30,7 @@ import org.fusesource.hawtdispatch.scala._
  * to the destination. 
  *
  */
-class Router[D, T <: Retained](var queue:TaskQueue) extends Queued {
+class Router[D, T <: Retained](var queue:DispatchQueue) extends Queued {
 
   class DestinationNode {
     var targets = List[T]()
@@ -85,7 +84,7 @@ class Router[D, T <: Retained](var queue:TaskQueue) extends Queued {
       }
     } ->: queue
 
-  def connect(destination:D, routeQueue:TaskQueue)(completed: (Route[D,T])=>Unit) = {
+  def connect(destination:D, routeQueue:DispatchQueue)(completed: (Route[D,T])=>Unit) = {
     val route = new Route[D,T](destination, routeQueue) {
       override def on_connected = {
         completed(this);
@@ -103,7 +102,7 @@ class Router[D, T <: Retained](var queue:TaskQueue) extends Queued {
 }
 
 
-class Route[D, T <: Retained ](val destination:D, var queue:TaskQueue) extends QueuedRetained {
+class Route[D, T <: Retained ](val destination:D, val queue:DispatchQueue) extends QueuedRetained {
 
   var targets = List[T]()
 
