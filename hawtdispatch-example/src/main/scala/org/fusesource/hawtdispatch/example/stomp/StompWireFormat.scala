@@ -92,10 +92,6 @@ class StompWireFormat {
   var socket_buffer:ByteBuffer = null
 
   def read_socket(socket:SocketChannel)(handler:(StompFrame)=>Boolean) = {
-    if( socket_buffer==null ) {
-      socket_buffer = ByteBuffer.allocate(8 * 1024);
-    }
-
     def fill_buffer() = {
       if( socket.read(socket_buffer) == -1 ) {
         throw new EOFException();
@@ -104,16 +100,21 @@ class StompWireFormat {
       socket_buffer.remaining==0
     }
 
-    var done = fill_buffer();
+    var done = false
+    if( socket_buffer==null ) {
+      socket_buffer = ByteBuffer.allocate(8 * 1024);
+      done = fill_buffer();
+    }
 
     // keep going until the socket buffer is drained.
     while( !done ) {
       done = unmarshall(socket_buffer) match {
         // The handler can return true to stop reading the buffer...
-        case Some(frame)=> handler(frame)
+        case Some(frame)=>
+          handler(frame)
         case None=>
           if( socket_buffer.remaining==0 ) {
-            socket_buffer.flip
+            socket_buffer.clear
             // we can only continue reading if there is data on the socket
             fill_buffer()
           } else {

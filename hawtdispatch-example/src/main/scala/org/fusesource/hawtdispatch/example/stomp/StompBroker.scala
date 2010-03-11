@@ -71,6 +71,7 @@ class StompBroker extends Queued {
   accept_source.setEventHandler(^{
     var socket = channel.accept();
     socket.configureBlocking(false);
+    socket.socket.setSoLinger(true,0);
     var connection = new StompConnection(socket)
   });
 
@@ -92,6 +93,9 @@ class StompBroker extends Queued {
     import StompConnection._
 
     val queue = createSerialQueue("connection:"+connectionCounter.incrementAndGet)
+
+//    println("connected from: "+socket.socket.getRemoteSocketAddress)
+
 
     val wireFormat = new StompWireFormat()
     val outbound = new LinkedList[StompFrame]()
@@ -137,9 +141,10 @@ class StompBroker extends Queued {
           close
       }
     });
-    read_source.setCancelHandler(^{
+    
+    queue.addReleaseWatcher(^{
       socket.close();
-    });
+    })
     read_source.resume();
 
 
@@ -163,14 +168,19 @@ class StompBroker extends Queued {
     def on_frame(frame:StompFrame) = {
       frame match {
         case StompFrame(Commands.CONNECT, headers, _) =>
+//          println("got CONNECT")
           on_stomp_connect(headers)
         case StompFrame(Commands.SEND, headers, content) =>
+//          println("got SEND")
           on_stomp_send(headers, content)
         case StompFrame(Commands.SUBSCRIBE, headers, content) =>
+//          println("got SUBSCRIBE")
           on_stomp_subscribe(headers)
         case StompFrame(Commands.ACK, headers, content) =>
+//          println("got ACK")
           // TODO:
         case StompFrame(Commands.DISCONNECT, headers, content) =>
+//          println("got DISCONNECT")
           close
         case StompFrame(unknown, _, _) =>
           die("Unsupported STOMP command: "+unknown);
@@ -204,10 +214,10 @@ class StompBroker extends Queued {
             // don't process frames until we are connected..
             read_source.suspend
             router.connect(dest, queue) {
-              read_source.resume
               route:Route[AsciiBuffer, Consumer] =>
-              producerRoute = route
-              send_via_route(producerRoute, headers, content)
+                read_source.resume
+                producerRoute = route
+                send_via_route(producerRoute, headers, content)
             }
           } else {
             // we can re-use the existing producer route
