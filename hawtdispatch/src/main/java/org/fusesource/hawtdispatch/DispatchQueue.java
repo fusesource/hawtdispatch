@@ -26,6 +26,14 @@ import java.util.concurrent.TimeUnit;
  */
 public interface DispatchQueue extends DispatchObject, Executor {
 
+    enum QueueType {
+        GLOBAL_QUEUE,
+        SERIAL_QUEUE,
+        THREAD_QUEUE
+    }
+
+    public QueueType getQueueType();
+
     public DispatchQueue createSerialQueue(String label, DispatchOption... options);
     
     public void dispatchAsync(Runnable runnable);

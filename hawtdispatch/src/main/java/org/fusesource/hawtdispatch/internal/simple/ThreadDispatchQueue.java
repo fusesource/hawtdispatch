@@ -46,7 +46,7 @@ final public class ThreadDispatchQueue implements SimpleQueue {
         this.dispatcher = dispatcher;
         this.thread = thread;
         this.globalQueue = globalQueue;
-        this.label="thread local "+globalQueue.getLabel();
+        this.label=thread.getName()+" pritority: "+globalQueue.getLabel();
         this.counter = thread.threadQueuedRunnables;
     }
 
@@ -175,4 +175,7 @@ final public class ThreadDispatchQueue implements SimpleQueue {
         return rc;
     }
 
+    public QueueType getQueueType() {
+        return QueueType.THREAD_QUEUE;
+    }
 }

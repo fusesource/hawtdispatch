@@ -25,6 +25,9 @@ import java.nio.channels.SelectableChannel;
  */
 public interface Dispatcher extends Suspendable {
 
+    public DispatchQueue getRandomThreadQueue();
+    public DispatchQueue getRandomThreadQueue(DispatchPriority priority);
+
     public DispatchQueue getGlobalQueue();
     public DispatchQueue getGlobalQueue(DispatchPriority priority);
     
@@ -34,7 +37,8 @@ public interface Dispatcher extends Suspendable {
     public void dispatchMain();
     
     public DispatchQueue getCurrentQueue();
-    
+    public DispatchQueue getCurrentThreadQueue();
+
     public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue);
 
     

@@ -66,7 +66,7 @@ public class NioSelector {
     public int select(long timeout) throws IOException {
         try {
             if (timeout == -1) {
-                selector.select(10);
+                selector.select();
             } else if (timeout > 0) {
                 selector.select(timeout);
             } else {

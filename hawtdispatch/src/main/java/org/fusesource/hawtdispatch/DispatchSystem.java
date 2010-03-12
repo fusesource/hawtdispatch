@@ -46,7 +46,7 @@ public class DispatchSystem {
         return dispatcher.getGlobalQueue(priority);
     }
     
-    public static DispatchQueue createSerialQueue(String label, DispatchOption...options) {
+    public static DispatchQueue createSerialQueue(String label, DispatchOption... options) {
         return dispatcher.createSerialQueue(label, options);
     }
     
@@ -54,9 +54,19 @@ public class DispatchSystem {
         dispatcher.dispatchMain();
     }
 
+    public static DispatchQueue getCurrentQueue() {
+        return dispatcher.getCurrentQueue();
+    }
+
+    public static DispatchQueue getCurrentThreadQueue() {
+        return dispatcher.getCurrentThreadQueue();
+    }
+
     public static DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {
         return dispatcher.createSource(channel, interestOps, queue);
     }
 
-
+    public static DispatchQueue getRandomThreadQueue() {
+        return dispatcher.getRandomThreadQueue();
+    }
 }

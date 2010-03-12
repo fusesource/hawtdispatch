@@ -56,17 +56,17 @@ final public class GlobalDispatchQueue implements SimpleQueue {
     }
 
     public void dispatchAsync(Runnable runnable) {
-        DispatcherThread thread = DispatcherThread.currentDispatcherThread();
-        if( runnable.getClass() == SerialDispatchQueue.class ) {
-            SerialDispatchQueue queue = ((SerialDispatchQueue)runnable);
-            queue.pick(this, thread);
-        } else {
-            if( thread==null ) {
+//        DispatcherThread thread = DispatcherThread.currentDispatcherThread();
+//        if( runnable.getClass() == SerialDispatchQueue.class ) {
+//            SerialDispatchQueue queue = ((SerialDispatchQueue)runnable);
+//            queue.pick(this, thread);
+//        } else {
+//            if( thread==null ) {
                 enqueueExternal(runnable);
-            } else {
-                thread.currentThreadQueue.localEnqueue(runnable);
-            }
-        }        
+//            } else {
+//                thread.currentThreadQueue.localEnqueue(runnable);
+//            }
+//        }
     }
 
     void enqueueExternal(Runnable runnable) {
@@ -88,11 +88,7 @@ final public class GlobalDispatchQueue implements SimpleQueue {
     }
 
     public ThreadDispatchQueue getTargetQueue() {
-        DispatcherThread thread = DispatcherThread.currentDispatcherThread();
-        if( thread == null ) {
-            return null;
-        }
-        return thread.threadQueues[priority.ordinal()];
+        return null;
     }
     
     public Runnable poll() {
@@ -172,4 +168,7 @@ final public class GlobalDispatchQueue implements SimpleQueue {
         return rc;
     }
 
+    public QueueType getQueueType() {
+        return QueueType.GLOBAL_QUEUE;
+    }
 }

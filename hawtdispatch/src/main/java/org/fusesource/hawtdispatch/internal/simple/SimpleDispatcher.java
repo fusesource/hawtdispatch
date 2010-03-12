@@ -17,6 +17,7 @@
 package org.fusesource.hawtdispatch.internal.simple;
 
 import java.nio.channels.SelectableChannel;
+import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,6 +53,9 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
 
     final ConcurrentLinkedQueue<DispatcherThread> waitingDispatchers = new ConcurrentLinkedQueue<DispatcherThread>();
     final AtomicInteger waitingDispatcherCount = new AtomicInteger();
+    final Random random = new Random();
+
+
     private final String label;
     TimerThread timerThread;
 
@@ -88,9 +92,7 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
     }
 
     public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {
-        NioDispatchSource source = new NioDispatchSource(this, channel, interestOps);
-        source.setTargetQueue(queue);
-        return source;
+        return new NioDispatchSource(this, channel, interestOps, queue);
     }
 
     public void addWaitingDispatcher(DispatcherThread dispatcher) {
@@ -108,7 +110,7 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
             }
         }
     }
-    
+
     @Override
     public void suspend() {
         throw new UnsupportedOperationException();
@@ -159,6 +161,15 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
             return null;
         }
         return thread.currentThreadQueue;
+    }
+
+    public DispatchQueue getRandomThreadQueue() {
+        return getRandomThreadQueue(DEFAULT);
+    }
+
+    public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
+        int i = random.nextInt(dispatchers.length);
+        return dispatchers[i].threadQueues[priority.ordinal()];
     }
 
 }

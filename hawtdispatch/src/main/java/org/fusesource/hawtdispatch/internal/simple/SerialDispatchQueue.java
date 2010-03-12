@@ -147,4 +147,9 @@ public final class SerialDispatchQueue extends AbstractSerialDispatchQueue imple
         rc.setTargetQueue(this);
         return rc;
     }
+
+    public QueueType getQueueType() {
+        return QueueType.SERIAL_QUEUE;
+    }
+    
 }

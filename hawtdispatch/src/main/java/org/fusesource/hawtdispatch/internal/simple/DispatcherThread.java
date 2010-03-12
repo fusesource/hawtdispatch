@@ -39,13 +39,13 @@ final public class DispatcherThread extends Thread {
     final IntegerCounter localWork = new IntegerCounter();
 
     public DispatcherThread(SimpleDispatcher dispatcher, int ordinal) {
+        setName(dispatcher.getLabel() + " dispatcher: " + (ordinal + 1));
+        setDaemon(true);
         this.dispatcher = dispatcher;
         this.threadQueues = new ThreadDispatchQueue[dispatcher.globalQueues.length];
         for (int i = 0; i < threadQueues.length; i++) {
             threadQueues[i] = new ThreadDispatchQueue(dispatcher, this, dispatcher.globalQueues[i]);
         }
-        setName(dispatcher.getLabel() + " dispatcher: " + (ordinal + 1));
-        setDaemon(true);
     }
 
     @Override

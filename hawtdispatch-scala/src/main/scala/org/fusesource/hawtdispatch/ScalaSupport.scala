@@ -33,6 +33,11 @@ object ScalaSupport {
   def createSerialQueue(name: String=null) = DispatchSystem.createSerialQueue(name)
   def createSource(channel:SelectableChannel, interestOps:Int, queue:DispatchQueue) = DispatchSystem.createSource(channel, interestOps, queue)
 
+  def getRandomThreadQueue() = DispatchSystem.getRandomThreadQueue
+  def getCurrentThreadQueue() = DispatchSystem.getCurrentThreadQueue
+  def getCurrentQueue() = DispatchSystem.getCurrentQueue
+
+
   trait Service {
     def startup() = {}
     def shutdown() = {}

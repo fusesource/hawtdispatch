@@ -7,18 +7,20 @@
  **************************************************************************************/
 package org.fusesource.hawtdispatch.internal.nio;
 
+import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.DispatchSource;
+import org.fusesource.hawtdispatch.Dispatcher;
+import org.fusesource.hawtdispatch.internal.BaseSuspendable;
+
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.fusesource.hawtdispatch.*;
-import org.fusesource.hawtdispatch.internal.BaseSuspendable;
-
-import static java.lang.String.*;
+import static java.lang.String.format;
+import static org.fusesource.hawtdispatch.DispatchQueue.QueueType.THREAD_QUEUE;
 
 /**
  * SelectableDispatchContext
@@ -35,6 +37,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
     private final SelectableChannel channel;
     private final DispatchQueue selectorQueue;
+
     final AtomicBoolean canceled = new AtomicBoolean();
     final int interestOps;
 
@@ -48,16 +51,32 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     SelectionKey key;
     Attachment attachment;
 
-    public NioDispatchSource(Dispatcher dispatcher, SelectableChannel channel, int interestOps) {
+    public NioDispatchSource(Dispatcher dispatcher, SelectableChannel channel, int interestOps, DispatchQueue targetQueue) {
         if( interestOps == 0 ) {
             throw new IllegalArgumentException("invalid interest ops");
         }
         this.channel = channel;
+        this.selectorQueue = pickThreadQueue(dispatcher, targetQueue);
+        this.targetQueue = targetQueue;
         this.interestOps = interestOps;
         this.suspended.incrementAndGet();
-        this.selectorQueue = dispatcher.createSerialQueue(getClass().getName(), DispatchOption.STICK_TO_DISPATCH_THREAD);
     }
 
+
+    static private DispatchQueue pickThreadQueue(Dispatcher dispatcher, DispatchQueue targetQueue) {
+        // Try to select a thread queue associated /w the target if available..
+        DispatchQueue selectorQueue = targetQueue;
+        while( selectorQueue.getQueueType()!=THREAD_QUEUE  && selectorQueue.getTargetQueue() !=null ) {
+            selectorQueue = selectorQueue.getTargetQueue();
+        }
+        // otherwise.. just use a random thread queue..
+        if( selectorQueue.getQueueType()!=THREAD_QUEUE ) {
+            selectorQueue = dispatcher.getRandomThreadQueue();
+        }
+
+//        System.out.println("Selector queue is: "+selectorQueue.getLabel());
+        return selectorQueue;
+    }
 
     @Override
     protected void onStartup() {
@@ -68,7 +87,6 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
             throw new IllegalArgumentException("eventHandler must be set");
         }
 
-        // Register the selection key...
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
                 Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
@@ -92,7 +110,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
 
     public void cancel() {
-        if( canceled.compareAndSet(false, true) ) {
+        if( canceled.compareAndSet(false, true) && selectorQueue!=null ) {
             selectorQueue.dispatchAsync(new Runnable(){
                 public void run() {
                     internal_cancel();
@@ -177,7 +195,6 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
                 NioDispatchSource.super.onShutdown();
-                selectorQueue.release();
             }
         });
     }

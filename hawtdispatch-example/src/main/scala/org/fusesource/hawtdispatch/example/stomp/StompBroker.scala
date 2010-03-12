@@ -45,8 +45,10 @@ class StompBroker extends Queued {
 
   type HeaderMap = collection.mutable.Map[AsciiBuffer, AsciiBuffer]
 
+  case class Delivery(headers:HeaderMap, content:Buffer) extends ServiceRetainer
+
   trait Consumer extends QueuedRetained {
-    def deliver(headers:HeaderMap, content:Buffer)
+    def deliver(delivery:Delivery)
   }
 
   val router = new Router[AsciiBuffer,Consumer](createSerialQueue("router"))
@@ -56,7 +58,7 @@ class StompBroker extends Queued {
     // Create the nio server socket...
   val channel = ServerSocketChannel.open();
   channel.configureBlocking(false);
-  channel.socket().bind(address("0.0.0.0", 61613), 10);
+  channel.socket().bind(address("0.0.0.0", 61613), 500);
 
   def address(host: String, port: Int): InetSocketAddress = {
     return new InetSocketAddress(ip(host), port)
@@ -98,26 +100,41 @@ class StompBroker extends Queued {
     import StompConnection._
 
     val queue = createSerialQueue("connection:"+connectionCounter.incrementAndGet)
+    queue.setTargetQueue(getRandomThreadQueue)
 
 //    println("connected from: "+socket.socket.getRemoteSocketAddress)
 
-
     val wireFormat = new StompWireFormat()
-    val outbound = new LinkedList[StompFrame]()
+    val outbound = new LinkedList[(StompFrame,Retained)]()
     var closed = false;
 
-    def send(frame:StompFrame) = {
-      outbound.addLast(frame);
+    def send(frame:StompFrame, retained:Retained=null) = {
+      if( retained !=null ) {
+        retained.retain
+      }
+      outbound.addLast((frame,retained));
       if( outbound.size == 1 ) {
         write_source.resume
       }
     }
+    
     val write_source = createSource(socket, OP_WRITE, queue);
     write_source.setEventHandler(^{
       try {
 
         val drained = wireFormat.drain_to_socket(socket) {
-          outbound.poll
+          var value = outbound.poll
+          if( value != null ) {
+            var frame = value._1
+            var retained = value._2
+            if( retained!=null ) {
+              retained.release
+            }
+            frame
+          } else {
+            null
+          }
+
         }
         // Once drained, we don't need write events..
         if( drained ) {
@@ -195,6 +212,7 @@ class StompBroker extends Queued {
     }
 
     def on_stomp_connect(headers:HeaderMap) = {
+      println("connected on: "+Thread.currentThread.getName);
       send(StompFrame(Responses.CONNECTED))
     }
 
@@ -236,14 +254,22 @@ class StompBroker extends Queued {
     }
 
     def send_via_route(route:Route[AsciiBuffer, Consumer], headers:HeaderMap, content:Buffer) = {
-      route.targets.foreach(consumer=>{
-        consumer.deliver(headers, content)
-      })
+      if( !route.targets.isEmpty ) {
+        read_source.suspend
+        var delivery = Delivery(headers, content)
+        delivery.addReleaseWatcher(^{
+          read_source.resume
+        })
+        route.targets.foreach(consumer=>{
+          consumer.deliver(delivery)
+        })
+        delivery.release;
+      }
     }
 
     class SimpleConsumer(val dest:AsciiBuffer, override val queue:DispatchQueue) extends Consumer {
-      override def deliver(headers:HeaderMap, content:Buffer) = ^ {
-        send(StompFrame(Responses.MESSAGE, headers, content))
+      override def deliver(delivery:Delivery) = using(delivery) {
+        send(StompFrame(Responses.MESSAGE, delivery.headers, delivery.content), delivery)
       } ->: queue
     }
 
