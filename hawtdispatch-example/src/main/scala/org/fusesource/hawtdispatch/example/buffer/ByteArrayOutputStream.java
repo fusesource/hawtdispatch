@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.example.stomp.buffer;
+package org.fusesource.hawtdispatch.example.buffer;
 
 import java.io.OutputStream;
 

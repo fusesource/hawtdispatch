@@ -1,4 +1,4 @@
-package org.fusesource.hawtdispatch.example.stomp
+package org.fusesource.hawtdispatch.example
 
 import buffer.{Buffer, AsciiBuffer}
 import collection.mutable.Map

@@ -13,18 +13,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  */
-package org.fusesource.hawtdispatch.example.stomp
+package org.fusesource.hawtdispatch.example
 
 import java.nio.channels.{SocketChannel}
 import java.nio.ByteBuffer
-import buffer._
-import AsciiBuffer._
-import org.fusesource.hawtdispatch.example.stomp.Stomp._
-import org.fusesource.hawtdispatch.example.stomp.Stomp.Headers._
+import org.fusesource.hawtdispatch.example.Stomp._
+import org.fusesource.hawtdispatch.example.Stomp.Headers._
 import java.util.{ArrayList}
 
 import collection.mutable.HashMap
-import java.io.{EOFException, IOException};
+import java.io.{EOFException, IOException}
+import org.fusesource.hawtdispatch.example.buffer._
+import AsciiBuffer._
+
 object StompWireFormat {
     val MAX_COMMAND_LENGTH = 1024;
     val MAX_HEADER_LENGTH = 1024 * 10;
