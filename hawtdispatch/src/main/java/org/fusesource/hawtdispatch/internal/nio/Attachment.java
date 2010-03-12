@@ -25,7 +25,9 @@ final class Attachment {
     public void cancel(SelectionKey key) {
         for(NioDispatchSource source: new ArrayList<NioDispatchSource>(sources)) {
             sources.remove(source);
-            source.internal_cancel();
+            if( source.canceled.compareAndSet(false, true) ) {
+                source.internal_cancel();
+            }
         }
         key.attach(null);
         key.cancel();        

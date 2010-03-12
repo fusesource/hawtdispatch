@@ -35,7 +35,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
     private final SelectableChannel channel;
     private final DispatchQueue selectorQueue;
-    private final AtomicBoolean canceled = new AtomicBoolean();
+    final AtomicBoolean canceled = new AtomicBoolean();
     final int interestOps;
 
     private DispatchQueue targetQueue;
@@ -92,53 +92,54 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
 
     public void cancel() {
-        selectorQueue.dispatchAsync(new Runnable(){
-            public void run() {
-                internal_cancel();
-            }
-        });
+        if( canceled.compareAndSet(false, true) ) {
+            selectorQueue.dispatchAsync(new Runnable(){
+                public void run() {
+                    internal_cancel();
+                }
+            });
+        }
     }
 
     void internal_cancel() {
-        if( canceled.compareAndSet(false, true) ) {
-            // Deregister...
-            if (key != null) {
+        // Deregister...
+        if (key != null) {
 
-                debug("canceling source");
-                attachment.sources.remove(this);
+            debug("canceling source");
+            attachment.sources.remove(this);
 
-                if( attachment.sources.isEmpty() ) {
-                    debug("canceling key.");
-                    // This will make sure that the key is removed
-                    // from the selector.
-                    key.cancel();
+            if( attachment.sources.isEmpty() ) {
+                debug("canceling key.");
+                // This will make sure that the key is removed
+                // from the selector.
+                key.cancel();
 
-                    // Running a select to remove the canceled key.
-                    Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
-                    try {
-                        selector.selectNow();
-                    } catch (IOException e) {
-                        debug(e, "Error canceling");
-                    }
+                // Running a select to remove the canceled key.
+                Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
+                try {
+                    selector.selectNow();
+                } catch (IOException e) {
+                    debug(e, "Error canceling");
                 }
+            }
 
-            }
-            targetQueue.release();
-            if( cancelHandler!=null ) {
-                cancelHandler.run();
-            }
+        }
+        targetQueue.release();
+        if( cancelHandler!=null ) {
+            cancelHandler.run();
         }
     }
 
     public void fire() {
-        if( readyOps!=0 && suspended.get() <= 0 && !isCanceled()) {
+        if( readyOps!=0 && !isSuspended() && !isCanceled() ) {
             readyOps = 0;
-            debug("<< fired %d", interestOps);
             targetQueue.dispatchAsync(new Runnable() {
                 public void run() {
-                    debug(">> fired %d", interestOps);
-                    eventHandler.run();
-                    updateInterest();
+                    if( !isSuspended() && !isCanceled()) {
+                        debug("fired %d", interestOps);
+                        eventHandler.run();
+                        updateInterest();
+                    }
                 }
             });
         }
@@ -175,7 +176,6 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
         cancel();
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
-                internal_cancel();
                 NioDispatchSource.super.onShutdown();
                 selectorQueue.release();
             }

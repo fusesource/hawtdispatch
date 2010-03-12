@@ -70,9 +70,14 @@ class StompBroker extends Queued {
   val accept_source = createSource(channel, OP_ACCEPT, queue);
   accept_source.setEventHandler(^{
     var socket = channel.accept();
-    socket.configureBlocking(false);
-    socket.socket.setSoLinger(true,0);
-    var connection = new StompConnection(socket)
+    try {
+      socket.configureBlocking(false);
+      socket.socket.setSoLinger(true,0);
+      var connection = new StompConnection(socket)
+    } catch {
+      case e:Exception=>
+        socket.close
+    }
   });
 
   accept_source.setCancelHandler(^{
@@ -150,6 +155,7 @@ class StompBroker extends Queued {
 
     def close = {
       if( !closed ) {
+        closed=true;
         if( producerRoute!=null ) {
           router.disconnect(producerRoute)
           producerRoute=null
@@ -158,9 +164,10 @@ class StompBroker extends Queued {
           router.unbind(consumer.dest, consumer::Nil)
           consumer=null
         }
-        closed=true;
         write_source.cancel
+        write_source.release
         read_source.cancel
+        read_source.release
         queue.release
       }
     }
@@ -251,6 +258,7 @@ class StompBroker extends Queued {
           } else {
             consumer = new SimpleConsumer(dest, queue);
             router.bind(dest, consumer :: Nil)
+            consumer.release
           }
         case None=>
           die("destination not set.")
