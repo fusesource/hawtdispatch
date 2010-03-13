@@ -47,7 +47,7 @@ class StompWireFormat {
   /**
    * @retruns true if the source has been drained of StompFrame objects they are fully written to the socket
    */
-  def drain_to_socket(socket:SocketChannel)(source: =>StompFrame ):Boolean = {
+  def drain_to_socket(socket:SocketChannel)(source: =>List[StompFrame] ):Boolean = {
     while(true) {
       // if we have a pending frame that is being sent over the socket...
       if( outbound_frame!=null ) {
@@ -60,20 +60,21 @@ class StompWireFormat {
           outbound_frame = null
         }
       } else {
-        val frame = source
-        if( frame==null ) {
+        val frames = source
+        if( frames.isEmpty ) {
           // the source is now drained...
           return true
         } else {
-          outbound_frame = marshall( frame )
+          outbound_frame = marshall( frames )
         }
       }
     }
     true
   }
 
-  def marshall(stomp:StompFrame) = {
-      val list = new ArrayList[ByteBuffer]()
+  def marshall(frames:List[StompFrame]) = {
+    val list = new ArrayList[ByteBuffer]()
+    for(stomp <- frames ) {
       list.add(stomp.action)
       list.add(NEWLINE)
 
@@ -86,7 +87,8 @@ class StompWireFormat {
       list.add(NEWLINE)
       list.add(stomp.content)
       list.add(END_OF_FRAME_BUFFER)
-      list.toArray(Array.ofDim[ByteBuffer](list.size))
+    }
+    list.toArray(Array.ofDim[ByteBuffer](list.size))
   }
 
 

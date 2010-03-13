@@ -48,51 +48,17 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Co
 //    println("connected from: "+socket.socket.getRemoteSocketAddress)
 
   val wireFormat = new StompWireFormat()
-  val outbound = new LinkedList[(StompFrame,Retained)]()
+  var outbound = List[(StompFrame,Retained)]()
   var closed = false;
-
-  def send(frame:StompFrame, retained:Retained=null) = {
-    if( retained !=null ) {
-      retained.retain
-    }
-    outbound.addLast((frame,retained));
-    if( outbound.size == 1 ) {
-      write_source.resume
-    }
-  }
+  var consumer:SimpleConsumer = null
 
   val write_source = createSource(socket, OP_WRITE, queue);
-  write_source.setEventHandler(^{
-    try {
-
-      val drained = wireFormat.drain_to_socket(socket) {
-        var value = outbound.poll
-        if( value != null ) {
-          var frame = value._1
-          var retained = value._2
-          if( retained!=null ) {
-            retained.release
-          }
-          frame
-        } else {
-          null
-        }
-
-      }
-      // Once drained, we don't need write events..
-      if( drained ) {
-        write_source.suspend
-      }
-
-    } catch {
-      case e:IOException=>
-        // The peer closed on us..
-        close
-    }
-
-  });
-
   val read_source = createSource(socket, OP_READ, queue);
+
+  queue.addReleaseWatcher(^{
+    socket.close();
+  })
+
   read_source.setEventHandler(^{
     try {
       wireFormat.read_socket(socket) {
@@ -107,11 +73,46 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Co
     }
   });
 
-  queue.addReleaseWatcher(^{
-    socket.close();
-  })
+  write_source.setEventHandler(^{
+    try {
+
+      val drained = wireFormat.drain_to_socket(socket) {
+        val rc:List[StompFrame] = outbound.map {
+          case (frame,null)=>
+            frame
+          case (frame,retained)=> {
+            retained.release
+            frame
+          }
+        }
+        outbound = Nil
+        rc
+      }
+      // Once drained, we don't need write events..
+      if( drained ) {
+        write_source.suspend
+      }
+
+    } catch {
+      case e:IOException=>
+        // The peer closed on us..
+        close
+    }
+
+  });
+
   read_source.resume();
 
+  def send(frame:StompFrame, retained:Retained=null) = {
+    if( retained !=null ) {
+      retained.retain
+    }
+
+    if( outbound == Nil ) {
+      write_source.resume
+    }
+    outbound = (frame,retained) :: outbound
+  }
 
   def close = {
     if( !closed ) {
@@ -159,12 +160,6 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Co
     send(StompFrame(Responses.CONNECTED))
   }
 
-  class Producer(var sendRoute:Route[AsciiBuffer,Consumer]) extends QueuedRetained {
-    override val queue = StompConnection.this.queue
-    def send(headers:HeaderMap, content:Buffer) = ^ {
-    } ->: queue
-  }
-
   var producerRoute:Route[AsciiBuffer, Consumer]=null
 
   def on_stomp_send(headers:HeaderMap, content:Buffer) = {
@@ -210,14 +205,6 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Co
     }
   }
 
-  class SimpleConsumer(val dest:AsciiBuffer, override val queue:DispatchQueue) extends Consumer {
-    override def deliver(delivery:Delivery) = using(delivery) {
-      send(StompFrame(Responses.MESSAGE, delivery.headers, delivery.content), delivery)
-    } ->: queue
-  }
-
-  var consumer:SimpleConsumer = null
-
   def on_stomp_subscribe(headers:HeaderMap) = {
     headers.get(Headers.Subscribe.DESTINATION) match {
       case Some(dest)=>
@@ -241,6 +228,18 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Co
     send(StompFrame(Responses.ERROR, new HashMap(), ascii(msg)))
     ^ {
       close
+    } ->: queue
+  }
+
+  class SimpleConsumer(val dest:AsciiBuffer, override val queue:DispatchQueue) extends Consumer {
+    override def deliver(delivery:Delivery) = using(delivery) {
+      send(StompFrame(Responses.MESSAGE, delivery.headers, delivery.content), delivery)
+    } ->: queue
+  }
+
+  class Producer(var sendRoute:Route[AsciiBuffer,Consumer]) extends QueuedRetained {
+    override val queue = StompConnection.this.queue
+    def send(headers:HeaderMap, content:Buffer) = ^ {
     } ->: queue
   }
 
