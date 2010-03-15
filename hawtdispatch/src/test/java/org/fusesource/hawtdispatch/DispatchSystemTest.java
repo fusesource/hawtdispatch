@@ -43,7 +43,22 @@ public class DispatchSystemTest {
         DispatcherConfig config = new DispatcherConfig();
         Dispatcher simpleSystem = new SimpleDispatcher(config);
         simpleSystem.resume();
-        
+
+        System.out.println("warm up 1");
+        benchmarkGlobalWork(simpleSystem, 100000);
+        System.out.println("warm up 2");
+        benchmarkGlobalWork(simpleSystem, 100000);
+        System.out.println("warm up 3");
+        benchmarkGlobalWork(simpleSystem, 100000);
+        System.out.println("warm up 4");
+        benchmarkGlobalWork(simpleSystem, 100000);
+        System.out.println("warm up 5");
+        benchmarkGlobalWork(simpleSystem, 100000);
+        System.out.println("warm up 6");
+        benchmarkGlobalWork(simpleSystem, 100000);
+        System.out.println("warm up 7");
+        benchmarkGlobalWork(simpleSystem, 100000);
+
         benchmarkGlobal("simple global queue", simpleSystem);
         benchmarkSerial("simple private serial queue", simpleSystem);
 
@@ -56,7 +71,7 @@ public class DispatchSystemTest {
     public void benchmarkSerial(String name, Dispatcher dispatcher) throws InterruptedException {
         // warm the JIT up..
         benchmarkSerialWork(dispatcher, 100000);
-        
+
         int iterations = 1000*1000*20;
         long start = System.nanoTime();
         benchmarkSerialWork(dispatcher, iterations);
@@ -88,7 +103,7 @@ public class DispatchSystemTest {
     private static void benchmarkGlobal(String name, Dispatcher dispatcher) throws InterruptedException {
         // warm the JIT up..
         benchmarkGlobalWork(dispatcher, 100000);
-        
+
         int iterations = 1000*1000*20;
         long start = System.nanoTime();
         benchmarkGlobalWork(dispatcher, iterations);

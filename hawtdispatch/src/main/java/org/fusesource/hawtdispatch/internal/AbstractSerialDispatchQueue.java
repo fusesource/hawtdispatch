@@ -125,17 +125,26 @@ abstract public class AbstractSerialDispatchQueue extends AbstractDispatchObject
 
     protected void dispatch(IntegerCounter limit) {
         executing.set(true);
-        // Protection against concurrent execution...
-        // Many threads can try to get in.. but only the first will win..
-        if( executeCounter.getAndIncrement()==0 ) {
-            // Do additional loops for each thread that could
-            // not make it in.  This protects us from exiting
-            // the dispatch loop but still just after a new
-            // thread was trying to get in.
-            do {
+        while( true ) {
+
+            // Protection against concurrent execution...
+            // Many threads can try to get in.. but only the first will win..
+            if( executeCounter.incrementAndGet()==1 ) {
                 dispatchLoop(limit);
-            } while( executeCounter.decrementAndGet()>0 );
+
+
+                // Do additional loops for each thread that could
+                // not make it in.  This protects us from exiting
+                // the dispatch loop but still just after a new
+                // thread was trying to get in.
+                if( executeCounter.getAndSet(0)==1 ) {
+                    break;
+                }
+            } else {
+                break;
+            }
         }
+        
         executing.remove();
     }
     
