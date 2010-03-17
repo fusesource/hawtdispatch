@@ -22,6 +22,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.*;
 
@@ -35,6 +36,8 @@ public class NioSelector {
     
     private final boolean DEBUG = false;
     private final Selector selector;
+    volatile protected int selectCounter;
+    volatile protected boolean selecting;
 
     public NioSelector() throws IOException {
         this.selector = Selector.open();
@@ -48,8 +51,11 @@ public class NioSelector {
      * Subclasses may override this to provide an alternative wakeup mechanism.
      */
     public void wakeup() {
-        debug("waking selector");
-        selector.wakeup();
+        debug("wakeup");
+        int was = selectCounter;
+        while( selecting && was==selectCounter) {
+            selector.wakeup();
+        }
     }
 
     /**
@@ -66,16 +72,32 @@ public class NioSelector {
     public int select(long timeout) throws IOException {
         try {
             if (timeout == -1) {
-                selector.select();
+                selecting=true;
+                try {
+                    debug("entered blocking select");
+                    selector.select();
+                    debug("exited blocking select");
+                } finally {
+                    selectCounter++;
+                    selecting=false;
+                }
             } else if (timeout > 0) {
-                selector.select(timeout);
+                selecting=true;
+                try {
+                    debug("entered blocking select with timeout");
+                    selector.select(timeout);
+                    debug("exited blocking select with timeout");
+                } finally {
+                    selectCounter++;
+                    selecting=false;
+                }
             } else {
                 selector.selectNow();
             }
-            return processSelected();
         } catch (CancelledKeyException ignore) {
             return 0;
         }
+        return processSelected();
     }
 
     private int processSelected() {

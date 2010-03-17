@@ -40,6 +40,14 @@
   <dependencies>
     
     <dependency>
+      <groupId>jsr166y</groupId>
+      <artifactId>jsr166y</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <scope>system</scope>
+      <systemPath>${basedir}/lib/jsr166y.jar</systemPath>
+    </dependency>
+    
+    <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-tree</artifactId>
       <version>${asm-version}</version>

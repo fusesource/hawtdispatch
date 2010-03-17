@@ -225,6 +225,7 @@ final public class DispatcherThread extends Thread {
     }
 
     public void wakeup() {
+       inWaitingList.set(false);
        this.selector.wakeup();
     }
 

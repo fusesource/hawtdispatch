@@ -132,7 +132,6 @@ abstract public class AbstractSerialDispatchQueue extends AbstractDispatchObject
             if( executeCounter.incrementAndGet()==1 ) {
                 dispatchLoop(limit);
 
-
                 // Do additional loops for each thread that could
                 // not make it in.  This protects us from exiting
                 // the dispatch loop but still just after a new
@@ -144,7 +143,6 @@ abstract public class AbstractSerialDispatchQueue extends AbstractDispatchObject
                 break;
             }
         }
-        
         executing.remove();
     }
     

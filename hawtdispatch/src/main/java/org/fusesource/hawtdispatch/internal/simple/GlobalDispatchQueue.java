@@ -56,17 +56,7 @@ final public class GlobalDispatchQueue implements SimpleQueue {
     }
 
     public void dispatchAsync(Runnable runnable) {
-//        DispatcherThread thread = DispatcherThread.currentDispatcherThread();
-//        if( runnable.getClass() == SerialDispatchQueue.class ) {
-//            SerialDispatchQueue queue = ((SerialDispatchQueue)runnable);
-//            queue.pick(this, thread);
-//        } else {
-//            if( thread==null ) {
-                enqueueExternal(runnable);
-//            } else {
-//                thread.currentThreadQueue.localEnqueue(runnable);
-//            }
-//        }
+        enqueueExternal(runnable);
     }
 
     void enqueueExternal(Runnable runnable) {
