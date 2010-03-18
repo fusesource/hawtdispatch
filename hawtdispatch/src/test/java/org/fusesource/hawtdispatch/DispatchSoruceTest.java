@@ -39,7 +39,7 @@ import static junit.framework.Assert.*;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class NioDispatchSoruceTest {
+public class DispatchSoruceTest {
 
     @Test
     public void connect() throws IOException, InterruptedException {
@@ -50,9 +50,8 @@ public class NioDispatchSoruceTest {
         channel.socket().bind(address("0.0.0.0", 0), 10);
 
 
-        // Get a dispatcher and queue..
-        HawtDispatcher dispatcher = new HawtDispatcher(new DispatcherConfig());
-        dispatcher.resume();
+        // Get a DISPATCHER and queue..
+        Dispatcher dispatcher = new DispatcherConfig().createDispatcher();
         
         Thread.sleep(1000);
         DispatchQueue accepts = dispatcher.createSerialQueue("test");

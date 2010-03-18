@@ -49,14 +49,6 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         this.label=thread.getName()+" pritority: "+globalQueue.getLabel();
     }
 
-    static ThreadDispatchQueue currentThreadDispatchQueue() {
-        Thread thread = Thread.currentThread();
-        if( thread instanceof WorkerThread ) {
-            return ((WorkerThread)thread).dispatchQueue;
-        }
-        return null;
-    } 
-
     public String getLabel() {
         return label;
     }

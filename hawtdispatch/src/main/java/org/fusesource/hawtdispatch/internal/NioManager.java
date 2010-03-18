@@ -31,8 +31,6 @@ import static java.lang.String.*;
  */
 public class NioManager {
     
-    public final static ThreadLocal<NioManager> CURRENT_SELECTOR = new ThreadLocal<NioManager>();
-    
     private final boolean DEBUG = false;
     private final Selector selector;
     volatile protected int selectCounter;

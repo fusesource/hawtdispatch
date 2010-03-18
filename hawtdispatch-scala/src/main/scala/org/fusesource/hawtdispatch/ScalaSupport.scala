@@ -21,6 +21,14 @@ import java.nio.channels.SelectableChannel
 
 object ScalaSupport {
 
+  val dispatcher:Dispatcher = DispatchSystem.DISPATCHER;
+//  val dispatcher:Dispatcher = {
+//    val config = new DispatcherConfig
+//    config.setThreads(2)
+//    config.createDispatcher
+//  }
+
+
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
   type Retained = org.fusesource.hawtdispatch.Retained
@@ -28,14 +36,14 @@ object ScalaSupport {
   type DispatchSource = org.fusesource.hawtdispatch.DispatchSource
   type DispatchPriority = org.fusesource.hawtdispatch.DispatchPriority
 
-  def mainQueue() = DispatchSystem.getMainQueue
-  def globalQueue(priority: DispatchPriority=DispatchPriority.DEFAULT) = DispatchSystem.getGlobalQueue(priority)
-  def createSerialQueue(name: String=null) = DispatchSystem.createSerialQueue(name)
-  def createSource(channel:SelectableChannel, interestOps:Int, queue:DispatchQueue) = DispatchSystem.createSource(channel, interestOps, queue)
+  def mainQueue() = dispatcher.getMainQueue
+  def globalQueue(priority: DispatchPriority=DispatchPriority.DEFAULT) = dispatcher.getGlobalQueue(priority)
+  def createSerialQueue(name: String=null) = dispatcher.createSerialQueue(name)
+  def createSource(channel:SelectableChannel, interestOps:Int, queue:DispatchQueue) = dispatcher.createSource(channel, interestOps, queue)
 
-  def getRandomThreadQueue() = DispatchSystem.getRandomThreadQueue
-  def getCurrentThreadQueue() = DispatchSystem.getCurrentThreadQueue
-  def getCurrentQueue() = DispatchSystem.getCurrentQueue
+  def getRandomThreadQueue() = dispatcher.getRandomThreadQueue
+  def getCurrentThreadQueue() = dispatcher.getCurrentThreadQueue
+  def getCurrentQueue() = dispatcher.getCurrentQueue
 
 
   trait Service {

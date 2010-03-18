@@ -42,7 +42,7 @@ import static org.fusesource.hawtdispatch.DispatchPriority.*;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-final public class HawtDispatcher extends BaseSuspendable implements Dispatcher {
+final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     public final static ThreadLocal<HawtDispatchQueue> CURRENT_QUEUE = new ThreadLocal<HawtDispatchQueue>();
 
@@ -64,7 +64,11 @@ final public class HawtDispatcher extends BaseSuspendable implements Dispatcher 
                 thread.dispatchQueue = new ThreadDispatchQueue(this, thread, globalQueues[i]);
             }
         }
-        this.suspended.incrementAndGet();
+        for (int i = 0; i < 3; i++) {
+            globalQueues[i].workers.start();
+        }
+        timerThread = new TimerThread(this);
+        timerThread.start();
     }
 
     public DispatchQueue getMainQueue() {
@@ -94,20 +98,6 @@ final public class HawtDispatcher extends BaseSuspendable implements Dispatcher 
     }
 
     @Override
-    public void suspend() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected void onStartup() {
-        for (int i = 0; i < 3; i++) {
-            globalQueues[i].workers.start();
-        }
-        timerThread = new TimerThread(this);
-        timerThread.start();
-    }
-
-    @Override
     public void onShutdown() {
         for (int i = 0; i < 3; i++) {
             globalQueues[i].workers.shutdown();
@@ -124,7 +114,11 @@ final public class HawtDispatcher extends BaseSuspendable implements Dispatcher 
     }
 
     public DispatchQueue getCurrentThreadQueue() {
-        return ThreadDispatchQueue.currentThreadDispatchQueue();
+        WorkerThread thread = WorkerThread.currentWorkerThread();
+        if( thread ==null ) {
+            return null;
+        }
+        return thread.dispatchQueue;
     }
 
     public DispatchQueue getRandomThreadQueue() {

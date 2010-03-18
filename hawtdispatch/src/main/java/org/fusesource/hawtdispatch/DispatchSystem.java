@@ -26,47 +26,102 @@ import java.nio.channels.SelectableChannel;
  */
 public class DispatchSystem {
 
-    final private static Dispatcher dispatcher = create();
+    final public static Dispatcher DISPATCHER = create();
 
     private static Dispatcher create() {
-        Dispatcher rc = new DispatcherConfig().createDispatcher();
-        rc.resume();
-        return rc;
+        return new Dispatcher() {
+
+            final Dispatcher next = new DispatcherConfig().createDispatcher();
+
+            public DispatchQueue getRandomThreadQueue() {
+                return next.getRandomThreadQueue();
+            }
+
+            public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
+                return next.getRandomThreadQueue(priority);
+            }
+
+            public DispatchQueue getGlobalQueue() {
+                return next.getGlobalQueue();
+            }
+
+            public DispatchQueue getGlobalQueue(DispatchPriority priority) {
+                return next.getGlobalQueue(priority);
+            }
+
+            public DispatchQueue createSerialQueue(String label, DispatchOption... options) {
+                return next.createSerialQueue(label, options);
+            }
+
+            public DispatchQueue getMainQueue() {
+                return next.getMainQueue();
+            }
+
+            public void dispatchMain() {
+                next.dispatchMain();
+            }
+
+            public DispatchQueue getCurrentQueue() {
+                return next.getCurrentQueue();
+            }
+
+            public DispatchQueue getCurrentThreadQueue() {
+                return next.getCurrentThreadQueue();
+            }
+
+            public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {
+                return next.createSource(channel, interestOps, queue);
+            }
+
+            public void addReleaseWatcher(Runnable onRelease) {
+            }
+
+            public void retain() {
+            }
+
+            public void release() {
+            }
+
+            public boolean isReleased() {
+                return false;
+            }
+
+        };
     }
     
     public static DispatchQueue getMainQueue() {
-        return dispatcher.getMainQueue();
+        return DISPATCHER.getMainQueue();
     }
     
     public static DispatchQueue getGlobalQueue() {
-        return dispatcher.getGlobalQueue();
+        return DISPATCHER.getGlobalQueue();
     }
     
     public static DispatchQueue getGlobalQueue(DispatchPriority priority) {
-        return dispatcher.getGlobalQueue(priority);
+        return DISPATCHER.getGlobalQueue(priority);
     }
     
     public static DispatchQueue createSerialQueue(String label, DispatchOption... options) {
-        return dispatcher.createSerialQueue(label, options);
+        return DISPATCHER.createSerialQueue(label, options);
     }
     
     public static void dispatchMain() {
-        dispatcher.dispatchMain();
+        DISPATCHER.dispatchMain();
     }
 
     public static DispatchQueue getCurrentQueue() {
-        return dispatcher.getCurrentQueue();
+        return DISPATCHER.getCurrentQueue();
     }
 
     public static DispatchQueue getCurrentThreadQueue() {
-        return dispatcher.getCurrentThreadQueue();
+        return DISPATCHER.getCurrentThreadQueue();
     }
 
     public static DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {
-        return dispatcher.createSource(channel, interestOps, queue);
+        return DISPATCHER.createSource(channel, interestOps, queue);
     }
 
     public static DispatchQueue getRandomThreadQueue() {
-        return dispatcher.getRandomThreadQueue();
+        return DISPATCHER.getRandomThreadQueue();
     }
 }

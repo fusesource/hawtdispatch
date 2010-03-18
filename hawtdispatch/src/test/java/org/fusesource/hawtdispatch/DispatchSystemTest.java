@@ -110,10 +110,7 @@ public class DispatchSystemTest {
             }
         });
 
-        DispatcherConfig config = new DispatcherConfig();
-        config.setThreads(4);
-        Dispatcher rc = config.createDispatcher();
-        rc.resume();        final DispatchQueue queue = DispatchSystem.createSerialQueue("test");
+        final DispatchQueue queue = DispatchSystem.createSerialQueue("test");
         benchmark(new Scenario(){
             public String getName() {
                 return "serial queue";
@@ -122,7 +119,6 @@ public class DispatchSystemTest {
                 queue.execute(partition);
             }
         });
-       
     }
 
      private static void benchmark(Scenario scenario) throws InterruptedException {

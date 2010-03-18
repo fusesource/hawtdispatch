@@ -46,7 +46,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     private Runnable eventHandler;
     private Object context;
 
-    // These fields are only accessed by the selector's thread.
+    // These fields are only accessed by the ioManager's thread.
     int readyOps;
     SelectionKey key;
     NioAttachment attachment;
@@ -89,7 +89,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
-                Selector selector = NioManager.CURRENT_SELECTOR.get().getSelector();
+                Selector selector = WorkerThread.currentWorkerThread().ioManager.getSelector();
                 try {
                     key = channel.keyFor(selector);
                     if( key==null ) {
@@ -102,7 +102,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
                     key.interestOps(key.interestOps()|interestOps);
                     attachment.sources.add(NioDispatchSource.this);
                 } catch (ClosedChannelException e) {
-                    debug(e, "could not register selector");
+                    debug(e, "could not register with selector");
                 }
             }
         });
@@ -129,11 +129,11 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
             if( attachment.sources.isEmpty() ) {
                 debug("canceling key.");
                 // This will make sure that the key is removed
-                // from the selector.
+                // from the ioManager.
                 key.cancel();
 
                 // Running a select to remove the canceled key.
-                Selector selector = NioManager.CURRENT_SELECTOR.get().getSelector();
+                Selector selector =  WorkerThread.currentWorkerThread().ioManager.getSelector();
                 try {
                     selector.selectNow();
                 } catch (IOException e) {

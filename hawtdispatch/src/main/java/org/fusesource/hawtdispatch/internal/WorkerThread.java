@@ -118,7 +118,7 @@ final public class WorkerThread extends Thread {
      */
     long lastEventCount;
 
-    private NioManager selector;
+    NioManager ioManager;
 
     /**
      * Creates a WorkerThread operating in the given pool.
@@ -129,7 +129,7 @@ final public class WorkerThread extends Thread {
     protected WorkerThread(WorkerPool pool) throws IOException {
         if (pool == null) throw new NullPointerException();
         this.pool = pool;
-        this.selector = new NioManager();
+        this.ioManager = new NioManager();
         // Note: poolIndex is set by pool during construction
         // Remaining initialization is deferred to onStart
     }
@@ -716,13 +716,22 @@ final public class WorkerThread extends Thread {
 
     public void park() {
         try {
-            selector.select(-1);
+            ioManager.select(-1);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void unpark() {
-        selector.wakeup();
+        ioManager.wakeup();
     }
+
+    static WorkerThread currentWorkerThread() {
+        Thread thread = Thread.currentThread();
+        if( thread instanceof WorkerThread ) {
+            return (WorkerThread)thread;
+        }
+        return null;
+    }
+
 }
