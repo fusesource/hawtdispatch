@@ -14,41 +14,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.internal.simple;
+package org.fusesource.hawtdispatch.internal;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.fusesource.hawtdispatch.DispatchOption;
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.internal.QueueSupport;
+import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-final public class ThreadDispatchQueue implements SimpleQueue {
+final public class ThreadDispatchQueue implements HawtDispatchQueue {
 
     final String label;
-    final LinkedList<Runnable> localRunnables = new LinkedList<Runnable>();
-    final ConcurrentLinkedQueue<Runnable> sharedRunnables = new ConcurrentLinkedQueue<Runnable>();
-    final DispatcherThread thread;
-    final AtomicLong counter;
+
+    final LinkedList<Work> localRunnables = new LinkedList<Work>();
+    final ConcurrentLinkedQueue<Work> sharedRunnables = new ConcurrentLinkedQueue<Work>();
+
+    final WorkerThread thread;
     final GlobalDispatchQueue globalQueue;
-    private final SimpleDispatcher dispatcher;
+    private final HawtDispatcher dispatcher;
     
-    public ThreadDispatchQueue(SimpleDispatcher dispatcher, DispatcherThread thread, GlobalDispatchQueue globalQueue) {
+    public ThreadDispatchQueue(HawtDispatcher dispatcher, WorkerThread thread, GlobalDispatchQueue globalQueue) {
         this.dispatcher = dispatcher;
         this.thread = thread;
         this.globalQueue = globalQueue;
         this.label=thread.getName()+" pritority: "+globalQueue.getLabel();
-        this.counter = thread.threadQueuedRunnables;
     }
+
+    static ThreadDispatchQueue currentThreadDispatchQueue() {
+        Thread thread = Thread.currentThread();
+        if( thread instanceof WorkerThread ) {
+            return ((WorkerThread)thread).dispatchQueue;
+        }
+        return null;
+    } 
 
     public String getLabel() {
         return label;
@@ -60,38 +67,18 @@ final public class ThreadDispatchQueue implements SimpleQueue {
     
     public void dispatchAsync(Runnable runnable) {
         // We don't have to take the synchronization hit 
-        // if the current thread is the dispatcher since we know it's not
-        // waiting.
         if( Thread.currentThread()!=thread ) {
-            globalEnqueue(runnable);
+            sharedRunnables.add(Work.wrap(runnable));
+            thread.unpark();
         } else {
-            localEnqueue(runnable);
+            localRunnables.add(Work.wrap(runnable));
         }
     }
 
-    void localEnqueue(Runnable runnable) {
-        thread.localWork.incrementAndGet();
-        localRunnables.add(runnable);
-    }
-
-    void globalEnqueue(Runnable runnable) {
-        counter.incrementAndGet();
-        sharedRunnables.add(runnable);
-        thread.wakeup();
-    }
-
-    public Runnable pollShared() {
-        Runnable rc = sharedRunnables.poll();
-        if( rc !=null ) {
-            counter.decrementAndGet();
-        }
-        return rc;
-    }
-
-    public Runnable pollLocal() {
-        Runnable rc = localRunnables.poll();
-        if( rc !=null ) {
-            thread.localWork.decrementAndGet();
+    public Work poll() {
+        Work rc = localRunnables.poll();
+        if (rc ==null) {
+            rc = sharedRunnables.poll();
         }
         return rc;
     }
@@ -136,7 +123,7 @@ final public class ThreadDispatchQueue implements SimpleQueue {
         throw new UnsupportedOperationException();
     }
     
-    public SimpleQueue getTargetQueue() {
+    public HawtDispatchQueue getTargetQueue() {
         return null;
     }
     

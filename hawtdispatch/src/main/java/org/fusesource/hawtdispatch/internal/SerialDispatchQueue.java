@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.fusesource.hawtdispatch.internal.simple;
+package org.fusesource.hawtdispatch.internal;
 
 import java.util.concurrent.TimeUnit;
 
@@ -29,15 +29,13 @@ import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public final class SerialDispatchQueue extends AbstractSerialDispatchQueue implements SimpleQueue {
+public final class SerialDispatchQueue extends AbstractSerialDispatchQueue implements HawtDispatchQueue {
 
-    private final SimpleDispatcher dispatcher;
-
+    private final HawtDispatcher dispatcher;
     private volatile boolean stickToThreadOnNextDispatch;
-
     private volatile boolean stickToThreadOnNextDispatchRequest;
 
-    SerialDispatchQueue(SimpleDispatcher dispatcher, String label, DispatchOption... options) {
+    SerialDispatchQueue(HawtDispatcher dispatcher, String label, DispatchOption... options) {
         super(label, options);
         this.dispatcher = dispatcher;
         if (getOptions().contains(DispatchOption.STICK_TO_DISPATCH_THREAD)) {
@@ -48,7 +46,7 @@ public final class SerialDispatchQueue extends AbstractSerialDispatchQueue imple
     @Override
     public void setTargetQueue(DispatchQueue targetQueue) {
         assertRetained();
-        GlobalDispatchQueue global = ((SimpleQueue) targetQueue).isGlobalDispatchQueue();
+        GlobalDispatchQueue global = ((HawtDispatchQueue) targetQueue).isGlobalDispatchQueue();
         if (getOptions().contains(DispatchOption.STICK_TO_CALLER_THREAD) && global != null) {
             stickToThreadOnNextDispatchRequest = true;
         }
@@ -60,9 +58,9 @@ public final class SerialDispatchQueue extends AbstractSerialDispatchQueue imple
         assertRetained();
 
         if (stickToThreadOnNextDispatchRequest) {
-            SimpleQueue current = SimpleDispatcher.CURRENT_QUEUE.get();
+            HawtDispatchQueue current = HawtDispatcher.CURRENT_QUEUE.get();
             if (current != null) {
-                SimpleQueue parent;
+                HawtDispatchQueue parent;
                 while ((parent = current.getTargetQueue()) != null) {
                     current = parent;
                 }
@@ -75,9 +73,8 @@ public final class SerialDispatchQueue extends AbstractSerialDispatchQueue imple
     }
 
     public void run() {
-        SimpleQueue current = SimpleDispatcher.CURRENT_QUEUE.get();
-        SimpleDispatcher.CURRENT_QUEUE.set(this);
-
+        HawtDispatchQueue current = HawtDispatcher.CURRENT_QUEUE.get();
+        HawtDispatcher.CURRENT_QUEUE.set(this);
         try {
             if (stickToThreadOnNextDispatch) {
                 stickToThreadOnNextDispatch = false;
@@ -86,11 +83,9 @@ public final class SerialDispatchQueue extends AbstractSerialDispatchQueue imple
                     setTargetQueue(global.getTargetQueue());
                 }
             }
-
-            DispatcherThread thread = DispatcherThread.currentDispatcherThread();
-            dispatch(thread.executionCounter);
+            dispatch();
         } finally {
-            SimpleDispatcher.CURRENT_QUEUE.set(current);
+            HawtDispatcher.CURRENT_QUEUE.set(current);
         }
 
     }
@@ -120,28 +115,16 @@ public final class SerialDispatchQueue extends AbstractSerialDispatchQueue imple
         return null;
     }
 
-    public SimpleQueue getTargetQueue() {
+    public HawtDispatchQueue getTargetQueue() {
         assertRetained();
-        return (SimpleQueue) targetQueue;
+        return (HawtDispatchQueue) targetQueue;
     }
 
     @Override
     public String toString() {
         return IntrospectionSupport.toString(this, "label", "size", "suspended", "retained");
     }
-
-    int localEnqueueCounter;
     
-    public void pick(GlobalDispatchQueue queue, DispatcherThread thread) {
-        if( thread==null || localEnqueueCounter > 500 ) {
-            localEnqueueCounter=0;
-            queue.enqueueExternal(this);
-        } else {
-            localEnqueueCounter++;
-            thread.currentThreadQueue.localEnqueue(this);
-        }        
-    }
-
     public DispatchQueue createSerialQueue(String label, DispatchOption... options) {
         DispatchQueue rc = dispatcher.createSerialQueue(label, options);
         rc.setTargetQueue(this);

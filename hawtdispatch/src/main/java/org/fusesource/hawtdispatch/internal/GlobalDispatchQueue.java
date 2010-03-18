@@ -14,37 +14,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.internal.simple;
+package org.fusesource.hawtdispatch.internal;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.fusesource.hawtdispatch.DispatchOption;
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.internal.QueueSupport;
+import org.fusesource.hawtdispatch.internal.util.QueueSupport;
+import org.fusesource.hawtdispatch.internal.WorkerPool;
 import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
 
 /**
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-final public class GlobalDispatchQueue implements SimpleQueue {
+final public class GlobalDispatchQueue implements HawtDispatchQueue {
 
-    private final SimpleDispatcher dispatcher;
+    private final HawtDispatcher dispatcher;
     final String label;
-    final ConcurrentLinkedQueue<Runnable> globalRunnables = new ConcurrentLinkedQueue<Runnable>();
-    final AtomicLong counter;
     private final DispatchPriority priority;
 
-    public GlobalDispatchQueue(SimpleDispatcher dispatcher, DispatchPriority priority) {
+    final WorkerPool workers;
+
+    public GlobalDispatchQueue(HawtDispatcher dispatcher, DispatchPriority priority, int threads) {
         this.dispatcher = dispatcher;
         this.priority = priority;
         this.label=priority.toString();
-        this.counter = dispatcher.globalQueuedRunnables;
+        this.workers = new WorkerPool(dispatcher.getLabel()+"-"+priority, threads, priority(priority));
+    }
+
+    static private int priority(DispatchPriority priority) {
+        switch(priority) {
+            case HIGH:
+                return Thread.MAX_PRIORITY;
+            case DEFAULT:
+                return Thread.NORM_PRIORITY;
+            case LOW:
+                return Thread.MIN_PRIORITY;
+        }
+        return 0;
     }
 
     public String getLabel() {
@@ -56,13 +67,7 @@ final public class GlobalDispatchQueue implements SimpleQueue {
     }
 
     public void dispatchAsync(Runnable runnable) {
-        enqueueExternal(runnable);
-    }
-
-    void enqueueExternal(Runnable runnable) {
-        this.counter.incrementAndGet();
-        globalRunnables.add(runnable);
-        dispatcher.wakeup();
+        workers.execute(runnable);
     }
 
     public void dispatchAfter(Runnable runnable, long delay, TimeUnit unit) {
@@ -79,14 +84,6 @@ final public class GlobalDispatchQueue implements SimpleQueue {
 
     public ThreadDispatchQueue getTargetQueue() {
         return null;
-    }
-    
-    public Runnable poll() {
-        Runnable rc = globalRunnables.poll();
-        if( rc !=null ) {
-            counter.decrementAndGet();
-        }
-        return rc;
     }
 
     public DispatchPriority getPriority() {

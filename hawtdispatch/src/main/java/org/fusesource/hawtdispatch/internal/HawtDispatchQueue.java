@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.internal.simple;
+package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
@@ -24,7 +24,7 @@ import org.fusesource.hawtdispatch.DispatchQueue;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  *
  */
-public interface SimpleQueue extends DispatchQueue {
+public interface HawtDispatchQueue extends DispatchQueue {
 
     DispatchPriority getPriority();
     
@@ -32,6 +32,6 @@ public interface SimpleQueue extends DispatchQueue {
     ThreadDispatchQueue isThreadDispatchQueue();
     GlobalDispatchQueue isGlobalDispatchQueue();
     
-    SimpleQueue getTargetQueue();
+    HawtDispatchQueue getTargetQueue();
 
 }

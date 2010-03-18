@@ -16,7 +16,7 @@
  */
 package org.fusesource.hawtdispatch;
 
-import org.fusesource.hawtdispatch.internal.simple.SimpleDispatcher;
+import org.fusesource.hawtdispatch.internal.HawtDispatcher;
 
 /**
  * 
@@ -36,7 +36,7 @@ public class DispatcherConfig {
     }
 
     public Dispatcher createDispatcher() {
-        return new SimpleDispatcher(this);
+        return new HawtDispatcher(this);
     }
     
     public String getLabel() {

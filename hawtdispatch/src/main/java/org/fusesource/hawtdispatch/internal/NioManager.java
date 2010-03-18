@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.internal.nio;
+package org.fusesource.hawtdispatch.internal;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -22,7 +22,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.*;
 
@@ -30,16 +29,16 @@ import static java.lang.String.*;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class NioSelector {
+public class NioManager {
     
-    public final static ThreadLocal<NioSelector> CURRENT_SELECTOR = new ThreadLocal<NioSelector>();
+    public final static ThreadLocal<NioManager> CURRENT_SELECTOR = new ThreadLocal<NioManager>();
     
     private final boolean DEBUG = false;
     private final Selector selector;
     volatile protected int selectCounter;
     volatile protected boolean selecting;
 
-    public NioSelector() throws IOException {
+    public NioManager() throws IOException {
         this.selector = Selector.open();
     }
 
@@ -116,9 +115,9 @@ public class NioSelector {
                 i.remove();
                 if (key.isValid()) {
                     key.interestOps(key.interestOps() & ~key.readyOps());
-                    ((Attachment) key.attachment()).selected(key);
+                    ((NioAttachment) key.attachment()).selected(key);
                 } else {
-                    ((Attachment) key.attachment()).cancel(key);
+                    ((NioAttachment) key.attachment()).cancel(key);
                 }
             }
         }
@@ -135,7 +134,7 @@ public class NioSelector {
 
     protected void debug(String str, Object... args) {
         if (DEBUG) {
-            System.out.println(format("[DEBUG] NioSelector %0#10x: ", System.identityHashCode(this))+format(str, args));
+            System.out.println(format("[DEBUG] NioManager %0#10x: ", System.identityHashCode(this))+format(str, args));
         }
     }
 

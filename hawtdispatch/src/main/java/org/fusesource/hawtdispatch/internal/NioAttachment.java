@@ -1,4 +1,4 @@
-package org.fusesource.hawtdispatch.internal.nio;
+package org.fusesource.hawtdispatch.internal;
 
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-final class Attachment {
+final class NioAttachment {
     
     final ArrayList<NioDispatchSource> sources = new ArrayList<NioDispatchSource>(2);
 

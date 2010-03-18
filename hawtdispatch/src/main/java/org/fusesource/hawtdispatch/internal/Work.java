@@ -16,31 +16,40 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
-import java.util.concurrent.CountDownLatch;
-
-import org.fusesource.hawtdispatch.DispatchQueue;
-
 /**
- * 
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ * Work maintain state about a runnable action.
+ *
+ * TODO: see if we can eliminate this class.
+ *  
+ * @author Doug Lea
  */
-public class QueueSupport {
+abstract public class Work implements Runnable {
 
-    static public void dispatchApply(DispatchQueue queue, int itterations, final Runnable runnable) throws InterruptedException {
-        final CountDownLatch done = new CountDownLatch(itterations);
-        Runnable wrapper = new Runnable() {
+    volatile int status;
+
+    static public Work wrap(final Runnable runnable) {
+        // avoid re-wrap
+        if (runnable instanceof Work) {
+            return (Work)runnable;
+        }
+        return new Work() {
             public void run() {
-                try {
-                    runnable.run();
-                } finally {
-                    done.countDown();
-                }
+                runnable.run();
             }
         };
-        for( int i=0; i < itterations; i++ ) { 
-            queue.dispatchAsync(wrapper);
-        }
-        done.await();
     }
+
+    static final int NORMAL               = 0xe0000000;
+
+    public void execute() {
+        if (status >= 0) {
+            try {
+                run();
+            } finally {
+                status = NORMAL;
+            }
+        }
+    }
+    
     
 }

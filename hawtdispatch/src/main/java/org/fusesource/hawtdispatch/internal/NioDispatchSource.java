@@ -5,7 +5,7 @@
  * The software in this package is published under the terms of the AGPL license      *
  * a copy of which has been included with this distribution in the license.txt file.  *
  **************************************************************************************/
-package org.fusesource.hawtdispatch.internal.nio;
+package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.DispatchSource;
@@ -49,7 +49,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     // These fields are only accessed by the selector's thread.
     int readyOps;
     SelectionKey key;
-    Attachment attachment;
+    NioAttachment attachment;
 
     public NioDispatchSource(Dispatcher dispatcher, SelectableChannel channel, int interestOps, DispatchQueue targetQueue) {
         if( interestOps == 0 ) {
@@ -89,15 +89,15 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
-                Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
+                Selector selector = NioManager.CURRENT_SELECTOR.get().getSelector();
                 try {
                     key = channel.keyFor(selector);
                     if( key==null ) {
                         key = channel.register(selector, interestOps);
-                        attachment = new Attachment();
+                        attachment = new NioAttachment();
                         key.attach(attachment);
                     } else {
-                        attachment = (Attachment)key.attachment();
+                        attachment = (NioAttachment)key.attachment();
                     }
                     key.interestOps(key.interestOps()|interestOps);
                     attachment.sources.add(NioDispatchSource.this);
@@ -133,7 +133,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
                 key.cancel();
 
                 // Running a select to remove the canceled key.
-                Selector selector = NioSelector.CURRENT_SELECTOR.get().getSelector();
+                Selector selector = NioManager.CURRENT_SELECTOR.get().getSelector();
                 try {
                     selector.selectNow();
                 } catch (IOException e) {

@@ -28,8 +28,8 @@ import java.nio.channels.SocketChannel;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.DispatchSource;
 import org.fusesource.hawtdispatch.DispatcherConfig;
-import org.fusesource.hawtdispatch.internal.RunnableCountDownLatch;
-import org.fusesource.hawtdispatch.internal.simple.SimpleDispatcher;
+import org.fusesource.hawtdispatch.internal.HawtDispatcher;
+import org.fusesource.hawtdispatch.internal.util.RunnableCountDownLatch;
 import org.junit.Test;
 
 import static java.util.concurrent.TimeUnit.*;
@@ -51,7 +51,7 @@ public class NioDispatchSoruceTest {
 
 
         // Get a dispatcher and queue..
-        SimpleDispatcher dispatcher = new SimpleDispatcher(new DispatcherConfig());
+        HawtDispatcher dispatcher = new HawtDispatcher(new DispatcherConfig());
         dispatcher.resume();
         
         Thread.sleep(1000);

@@ -27,7 +27,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.fusesource.hawtdispatch.DispatchOption;
 import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.internal.simple.IntegerCounter;
+import org.fusesource.hawtdispatch.internal.util.IntegerCounter;
+import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
  * 
@@ -118,19 +119,14 @@ abstract public class AbstractSerialDispatchQueue extends AbstractDispatchObject
     }
 
     public void run() {
-        IntegerCounter limit = new IntegerCounter();
-        limit.set(1000);
-        dispatch(limit);
+        dispatch();
     }
 
-    protected void dispatch(IntegerCounter limit) {
+    protected void dispatch() {
         executing.set(true);
         while( true ) {
-
-            // Protection against concurrent execution...
-            // Many threads can try to get in.. but only the first will win..
             if( executeCounter.incrementAndGet()==1 ) {
-                dispatchLoop(limit);
+                dispatchLoop();
 
                 // Do additional loops for each thread that could
                 // not make it in.  This protects us from exiting
@@ -146,10 +142,9 @@ abstract public class AbstractSerialDispatchQueue extends AbstractDispatchObject
         executing.remove();
     }
     
-    private void dispatchLoop(IntegerCounter limit) {
+    private void dispatchLoop() {
         int counter=0;
         try {
-            
             Runnable runnable;
             while( suspended.get() <= 0 ) {
                 
@@ -159,9 +154,6 @@ abstract public class AbstractSerialDispatchQueue extends AbstractDispatchObject
                         runnable.run();
                     } catch (Exception e) {
                         e.printStackTrace();
-                    }
-                    if( limit.decrementAndGet() <= 0 ) {
-                        return;
                     }
                     continue;
                 }

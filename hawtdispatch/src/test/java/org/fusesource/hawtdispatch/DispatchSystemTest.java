@@ -20,15 +20,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jsr166y.ForkJoinPool;
-import org.fusesource.hawtdispatch.DispatchOption;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.Dispatcher;
-import org.fusesource.hawtdispatch.DispatcherConfig;
-import org.fusesource.hawtdispatch.internal.RunnableCountDownLatch;
-import org.fusesource.hawtdispatch.internal.simple.SimpleDispatcher;
+import org.fusesource.hawtdispatch.internal.WorkerPool;
 import org.junit.Test;
 
-import static java.lang.String.*;
 import static java.lang.String.format;
 
 /**
@@ -58,9 +52,9 @@ public class DispatchSystemTest {
 
             public void run() {
                 int rc = remaining.decrementAndGet();
-                if( (rc%10000)==0 ) {
-                    System.out.println(id+" at: "+rc);
-                }
+//                if( (rc%10000)==0 ) {
+//                    System.out.println(id+" at: "+rc);
+//                }
                 if( rc == 0 ) {
                     done.countDown();
                 } else {
@@ -93,6 +87,7 @@ public class DispatchSystemTest {
 
     @Test
     public void benchmark() throws InterruptedException {
+        
 
 //        final ForkJoinPool pool = new ForkJoinPool();
 //        benchmark(new Scenario(){
@@ -103,18 +98,22 @@ public class DispatchSystemTest {
 //                pool.execute(partition);
 //            }
 //        });
-//        pool.shutdown();
 //
-//        benchmark(new Scenario(){
-//            public String getName() {
-//                return "global queue";
-//            }
-//            public void execute(Partition partition) {
-//                DispatchSystem.getGlobalQueue().execute(partition);
-//            }
-//        });
+//        pool.shutdown();
 
-        final DispatchQueue queue = DispatchSystem.createSerialQueue("test");
+        benchmark(new Scenario(){
+            public String getName() {
+                return "global queue";
+            }
+            public void execute(Partition partition) {
+                DispatchSystem.getGlobalQueue().execute(partition);
+            }
+        });
+
+        DispatcherConfig config = new DispatcherConfig();
+        config.setThreads(4);
+        Dispatcher rc = config.createDispatcher();
+        rc.resume();        final DispatchQueue queue = DispatchSystem.createSerialQueue("test");
         benchmark(new Scenario(){
             public String getName() {
                 return "serial queue";

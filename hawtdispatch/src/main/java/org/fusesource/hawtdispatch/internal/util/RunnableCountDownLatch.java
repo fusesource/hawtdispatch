@@ -15,23 +15,19 @@
  * limitations under the License.
  */
 
-package org.fusesource.hawtdispatch;
+package org.fusesource.hawtdispatch.internal.util;
+
+import java.util.concurrent.CountDownLatch;
 
 /**
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public interface DispatcherObserver {
-    
-    public void onThreadCreate(Thread thread);
-    public void onThreadDestroy(Thread thread);
-
-    public void onQueueCreate(DispatchQueue queue, DispatchOption...options);
-    public void onQueueDestroy(DispatchQueue queue);
-    
-    public void onSourceCreate(DispatchSource source);
-    public void onSourceDestroy(DispatchSource source);
-    
-    public void onDispatchRequest(DispatchQueue target, Runnable request);
-
+public class RunnableCountDownLatch extends CountDownLatch implements Runnable {
+    public RunnableCountDownLatch(int count) {
+        super(count);
+    }
+    public void run() {
+        countDown();
+    }
 }

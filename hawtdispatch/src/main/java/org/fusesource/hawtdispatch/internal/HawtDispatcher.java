@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.internal.simple;
+package org.fusesource.hawtdispatch.internal;
 
 import java.nio.channels.SelectableChannel;
 import java.util.Random;
@@ -30,7 +30,7 @@ import org.fusesource.hawtdispatch.Dispatcher;
 import org.fusesource.hawtdispatch.DispatcherConfig;
 import org.fusesource.hawtdispatch.internal.AbstractSerialDispatchQueue;
 import org.fusesource.hawtdispatch.internal.BaseSuspendable;
-import org.fusesource.hawtdispatch.internal.nio.NioDispatchSource;
+import org.fusesource.hawtdispatch.internal.NioDispatchSource;
 
 import static org.fusesource.hawtdispatch.DispatchPriority.*;
 
@@ -42,30 +42,28 @@ import static org.fusesource.hawtdispatch.DispatchPriority.*;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-final public class SimpleDispatcher extends BaseSuspendable implements Dispatcher {
+final public class HawtDispatcher extends BaseSuspendable implements Dispatcher {
 
-    public final static ThreadLocal<SimpleQueue> CURRENT_QUEUE = new ThreadLocal<SimpleQueue>();
+    public final static ThreadLocal<HawtDispatchQueue> CURRENT_QUEUE = new ThreadLocal<HawtDispatchQueue>();
 
     final SerialDispatchQueue mainQueue = new SerialDispatchQueue(this, "main");
     final GlobalDispatchQueue globalQueues[];
-    final DispatcherThread dispatchers[];
     final AtomicLong globalQueuedRunnables = new AtomicLong();
-
-    final ConcurrentLinkedQueue<DispatcherThread> waitingDispatchers = new ConcurrentLinkedQueue<DispatcherThread>();
-    final AtomicInteger waitingDispatcherCount = new AtomicInteger();
     final Random random = new Random();
 
 
     private final String label;
     TimerThread timerThread;
 
-    public SimpleDispatcher(DispatcherConfig config) {
+    public HawtDispatcher(DispatcherConfig config) {
         this.label = config.getLabel();
         globalQueues = new GlobalDispatchQueue[3];
         for (int i = 0; i < 3; i++) {
-            globalQueues[i] = new GlobalDispatchQueue(this, DispatchPriority.values()[i]);
+            globalQueues[i] = new GlobalDispatchQueue(this, DispatchPriority.values()[i], config.getThreads());
+            for ( WorkerThread thread: globalQueues[i].workers.threads) {
+                thread.dispatchQueue = new ThreadDispatchQueue(this, thread, globalQueues[i]);
+            }
         }
-        dispatchers = new DispatcherThread[config.getThreads()];
         this.suspended.incrementAndGet();
     }
 
@@ -95,22 +93,6 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
         return new NioDispatchSource(this, channel, interestOps, queue);
     }
 
-    public void addWaitingDispatcher(DispatcherThread dispatcher) {
-        waitingDispatcherCount.incrementAndGet();
-        waitingDispatchers.add(dispatcher);
-    }
-
-    public void wakeup() {
-        int value = waitingDispatcherCount.get();
-        if (value != 0) {
-            DispatcherThread dispatcher = waitingDispatchers.poll();
-            if (dispatcher != null) {
-                waitingDispatcherCount.decrementAndGet();
-                dispatcher.wakeup();
-            }
-        }
-    }
-
     @Override
     public void suspend() {
         throw new UnsupportedOperationException();
@@ -118,9 +100,8 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
 
     @Override
     protected void onStartup() {
-        for (int i = 0; i < dispatchers.length; i++) {
-            dispatchers[i] = new DispatcherThread(this, i);
-            dispatchers[i].start();
+        for (int i = 0; i < 3; i++) {
+            globalQueues[i].workers.start();
         }
         timerThread = new TimerThread(this);
         timerThread.start();
@@ -128,23 +109,10 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
 
     @Override
     public void onShutdown() {
-
-        Runnable countDown = new Runnable() {
-            AtomicInteger shutdownCountDown = new AtomicInteger(dispatchers.length);
-            public void run() {
-                if (shutdownCountDown.decrementAndGet() == 0) {
-                    // Notify any registered shutdown watchers.
-                    SimpleDispatcher.super.onShutdown();
-                }
-                throw new DispatcherThread.Shutdown();
-            }
-        };
-
-        timerThread.shutdown(null);
-        for (int i = 0; i < dispatchers.length; i++) {
-            ThreadDispatchQueue queue = dispatchers[i].threadQueues[LOW.ordinal()];
-            queue.dispatchAsync(countDown);
+        for (int i = 0; i < 3; i++) {
+            globalQueues[i].workers.shutdown();
         }
+        timerThread.shutdown(null);
     }
 
     public String getLabel() {
@@ -156,11 +124,7 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
     }
 
     public DispatchQueue getCurrentThreadQueue() {
-        DispatcherThread thread = DispatcherThread.currentDispatcherThread();
-        if (thread == null) {
-            return null;
-        }
-        return thread.currentThreadQueue;
+        return ThreadDispatchQueue.currentThreadDispatchQueue();
     }
 
     public DispatchQueue getRandomThreadQueue() {
@@ -168,8 +132,9 @@ final public class SimpleDispatcher extends BaseSuspendable implements Dispatche
     }
 
     public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
-        int i = random.nextInt(dispatchers.length);
-        return dispatchers[i].threadQueues[priority.ordinal()];
+        WorkerThread[] threads = globalQueues[priority.ordinal()].workers.threads;
+        int i = random.nextInt(threads.length);
+        return threads[i].dispatchQueue;
     }
 
 }

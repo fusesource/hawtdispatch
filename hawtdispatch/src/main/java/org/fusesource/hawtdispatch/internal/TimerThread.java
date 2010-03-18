@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.internal.simple;
+package org.fusesource.hawtdispatch.internal;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.internal.util.TimerHeap;
 
-import static org.fusesource.hawtdispatch.internal.simple.TimerThread.Type.*;
+import static org.fusesource.hawtdispatch.internal.TimerThread.Type.*;
 
 
 
@@ -48,7 +48,7 @@ final public class TimerThread extends Thread {
     private final Object mutex = new Object();
     private ArrayList<TimerRequest> requests = new ArrayList<TimerRequest>();
     
-    public TimerThread(SimpleDispatcher dispatcher) {
+    public TimerThread(HawtDispatcher dispatcher) {
         setName(dispatcher.getLabel()+" timer");
         setDaemon(true);
     }
