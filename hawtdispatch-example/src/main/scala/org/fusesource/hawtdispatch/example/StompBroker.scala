@@ -15,6 +15,7 @@
  */
 package org.fusesource.hawtdispatch.example
 
+import _root_.java.util.concurrent.TimeUnit
 import java.nio.channels.SelectionKey._
 import org.fusesource.hawtdispatch.ScalaSupport._
 
@@ -31,9 +32,14 @@ object StompBroker {
   type HeaderMap = collection.mutable.Map[AsciiBuffer, AsciiBuffer]
 
   case class Delivery(headers:HeaderMap, content:Buffer) extends ServiceRetainer
+  trait Producer {
+    def setTargetQueue(queue:DispatchQueue):Unit
+  }
+
   trait Consumer extends QueuedRetained {
     def deliver(delivery:Delivery)
   }
+  
 
   def main(args:Array[String]) = {
     println("Starting stomp broker...")
@@ -53,7 +59,7 @@ object StompBroker {
 class StompBroker extends Queued {
   import StompBroker._
 
-  val router = new Router[AsciiBuffer,Consumer](createSerialQueue("router"))
+  val router = new Router[AsciiBuffer,Producer,Consumer](createSerialQueue("router"))
   val queue = createSerialQueue("broker")
 
     // Create the nio server socket...
@@ -97,6 +103,25 @@ class StompBroker extends Queued {
   private def ip(host: String): InetAddress = {
     return InetAddress.getByName(host)
   }
+
+  // Try to periodically re-balance connections so that consumers/producers
+  // are on the same thread.
+  val reblance = ^{
+    println("reblancing: "+router.destinations.size)
+    router.each {
+      (destination, routes, targets) =>
+      // for now just move the producer to the consumer's thread..
+      if( !targets.isEmpty ) {
+        for( route <- routes ) {
+          route.producer.setTargetQueue( targets.head.queue.getTargetQueue )
+        }
+      }
+
+    }
+    schedualRebalance
+  }
+  def schedualRebalance:Unit = router.queue.dispatchAfter(reblance, 1000, TimeUnit.MILLISECONDS)
+  schedualRebalance
 }
 
 

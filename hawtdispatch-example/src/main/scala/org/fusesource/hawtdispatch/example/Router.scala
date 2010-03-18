@@ -15,8 +15,10 @@
  */
 package org.fusesource.hawtdispatch.example
 
+import _root_.java.util.concurrent.atomic.AtomicLong
 import java.util.HashMap
 import org.fusesource.hawtdispatch.ScalaSupport._
+import collection.JavaConversions
 
 /**
  * Provides a non-blocking concurrent producer to consumer
@@ -30,11 +32,11 @@ import org.fusesource.hawtdispatch.ScalaSupport._
  * to the destination. 
  *
  */
-class Router[D, T <: Retained](var queue:DispatchQueue) extends Queued {
+class Router[D, P, T <: Retained](var queue:DispatchQueue) extends Queued {
 
   class DestinationNode {
     var targets = List[T]()
-    var routes = List[Route[D,T]]()
+    var routes = List[Route[D,P,T]]()
 
     def on_bind(x:List[T]) =  {
       targets = x ::: targets
@@ -51,19 +53,19 @@ class Router[D, T <: Retained](var queue:DispatchQueue) extends Queued {
       routes == Nil && targets == Nil
     }
 
-    def on_connect(route:Route[D,T]) = {
+    def on_connect(route:Route[D,P,T]) = {
       routes = route :: routes
       route.connected(targets)
     }
 
-    def on_disconnect(route:Route[D,T]):Boolean = {
+    def on_disconnect(route:Route[D,P,T]):Boolean = {
       routes = routes.filterNot({r=> route==r})
       route.disconnected()
       routes == Nil && targets == Nil
     }
   }
 
-  private var destinations = new HashMap[D, DestinationNode]()
+  var destinations = new HashMap[D, DestinationNode]()
 
   private def get(destination:D) = {
     var result = destinations.get(destination)
@@ -84,8 +86,8 @@ class Router[D, T <: Retained](var queue:DispatchQueue) extends Queued {
       }
     } ->: queue
 
-  def connect(destination:D, routeQueue:DispatchQueue)(completed: (Route[D,T])=>Unit) = {
-    val route = new Route[D,T](destination, routeQueue) {
+  def connect(destination:D, routeQueue:DispatchQueue, producer:P)(completed: (Route[D,P,T])=>Unit) = {
+    val route = new Route[D,P,T](destination, routeQueue, producer) {
       override def on_connected = {
         completed(this);
       }
@@ -95,15 +97,24 @@ class Router[D, T <: Retained](var queue:DispatchQueue) extends Queued {
     } ->: queue
   }
 
-  def disconnect(route:Route[D,T]) = releasing(route) {
+  def disconnect(route:Route[D,P,T]) = releasing(route) {
       get(route.destination).on_disconnect(route)
     } ->: queue
+
+
+ def each(proc:(D, List[Route[D,P,T]], List[T])=>Unit) = {
+   import JavaConversions._;
+   for( (destination, node) <- destinations ) {
+      proc(destination, node.routes, node.targets)
+   }
+ }
 
 }
 
 
-class Route[D, T <: Retained ](val destination:D, val queue:DispatchQueue) extends QueuedRetained {
+class Route[D, P, T <: Retained ](val destination:D, val queue:DispatchQueue, val producer:P) extends QueuedRetained {
 
+  val metric = new AtomicLong();
   var targets = List[T]()
 
   def connected(targets:List[T]) = retaining(targets) {

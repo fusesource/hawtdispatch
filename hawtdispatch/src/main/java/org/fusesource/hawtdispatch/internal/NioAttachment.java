@@ -16,8 +16,7 @@ final class NioAttachment {
         for(NioDispatchSource source: sources) {
             int ops = source.interestOps & readyOps;
             if( ops !=0 ) {
-                source.readyOps |= readyOps;
-                source.fire();
+                source.fire(readyOps);
             }
         }
     }

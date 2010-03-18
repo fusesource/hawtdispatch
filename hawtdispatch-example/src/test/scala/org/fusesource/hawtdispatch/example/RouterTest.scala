@@ -42,7 +42,7 @@ class RouterTest extends FunSuite {
       } ->: queue
     }
 
-    class Producer(val route:Route[String,Consumer], val queue:DispatchQueue) extends QueuedRetained {
+    class Producer(val route:Route[String,Producer,Consumer], val queue:DispatchQueue) extends QueuedRetained {
       def send(msg:String) = ^ {
         route.targets.foreach(t=>{
           t.deliver(msg)
@@ -50,15 +50,15 @@ class RouterTest extends FunSuite {
       }  ->: queue
     }
 
-    val router = new Router[String,Consumer](createSerialQueue("router"))
+    val router = new Router[String,Producer,Consumer](createSerialQueue("router"))
     val consumer = new Consumer(createSerialQueue("consumer"));
     router.bind("FOO.QUEUE", consumer::Nil )
     consumer.release
 
     var producer:Producer=null;
     val producerQueue = createSerialQueue("producer")
-    router.connect("FOO.QUEUE", producerQueue) {
-      route:Route[String, Consumer] =>
+    router.connect("FOO.QUEUE", producerQueue, null) {
+      route:Route[String, Producer, Consumer] =>
 
       producer = new Producer(route, producerQueue)
       producer send "message 1"
