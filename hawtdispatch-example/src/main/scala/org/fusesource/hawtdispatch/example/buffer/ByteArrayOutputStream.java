@@ -50,10 +50,14 @@ public class ByteArrayOutputStream extends OutputStream {
         System.arraycopy(b, off, buffer, size, len);
         size = newsize;
     }
+
+    public void write(Buffer b) {
+        write(b.data, b.offset, b.length);
+    }
     
     /**
      * Ensures the the buffer has at least the minimumCapacity specified. 
-     * @param i
+     * @param minimumCapacity
      */
     private void checkCapacity(int minimumCapacity) {
         if (minimumCapacity > buffer.length) {

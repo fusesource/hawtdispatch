@@ -42,17 +42,17 @@ class StompWireFormat {
     ByteBuffer.wrap(Array(x));
   }
 
-  var outbound_frame: Array[ByteBuffer] = null
+  var outbound_frame: ByteBuffer = null
 
   /**
-   * @retruns true if the source has been drained of StompFrame objects they are fully written to the socket
+   * @retruns true if the source has been drained of StompFrame objects and they are fully written to the socket
    */
-  def drain_to_socket(socket:SocketChannel)(source: =>List[StompFrame] ):Boolean = {
+  def drain_source(socket:SocketChannel)(source: =>StompFrame ):Boolean = {
     while(true) {
       // if we have a pending frame that is being sent over the socket...
       if( outbound_frame!=null ) {
         socket.write(outbound_frame)
-        if( outbound_frame.last.remaining != 0 ) {
+        if( outbound_frame.remaining != 0 ) {
           // non blocking socket returned before the buffers were fully written to disk..
           // we are not yet fully drained.. but need to quit now.
           return false
@@ -60,41 +60,47 @@ class StompWireFormat {
           outbound_frame = null
         }
       } else {
-        val frames = source
-        if( frames.isEmpty ) {
+
+        // marshall all the available frames..
+        val buffer = new ByteArrayOutputStream()
+        var frame = source
+        var counter = 0
+        while( frame!=null ) {
+          marshall(buffer, frame)
+          frame = source
+          counter+=1
+        }
+
+        if( buffer.size() ==0 ) {
           // the source is now drained...
           return true
         } else {
-          outbound_frame = marshall( frames )
+          val b = buffer.toBuffer
+//          println("writing: "+counter+"frames, data size: "+b.length)
+          outbound_frame = ByteBuffer.wrap(b.data, b.offset, b.length)
         }
       }
     }
     true
   }
 
-  def marshall(frames:List[StompFrame]) = {
-    val list = new ArrayList[ByteBuffer]()
-    for(stomp <- frames ) {
-      list.add(stomp.action)
-      list.add(NEWLINE)
-
-      for ((key, value) <- stomp.headers.elements ) {
-          list.add(key)
-          list.add(SEPERATOR)
-          list.add(value)
-          list.add(NEWLINE)
-      }
-      list.add(NEWLINE)
-      list.add(stomp.content)
-      list.add(END_OF_FRAME_BUFFER)
+  def marshall(buffer:ByteArrayOutputStream, frame:StompFrame) = {
+    buffer.write(frame.action)
+    buffer.write(NEWLINE)
+    for ((key, value) <- frame.headers.elements ) {
+        buffer.write(key)
+        buffer.write(SEPERATOR)
+        buffer.write(value)
+        buffer.write(NEWLINE)
     }
-    list.toArray(Array.ofDim[ByteBuffer](list.size))
+    buffer.write(NEWLINE)
+    buffer.write(frame.content)
+    buffer.write(END_OF_FRAME_BUFFER)
   }
-
 
   var socket_buffer:ByteBuffer = null
 
-  def read_socket(socket:SocketChannel)(handler:(StompFrame)=>Boolean) = {
+  def drain_socket(socket:SocketChannel)(handler:(StompFrame)=>Boolean) = {
     def fill_buffer() = {
       if( socket.read(socket_buffer) == -1 ) {
         throw new EOFException();
@@ -126,6 +132,8 @@ class StompWireFormat {
           }
       }
     }
+
+
 
     // Only release the memory if we have fully consumed the buffer data..
     // it is possible the handler wants to stop reading data before the buffer is

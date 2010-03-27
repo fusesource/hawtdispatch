@@ -150,11 +150,7 @@ abstract public class AbstractSerialDispatchQueue extends AbstractDispatchObject
                 
                 if( (runnable = localQueue.poll())!=null ) {
                     counter++;
-                    try {
-                        runnable.run();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    dispatch(runnable);
                     continue;
                 }
     
@@ -183,6 +179,14 @@ abstract public class AbstractSerialDispatchQueue extends AbstractDispatchObject
                     dispatchSelfAsync();
                 }
             }
+        }
+    }
+
+    protected void dispatch(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

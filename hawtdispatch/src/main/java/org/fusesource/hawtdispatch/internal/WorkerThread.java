@@ -36,6 +36,8 @@ import java.util.Collection;
  */
 final public class WorkerThread extends Thread {
 
+    public static final int MAX_NESTED_EXECUTIONS = 10;
+
     /**
      * Capacity of work-stealing queue array upon initialization.
      * Must be a power of two. Initial size must be at least 2, but is
@@ -119,6 +121,11 @@ final public class WorkerThread extends Thread {
     long lastEventCount;
 
     NioManager ioManager;
+
+    /**
+     * The number of nested execution that have occurred on this thread.
+     */
+    int nestedExecutions;
 
     /**
      * Creates a WorkerThread operating in the given pool.

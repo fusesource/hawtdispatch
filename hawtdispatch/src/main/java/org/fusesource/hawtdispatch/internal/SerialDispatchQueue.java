@@ -55,21 +55,28 @@ public final class SerialDispatchQueue extends AbstractSerialDispatchQueue imple
 
     @Override
     public void dispatchAsync(Runnable runnable) {
+        DispatchQueue currentThreadQueue = dispatcher.getCurrentThreadQueue();
         assertRetained();
-
         if (stickToThreadOnNextDispatchRequest) {
-            HawtDispatchQueue current = HawtDispatcher.CURRENT_QUEUE.get();
-            if (current != null) {
-                HawtDispatchQueue parent;
-                while ((parent = current.getTargetQueue()) != null) {
-                    current = parent;
-                }
-                super.setTargetQueue(current);
+            if (currentThreadQueue != null) {
                 stickToThreadOnNextDispatchRequest = false;
+                super.setTargetQueue(currentThreadQueue);
             }
         }
 
+
         super.dispatchAsync(runnable);
+
+        // If we are in the right thread already.. lets the queue now if we can.
+        if( currentThreadQueue == targetQueue ) {
+            WorkerThread worker = WorkerThread.currentWorkerThread();
+            if( worker.nestedExecutions < WorkerThread.MAX_NESTED_EXECUTIONS ) {
+                worker.nestedExecutions++;
+                run();
+                worker.nestedExecutions--;
+            }
+        }
+
     }
 
     public void run() {

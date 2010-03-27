@@ -107,7 +107,6 @@ class StompBroker extends Queued {
   // Try to periodically re-balance connections so that consumers/producers
   // are on the same thread.
   val reblance = ^{
-    println("reblancing: "+router.destinations.size)
     router.each {
       (destination, routes, targets) =>
       // for now just move the producer to the consumer's thread..

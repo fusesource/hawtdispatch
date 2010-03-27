@@ -33,7 +33,7 @@ import static org.fusesource.hawtdispatch.DispatchQueue.QueueType.THREAD_QUEUE;
  */
 final public class NioDispatchSource extends BaseSuspendable implements DispatchSource {
 
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
 
     private final SelectableChannel channel;
     private volatile DispatchQueue selectorQueue;
@@ -183,7 +183,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
             targetQueue.dispatchAsync(new Runnable() {
                 public void run() {
                     if( !isSuspended() && !isCanceled()) {
-//                        debug("fired %d", interestOps);
+                        debug("fired %d", interestOps);
                         eventHandler.run();
                         updateInterest();
                     }
@@ -196,7 +196,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
                 if( !isSuspended() && !isCanceled() ) {
-//                    debug("adding interest: %d", interestOps);
+                    debug("adding interest: %d", interestOps);
                     KeyState state = keyState.get();
                     if( state==null ) {
                         return;
@@ -212,13 +212,13 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
     @Override
     protected void onSuspend() {
-//        debug("onSuspend");
+        debug("onSuspend");
         super.onSuspend();
     }
 
     @Override
     protected void onResume() {
-//        debug("onResume");
+        debug("onResume");
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
                 fire(interestOps);

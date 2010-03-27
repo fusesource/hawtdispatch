@@ -15,20 +15,21 @@
  */
 package org.fusesource.hawtdispatch.example
 
+import _root_.java.util.{LinkedList}
 import _root_.org.fusesource.hawtdispatch.example.StompBroker.{Producer, Consumer}
 import java.nio.channels.SelectionKey._
 import org.fusesource.hawtdispatch.ScalaSupport._
 
 import java.net.{InetAddress, InetSocketAddress}
 
-import java.util.{LinkedList}
 import buffer._
 import AsciiBuffer._
-import collection.mutable.HashMap
 import java.util.concurrent.atomic.AtomicLong
 import java.nio.channels.{SocketChannel, ServerSocketChannel}
 import java.io.{IOException}
 import org.fusesource.hawtdispatch.example.Stomp.{Headers, Responses, Commands}
+import collection.mutable.{HashMap}
+
 /**
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
@@ -41,13 +42,16 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
   import StompBroker._
   import StompConnection._
 
+  socket.socket.setSendBufferSize(1024*64)
+  socket.socket.setReceiveBufferSize(1024*64)
+
   val queue = createSerialQueue("connection:"+connectionCounter.incrementAndGet)
   queue.setTargetQueue(getRandomThreadQueue)
 
 //    println("connected from: "+socket.socket.getRemoteSocketAddress)
 
   val wireFormat = new StompWireFormat()
-  var outbound = List[(StompFrame,Retained)]()
+  var outbound = new LinkedList[(StompFrame,Retained)]()
   var closed = false;
   var consumer:SimpleConsumer = null
 
@@ -60,7 +64,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
 
   read_source.setEventHandler(^{
     try {
-      wireFormat.read_socket(socket) {
+      wireFormat.drain_socket(socket) {
         frame:StompFrame=>
           on_frame(frame)
           read_source.isSuspended
@@ -72,45 +76,52 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
     }
   });
 
-  write_source.setEventHandler(^{
-    try {
-
-      val drained = wireFormat.drain_to_socket(socket) {
-        val rc:List[StompFrame] = outbound.map {
-          case (frame,null)=>
-            frame
-          case (frame,retained)=> {
-            retained.release
-            frame
-          }
-        }
-        outbound = Nil
-        rc
-      }
-      // Once drained, we don't need write events..
-      if( drained ) {
-        write_source.suspend
-      }
-
-    } catch {
-      case e:IOException=>
-        // The peer closed on us..
-        close
-    }
-
-  });
-
   read_source.resume();
 
+  def drain_outbound_data = wireFormat.drain_source(socket) {
+    val node = outbound.poll
+    if( node !=null ) {
+      node match {
+        case (frame,null)=>
+          frame
+        case (frame,retained)=> {
+          retained.release
+          frame
+        }
+      }
+    } else {
+      null
+    }
+  }
+
+  write_source.setEventHandler(^{
+    try {
+      if( drain_outbound_data ) {
+        write_source.suspend
+      }
+    } catch {
+      case e:IOException=>
+        close // The peer must have closed on us..
+    }
+  });
+
+
   def send(frame:StompFrame, retained:Retained=null) = {
-    if( retained !=null ) {
-      retained.retain
+    if( outbound.size < 10000 ) {
+      outbound.add((frame,null))
+    } else {
+      // we only start retaining once our outbound is full..
+      // retaining will cause the producers to slow down until
+      // we released
+      if( retained !=null ) {
+        retained.retain
+      }
+      outbound.add((frame,retained))
     }
 
-    if( outbound == Nil ) {
+    if( outbound.size == 1 ) {
       write_source.resume
     }
-    outbound = (frame,retained) :: outbound
   }
 
   def close = {
