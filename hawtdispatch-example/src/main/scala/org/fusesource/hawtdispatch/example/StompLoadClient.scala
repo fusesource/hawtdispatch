@@ -26,11 +26,7 @@ import collection.mutable.Map
 
 /**
  *
- * Simulates load on the Stomp connector. All producers/consumers open/close a
- * connection on every command Configurable number of producers/consumers, their
- * speed and duration of test
- *
- * Start a broker with the desired configuration to test and then run this test
+ * Simulates load on the a stomp broker.
  *
  */
 object StompLoadClient {
@@ -39,24 +35,25 @@ object StompLoadClient {
   import StompLoadClient._
   implicit def toAsciiBuffer(value: String) = new AsciiBuffer(value)
 
-  val producerSleep = 0;
-  val consumerSleep = 0;
-  val producerCount = 1;
-  val consumerCount = 1;
-  val sampleInterval = 5 * 1000;
-  val bindAddress = "stomp://0.0.0.0:61613";
+  var producerSleep = 0;
+  var consumerSleep = 0;
+  var producers = 1;
+  var consumers = 1;
+  var sampleInterval = 5 * 1000;
+  var uri = "stomp://127.0.0.1:61613";
+  var bufferSize = 64*1204
 
   val producerCounter = new AtomicLong();
   val consumerCounter = new AtomicLong();
 
   def main(args:Array[String]) = {
 
-    for (i <- 0 until producerCount) {
+    for (i <- 0 until producers) {
       val producerThread = new ProducerThread(i);
       producerThread.start();
     }
 
-    for (i <- 0 until consumerCount) {
+    for (i <- 0 until consumers) {
       val consumerThread = new ConsumerThread(i);
       consumerThread.start();
     }
@@ -78,13 +75,12 @@ object StompLoadClient {
     println(format("%s rate: %,.3f per second", name, rate_per_second));
   }
 
-  val BUFFER_SIZE = 64*1204
 
   object StompClient {
     def connect(proc: StompClient=>Unit ) = {
       val client = new StompClient();
       try {
-        val connectUri = new URI(bindAddress);
+        val connectUri = new URI(uri);
         client.open(connectUri.getHost(), connectUri.getPort());
         client.send("""CONNECT
 
@@ -117,10 +113,8 @@ object StompLoadClient {
       socket = new Socket
       socket.connect(new InetSocketAddress(host, port))
       socket.setSoLinger(true, 0);
-//      socket.setReceiveBufferSize(BUFFER_SIZE);
-//      socket.setSendBufferSize(BUFFER_SIZE);
-      out = new BufferedOutputStream(socket.getOutputStream, BUFFER_SIZE)
-      in = new BufferedInputStream(socket.getInputStream, BUFFER_SIZE)
+      out = new BufferedOutputStream(socket.getOutputStream, bufferSize)
+      in = new BufferedInputStream(socket.getInputStream, bufferSize)
     }
 
     def close() = {

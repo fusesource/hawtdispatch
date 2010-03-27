@@ -36,14 +36,16 @@ import collection.mutable.{HashMap}
  */
 object StompConnection {
   val connectionCounter = new AtomicLong();
+  var bufferSize = 64*1204
+  var maxOutboundSize = 10000
 }
 class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Producer,Consumer]) extends Queued {
 
   import StompBroker._
   import StompConnection._
 
-  socket.socket.setSendBufferSize(1024*64)
-  socket.socket.setReceiveBufferSize(1024*64)
+  socket.socket.setSendBufferSize(bufferSize)
+  socket.socket.setReceiveBufferSize(bufferSize)
 
   val queue = createSerialQueue("connection:"+connectionCounter.incrementAndGet)
   queue.setTargetQueue(getRandomThreadQueue)
@@ -107,7 +109,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
 
 
   def send(frame:StompFrame, retained:Retained=null) = {
-    if( outbound.size < 10000 ) {
+    if( outbound.size < maxOutboundSize ) {
       outbound.add((frame,null))
     } else {
       // we only start retaining once our outbound is full..
