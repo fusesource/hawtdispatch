@@ -53,6 +53,11 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return label;
     }
 
+    public HawtDispatcher getDispatcher() {
+        return dispatcher;
+    }
+
+
     public void execute(Runnable runnable) {
         dispatchAsync(runnable);
     }

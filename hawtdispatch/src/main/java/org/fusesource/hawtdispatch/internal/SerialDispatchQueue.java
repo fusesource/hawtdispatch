@@ -14,104 +14,214 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.fusesource.hawtdispatch.internal;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.LinkedList;
+import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.fusesource.hawtdispatch.DispatchOption;
-import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.internal.AbstractSerialDispatchQueue;
-import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
+import org.fusesource.hawtdispatch.internal.util.IntegerCounter;
+import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public final class SerialDispatchQueue extends AbstractSerialDispatchQueue implements HawtDispatchQueue {
+public class SerialDispatchQueue extends AbstractDispatchObject implements HawtDispatchQueue, Runnable {
 
-    private final HawtDispatcher dispatcher;
-    private volatile boolean stickToThreadOnNextDispatch;
-    private volatile boolean stickToThreadOnNextDispatchRequest;
+    protected final String label;
 
-    SerialDispatchQueue(HawtDispatcher dispatcher, String label, DispatchOption... options) {
-        super(label, options);
-        this.dispatcher = dispatcher;
-        if (getOptions().contains(DispatchOption.STICK_TO_DISPATCH_THREAD)) {
-            stickToThreadOnNextDispatch = true;
-        }
+//    protected final Set<DispatchOption> options;
+
+    protected final AtomicInteger executeCounter = new AtomicInteger();
+    protected final AtomicLong size = new AtomicLong();
+    protected final AtomicLong externalQueueSize = new AtomicLong();
+    protected final ConcurrentLinkedQueue<Runnable> externalQueue = new ConcurrentLinkedQueue<Runnable>();
+    private final LinkedList<Runnable> localQueue = new LinkedList<Runnable>();
+    private final ThreadLocal<Boolean> executing = new ThreadLocal<Boolean>();
+    
+
+    public SerialDispatchQueue(String label, DispatchOption...options) {
+        this.label = label;
+//        this.options = set(options);
     }
 
-    @Override
-    public void setTargetQueue(DispatchQueue targetQueue) {
-        assertRetained();
-        GlobalDispatchQueue global = ((HawtDispatchQueue) targetQueue).isGlobalDispatchQueue();
-        if (getOptions().contains(DispatchOption.STICK_TO_CALLER_THREAD) && global != null) {
-            stickToThreadOnNextDispatchRequest = true;
-        }
-        super.setTargetQueue(targetQueue);
-    }
 
-    @Override
     public void dispatchAsync(Runnable runnable) {
-        DispatchQueue currentThreadQueue = dispatcher.getCurrentThreadQueue();
-        assertRetained();
-        if (stickToThreadOnNextDispatchRequest) {
-            if (currentThreadQueue != null) {
-                stickToThreadOnNextDispatchRequest = false;
-                super.setTargetQueue(currentThreadQueue);
+        assert runnable != null;
+       assertRetained();
+
+        long sizeWas = size.getAndIncrement();
+
+        // We can take a shortcut...
+        if( executing.get()!=null ) {
+            localQueue.add(runnable);
+        } else {
+            if( sizeWas==0 ) {
+                retain();
+            }
+
+            long lastSize = externalQueueSize.getAndIncrement();
+            externalQueue.add(runnable);
+            if( lastSize == 0 && suspended.get()<=0 ) {
+                dispatchSelfAsync();
             }
         }
-
-
-        super.dispatchAsync(runnable);
-
-        // If we are in the right thread already.. lets the queue now if we can.
-        if( currentThreadQueue == targetQueue ) {
-            WorkerThread worker = WorkerThread.currentWorkerThread();
-            if( worker.nestedExecutions < WorkerThread.MAX_NESTED_EXECUTIONS ) {
-                worker.nestedExecutions++;
-                run();
-                worker.nestedExecutions--;
-            }
-        }
-
     }
+
 
     public void run() {
-        HawtDispatchQueue current = HawtDispatcher.CURRENT_QUEUE.get();
+        HawtDispatchQueue original = HawtDispatcher.CURRENT_QUEUE.get();
         HawtDispatcher.CURRENT_QUEUE.set(this);
         try {
-            if (stickToThreadOnNextDispatch) {
-                stickToThreadOnNextDispatch = false;
-                GlobalDispatchQueue global = current.isGlobalDispatchQueue();
-                if (global != null) {
-                    setTargetQueue(global.getTargetQueue());
-                }
-            }
             dispatch();
         } finally {
-            HawtDispatcher.CURRENT_QUEUE.set(current);
+            HawtDispatcher.CURRENT_QUEUE.set(original);
         }
+    }
 
+    protected void dispatch() {
+        executing.set(true);
+        while( true ) {
+            if( executeCounter.incrementAndGet()==1 ) {
+                dispatchLoop();
+
+                // Do additional loops for each thread that could
+                // not make it in.  This protects us from exiting
+                // the dispatch loop but still just after a new
+                // thread was trying to get in.
+                if( executeCounter.getAndSet(0)==1 ) {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        executing.remove();
+    }
+    
+    private void dispatchLoop() {
+        int counter=0;
+        try {
+            Runnable runnable;
+            while( suspended.get() <= 0 ) {
+                
+                if( (runnable = localQueue.poll())!=null ) {
+                    counter++;
+                    dispatch(runnable);
+                    continue;
+                }
+    
+                long lsize = externalQueueSize.get();
+                if( lsize>0 ) {
+                    while( lsize > 0 ) {
+                        runnable = externalQueue.poll();
+                        if( runnable!=null ) {
+                            localQueue.add(runnable);
+                            lsize = externalQueueSize.decrementAndGet();
+                        }
+                    }
+                    continue;
+                }
+                
+                break;
+            }
+            
+        } finally {
+            if( counter>0 ) {
+                long lsize = size.addAndGet(-counter);
+                assert lsize >= 0;
+                if( lsize==0 ) {
+                    release();
+                } else {
+                    dispatchSelfAsync();
+                }
+            }
+        }
+    }
+
+    static private Set<DispatchOption> set(DispatchOption[] options) {
+        if( options==null || options.length==0 )
+            return Collections.emptySet() ;
+        return Collections.unmodifiableSet(EnumSet.copyOf(Arrays.asList(options)));
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    @Override
+    protected void onStartup() {
+        dispatchSelfAsync();
+    }
+
+    @Override
+    protected void onResume() {
+        dispatchSelfAsync();
+    }
+
+    public void execute(Runnable command) {
+       assertRetained();
+        dispatchAsync(command);
+    }
+
+    public QueueType getQueueType() {
+        return QueueType.SERIAL_QUEUE;
+    }
+
+    protected void dispatchSelfAsync() {
+        getTargetQueue().dispatchAsync(this);
+    }
+
+    protected void dispatch(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void dispatchSync(Runnable runnable) throws InterruptedException {
+       assertRetained();
+       dispatchApply(1, runnable);
+    }
+
+    public void dispatchApply(int iterations, Runnable runnable) throws InterruptedException {
+       assertRetained();
+        QueueSupport.dispatchApply(this, iterations, runnable);
+    }
+
+    public Set<DispatchOption> getOptions() {
+       assertRetained();
+//       return options;
+        return Collections.emptySet();
     }
 
     public void dispatchAfter(Runnable runnable, long delay, TimeUnit unit) {
-        assertRetained();
-        dispatcher.timerThread.addRelative(runnable, this, delay, unit);
+        getDispatcher().timerThread.addRelative(runnable, this, delay, unit);
     }
 
-    public DispatchPriority getPriority() {
-        throw new UnsupportedOperationException();
+
+    public SerialDispatchQueue createSerialQueue(String label, DispatchOption... options) {
+        SerialDispatchQueue rc = getDispatcher().createSerialQueue(label, options);
+        rc.setTargetQueue(this);
+        return rc;
     }
 
-    public Runnable poll() {
-        throw new UnsupportedOperationException();
-    }
-
-    public GlobalDispatchQueue isGlobalDispatchQueue() {
-        return null;
+    public HawtDispatcher getDispatcher() {
+        HawtDispatchQueue target = getTargetQueue();
+        if (target ==null ) {
+            throw new UnsupportedOperationException();
+        }
+        return target.getDispatcher();
     }
 
     public SerialDispatchQueue isSerialDispatchQueue() {
@@ -122,24 +232,7 @@ public final class SerialDispatchQueue extends AbstractSerialDispatchQueue imple
         return null;
     }
 
-    public HawtDispatchQueue getTargetQueue() {
-        assertRetained();
-        return (HawtDispatchQueue) targetQueue;
+    public GlobalDispatchQueue isGlobalDispatchQueue() {
+        return null;
     }
-
-    @Override
-    public String toString() {
-        return IntrospectionSupport.toString(this, "label", "size", "suspended", "retained");
-    }
-    
-    public DispatchQueue createSerialQueue(String label, DispatchOption... options) {
-        DispatchQueue rc = dispatcher.createSerialQueue(label, options);
-        rc.setTargetQueue(this);
-        return rc;
-    }
-
-    public QueueType getQueueType() {
-        return QueueType.SERIAL_QUEUE;
-    }
-    
 }

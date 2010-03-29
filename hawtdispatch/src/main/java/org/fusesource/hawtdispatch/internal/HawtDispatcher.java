@@ -18,8 +18,6 @@ package org.fusesource.hawtdispatch.internal;
 
 import java.nio.channels.SelectableChannel;
 import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.fusesource.hawtdispatch.DispatchOption;
@@ -28,8 +26,7 @@ import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.DispatchSource;
 import org.fusesource.hawtdispatch.Dispatcher;
 import org.fusesource.hawtdispatch.DispatcherConfig;
-import org.fusesource.hawtdispatch.internal.AbstractSerialDispatchQueue;
-import org.fusesource.hawtdispatch.internal.BaseSuspendable;
+import org.fusesource.hawtdispatch.internal.SerialDispatchQueue;
 import org.fusesource.hawtdispatch.internal.NioDispatchSource;
 
 import static org.fusesource.hawtdispatch.DispatchPriority.*;
@@ -39,14 +36,14 @@ import static org.fusesource.hawtdispatch.DispatchPriority.*;
 
 /**
  * Implements a simple dispatch system.
- * 
+ *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     public final static ThreadLocal<HawtDispatchQueue> CURRENT_QUEUE = new ThreadLocal<HawtDispatchQueue>();
 
-    final SerialDispatchQueue mainQueue = new SerialDispatchQueue(this, "main");
+    final SerialDispatchQueue mainQueue = new SerialDispatchQueue("main");
     final GlobalDispatchQueue globalQueues[];
     final AtomicLong globalQueuedRunnables = new AtomicLong();
     final Random random = new Random();
@@ -83,8 +80,8 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         return globalQueues[priority.ordinal()];
     }
 
-    public DispatchQueue createSerialQueue(String label, DispatchOption... options) {
-        AbstractSerialDispatchQueue rc = new SerialDispatchQueue(this, label, options);
+    public SerialDispatchQueue createSerialQueue(String label, DispatchOption... options) {
+        SerialDispatchQueue rc = new SerialDispatchQueue(label, options);
         rc.setTargetQueue(getGlobalQueue());
         return rc;
     }

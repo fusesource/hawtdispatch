@@ -58,6 +58,10 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         return 0;
     }
 
+    public HawtDispatcher getDispatcher() {
+        return dispatcher;
+    }
+
     public String getLabel() {
         return label;
     }

@@ -36,8 +36,6 @@ import java.util.Collection;
  */
 final public class WorkerThread extends Thread {
 
-    public static final int MAX_NESTED_EXECUTIONS = 10;
-
     /**
      * Capacity of work-stealing queue array upon initialization.
      * Must be a power of two. Initial size must be at least 2, but is

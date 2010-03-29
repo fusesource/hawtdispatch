@@ -21,10 +21,6 @@ package org.fusesource.hawtdispatch;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public interface DispatchObject extends Suspendable {
-    
-    public <Context> Context getContext();
-    public <Context> void setContext(Context context);
-
     public void setTargetQueue(DispatchQueue queue);
     public DispatchQueue getTargetQueue();
 }

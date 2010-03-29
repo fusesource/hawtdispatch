@@ -17,66 +17,26 @@
 package org.fusesource.hawtdispatch;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jsr166y.ForkJoinPool;
-import org.fusesource.hawtdispatch.internal.WorkerPool;
+import org.fusesource.hawtdispatch.internal.util.RunnableCountDownLatch;
 import org.junit.Test;
 
 import static java.lang.String.format;
 
 /**
- * 
+ *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class DispatchSystemTest {
 
-    static int PARTITIONS = 100;
+    static int PARTITIONS = 1000;
     static int WARM_UP_ITERATIONS = 10000;
-    static int RUN_UP_ITERATIONS = 100000;
+    static int RUN_UP_ITERATIONS = 1000*1000*10;
 
 
     abstract class Scenario {
-        int partitions = PARTITIONS;
-        CountDownLatch done;
-
-        public class Partition implements Runnable {
-
-            int id = 1000;
-            AtomicInteger remaining;
-
-            public Partition(int id, int iterations) {
-                this.id = id;
-                this.remaining = new AtomicInteger(iterations);
-            }
-
-            public void run() {
-                int rc = remaining.decrementAndGet();
-//                if( (rc%10000)==0 ) {
-//                    System.out.println(id+" at: "+rc);
-//                }
-                if( rc == 0 ) {
-                    done.countDown();
-                } else {
-                    execute(this);
-                }
-            }
-        }
-
-        public void execute(int iterations) {
-            done = new CountDownLatch(partitions);
-            for (int i = 0; i < partitions; i++) {
-                execute(new Partition(i, iterations));
-            }
-            try {
-                done.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-        }
-
-        abstract public void execute(Partition partition);
+        abstract public void execute(int iterations) throws InterruptedException;
         abstract public String getName();
     }
 
@@ -87,26 +47,53 @@ public class DispatchSystemTest {
 
     @Test
     public void benchmark() throws InterruptedException {
-        
 
-//        final ForkJoinPool pool = new ForkJoinPool();
-//        benchmark(new Scenario(){
-//            public String getName() {
-//                return "fork join";
-//            }
-//            public void execute(Partition partition) {
-//                pool.execute(partition);
-//            }
-//        });
-//
-//        pool.shutdown();
+
+        benchmark(new Scenario(){
+            public String getName() {
+                return "fork join";
+            }
+
+            public void execute(int iterations) throws InterruptedException {
+                final ForkJoinPool pool = new ForkJoinPool();
+                final CountDownLatch counter = new CountDownLatch(iterations);
+                Runnable task = new Runnable(){
+                    public void run() {
+                        counter.countDown();
+                        if( counter.getCount()>0 ) {
+                            pool.execute(this);
+                        }
+                    }
+                };
+                for (int i = 0; i < 1000; i++) {
+                    pool.execute(task);
+                }
+                counter.await();
+                pool.shutdown();
+            }
+        });
 
         benchmark(new Scenario(){
             public String getName() {
                 return "global queue";
             }
-            public void execute(Partition partition) {
-                DispatchSystem.getGlobalQueue().execute(partition);
+            public void execute(int iterations) throws InterruptedException {
+
+                final DispatchQueue queue = DispatchSystem.getGlobalQueue();
+                final CountDownLatch counter = new CountDownLatch(iterations);
+                Runnable task = new Runnable(){
+                    public void run() {
+                        counter.countDown();
+                        if( counter.getCount()>0 ) {
+                            queue.dispatchAsync(this);
+                        }
+                    }
+                };
+                for (int i = 0; i < 1000; i++) {
+                    queue.dispatchAsync(task);
+                }
+                counter.await();
+
             }
         });
 
@@ -115,8 +102,23 @@ public class DispatchSystemTest {
             public String getName() {
                 return "serial queue";
             }
-            public void execute(Partition partition) {
-                queue.execute(partition);
+            public void execute(int iterations) throws InterruptedException {
+
+                final DispatchQueue queue = DispatchSystem.createSerialQueue(null);
+                final CountDownLatch counter = new CountDownLatch(iterations);
+                Runnable task = new Runnable(){
+                    public void run() {
+                        counter.countDown();
+                        if( counter.getCount()>0 ) {
+                            queue.dispatchAsync(this);
+                        }
+                    }
+                };
+                for (int i = 0; i < 1000; i++) {
+                    queue.dispatchAsync(task);
+                }
+                counter.await();
+
             }
         });
     }
@@ -132,6 +134,5 @@ public class DispatchSystemTest {
         double rate = 1000d * RUN_UP_ITERATIONS / durationMS;
         System.out.println(format("name: %s, duration: %,.3f ms, rate: %,.2f executions/sec", scenario.getName(), durationMS, rate));
     }
-
 
 }

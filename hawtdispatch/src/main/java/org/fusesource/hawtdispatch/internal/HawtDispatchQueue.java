@@ -26,8 +26,8 @@ import org.fusesource.hawtdispatch.DispatchQueue;
  */
 public interface HawtDispatchQueue extends DispatchQueue {
 
-    DispatchPriority getPriority();
-    
+    HawtDispatcher getDispatcher();
+
     SerialDispatchQueue isSerialDispatchQueue();
     ThreadDispatchQueue isThreadDispatchQueue();
     GlobalDispatchQueue isGlobalDispatchQueue();

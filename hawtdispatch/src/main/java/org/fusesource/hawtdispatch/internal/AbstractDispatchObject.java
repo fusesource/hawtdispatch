@@ -25,27 +25,14 @@ import org.fusesource.hawtdispatch.DispatchQueue;
  */
 abstract public class AbstractDispatchObject extends BaseSuspendable implements DispatchObject {
 
-    protected volatile Object context;
-
-    protected volatile DispatchQueue targetQueue;
-
-    @SuppressWarnings("unchecked")
-    public <Context> Context getContext() {
-        assertRetained();
-        return (Context) context;
-    }
-
-    public <Context> void setContext(Context context) {
-        assertRetained();
-        this.context = context;
-    }
+    protected volatile HawtDispatchQueue targetQueue;
 
     public void setTargetQueue(DispatchQueue targetQueue) {
         assertRetained();
-        this.targetQueue = targetQueue;
+        this.targetQueue = (HawtDispatchQueue)targetQueue;
     }
 
-    public DispatchQueue getTargetQueue() {
+    public HawtDispatchQueue getTargetQueue() {
         assertRetained();
         return this.targetQueue;
     }
