@@ -17,9 +17,10 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.io._
+import _root_.java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import java.net.{ProtocolException, InetSocketAddress, URI, Socket}
 import buffer.AsciiBuffer
-import java.util.concurrent.atomic.AtomicLong;
+
 import java.lang.String._
 import java.util.concurrent.TimeUnit._
 import collection.mutable.Map
@@ -37,37 +38,81 @@ object StompLoadClient {
 
   var producerSleep = 0;
   var consumerSleep = 0;
-  var producers = 1;
-  var consumers = 1;
+  var producers = 5;
+  var consumers = 5;
   var sampleInterval = 5 * 1000;
   var uri = "stomp://127.0.0.1:61613";
   var bufferSize = 64*1204
 
   val producerCounter = new AtomicLong();
   val consumerCounter = new AtomicLong();
+  val done = new AtomicBoolean()
 
-  def main(args:Array[String]) = {
+  def main(args:Array[String]) = run
 
+  def run() = {
+
+    println("=======================")
+    println("Press ENTER to shutdown");
+    println("=======================")
+    println("")
+
+    var producerThreads = List[ProducerThread]()
     for (i <- 0 until producers) {
       val producerThread = new ProducerThread(i);
+      producerThreads = producerThread :: producerThreads
       producerThread.start();
     }
 
+    var consumerThreads = List[ConsumerThread]()
     for (i <- 0 until consumers) {
       val consumerThread = new ConsumerThread(i);
+      consumerThreads = consumerThread :: consumerThreads
       consumerThread.start();
     }
 
-    var start = System.nanoTime();
-    while( true ) {
-      Thread.sleep(sampleInterval);
-      val end = System.nanoTime();
-      printRate("Producer", producerCounter, end - start);
-      printRate("Consumer", consumerCounter, end - start);
-      start = end;
+    // start a sampling thread...
+    val sampleThread = new Thread() {
+      override def run() = {
+        try {
+          var start = System.nanoTime();
+          while( !done.get ) {
+            Thread.sleep(sampleInterval)
+            val end = System.nanoTime();
+            printRate("Producer", producerCounter, end - start);
+            printRate("Consumer", consumerCounter, end - start);
+            start = end;
+          }
+        } catch {
+          case e:InterruptedException =>
+        }
+      }
     }
-  }
+    sampleThread.start()
 
+
+    System.in.read()
+    println("=======================")
+    done.set(true)
+
+    // wait for the threads to finish..
+    for( thread <- consumerThreads ) {
+      thread.client.close
+      thread.interrupt
+      thread.join
+    }
+    for( thread <- producerThreads ) {
+      thread.client.close
+      thread.interrupt
+      thread.join
+    }
+    sampleThread.interrupt
+    sampleThread.join
+
+    println("Shutdown");
+    println("=======================")
+
+  }
 
   def printRate(name: String, counter: AtomicLong, nanos: Long) = {
     val c = counter.getAndSet(0);
@@ -90,9 +135,10 @@ object StompLoadClient {
         proc(client)
       } catch {
         case e: Throwable =>
-//          e.printStackTrace();
-          println("failure occured: "+e);
-          Thread.sleep(1000);
+          if(!done.get) {
+            println("failure occured: "+e);
+            Thread.sleep(1000);
+          }
       } finally {
         try {
           client.close();
@@ -161,12 +207,14 @@ object StompLoadClient {
 
   class ProducerThread(val id: Int) extends Thread {
     val name: String = "producer " + id;
+    var client:StompClient=null
 
     override def run() {
-      while (true) {
+      while (!done.get) {
         StompClient.connect { client =>
+          this.client=client
           var i =0;
-          while (true) {
+          while (!done.get) {
             client.send("""
 SEND
 destination:/queue/test"""+id+"""
@@ -183,10 +231,12 @@ Message #""" + i + " from " + name)
 
   class ConsumerThread(val id: Int) extends Thread {
     val name: String = "producer " + id;
+    var client:StompClient=null
 
     override def run() {
-      while (true) {
+      while (!done.get) {
         StompClient.connect { client =>
+          this.client=client
           val headers = Map[AsciiBuffer, AsciiBuffer]();
           client.send("""
 SUBSCRIBE
@@ -195,7 +245,7 @@ destination:/queue/test"""+id+"""
 """)
           client.flush
 
-          while (true) {
+          while (!done.get) {
             client.receive("MESSAGE");
             consumerCounter.incrementAndGet();
             Thread.sleep(consumerSleep);
