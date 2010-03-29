@@ -57,6 +57,8 @@ object StompLoadClient {
     println("=======================")
     println("")
 
+
+    done.set(false)
     var producerThreads = List[ProducerThread]()
     for (i <- 0 until producers) {
       val producerThread = new ProducerThread(i);
