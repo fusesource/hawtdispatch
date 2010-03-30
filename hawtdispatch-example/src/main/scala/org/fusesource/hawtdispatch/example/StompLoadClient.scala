@@ -43,7 +43,7 @@ object StompLoadClient {
   var sampleInterval = 5 * 1000;
   var uri = "stomp://127.0.0.1:61613";
   var bufferSize = 64*1204
-
+  var messageSize = 1024;
   val producerCounter = new AtomicLong();
   val consumerCounter = new AtomicLong();
   val done = new AtomicBoolean()
@@ -221,7 +221,7 @@ object StompLoadClient {
 SEND
 destination:/queue/test"""+id+"""
 
-Message #""" + i + " from " + name)
+""" + message(name, i))
             producerCounter.incrementAndGet();
             Thread.sleep(producerSleep);
             i += 1
@@ -229,6 +229,15 @@ Message #""" + i + " from " + name)
         }
       }
     }
+  }
+
+  def message(name:String, counter:Int) = {
+    val rc = new StringBuffer(messageSize)
+    rc.append("Message #" + counter + " from " + name+"\n");
+    for( i <- rc.length to messageSize ) {
+      rc.append(('a'+(i%26)).toChar)
+    }
+    rc
   }
 
   class ConsumerThread(val id: Int) extends Thread {
