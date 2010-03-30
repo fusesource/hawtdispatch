@@ -44,6 +44,8 @@ object StompLoadClient {
   var uri = "stomp://127.0.0.1:61613";
   var bufferSize = 64*1204
   var messageSize = 1024;
+  var enableLength=false
+
   val producerCounter = new AtomicLong();
   val consumerCounter = new AtomicLong();
   val done = new AtomicBoolean()
@@ -217,12 +219,11 @@ object StompLoadClient {
           this.client=client
           var i =0;
           while (!done.get) {
-            client.send("""
-SEND
-destination:/queue/test"""+id+"""
-content-length:"""+messageSize+"""
-
-""" +content)
+            client.send(
+              "SEND\n" +
+              "destination:/queue/test"+id+"\n"+
+               { if(enableLength) "content-length:"+messageSize+"\n" else "" } +
+              "\n"+content)
             producerCounter.incrementAndGet();
             Thread.sleep(producerSleep);
             i += 1
