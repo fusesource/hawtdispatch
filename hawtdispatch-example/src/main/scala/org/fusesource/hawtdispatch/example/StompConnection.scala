@@ -36,7 +36,7 @@ import collection.mutable.{HashMap}
  */
 object StompConnection {
   val connectionCounter = new AtomicLong();
-  var bufferSize = 1024*1204
+  var bufferSize = 1024*1204*4
   var maxOutboundSize = 10000
 }
 class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Producer,Consumer]) extends Queued {
@@ -245,6 +245,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
   }
 
   def on_stomp_subscribe(headers:HeaderMap) = {
+    println("Consumer on "+Thread.currentThread.getName)
     get(headers, Headers.Subscribe.DESTINATION) match {
       case Some(dest)=>
         if( consumer !=null ) {

@@ -192,22 +192,44 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
         }
     }
 
-    private void updateInterest() {
-        selectorQueue.dispatchAsync(new Runnable(){
-            public void run() {
-                if( !isSuspended() && !isCanceled() ) {
-                    debug("adding interest: %d", interestOps);
-                    KeyState state = keyState.get();
-                    if( state==null ) {
-                        return;
-                    }
 
-                    if( state.key.isValid() ) {
-                        state.key.interestOps(state.key.interestOps()|interestOps);
-                    }
+    private void updateInterest() {
+        if( isCurrent(selectorQueue) ) {
+            if( !isSuspended() && !isCanceled() ) {
+                debug("adding interest: %d", interestOps);
+                KeyState state = keyState.get();
+                if( state==null ) {
+                    return;
+                }
+
+                if( state.key.isValid() ) {
+                    state.key.interestOps(state.key.interestOps()|interestOps);
                 }
             }
-        });
+        } else {
+            selectorQueue.dispatchAsync(new Runnable(){
+                public void run() {
+                    if( !isSuspended() && !isCanceled() ) {
+                        debug("adding interest: %d", interestOps);
+                        KeyState state = keyState.get();
+                        if( state==null ) {
+                            return;
+                        }
+
+                        if( state.key.isValid() ) {
+                            state.key.interestOps(state.key.interestOps()|interestOps);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    private boolean isCurrent(DispatchQueue q) {
+        WorkerThread thread = WorkerThread.currentWorkerThread();
+        if( thread == null )
+            return false;
+        return thread.getDispatchQueue() == q;
     }
 
     @Override
@@ -219,11 +241,15 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     @Override
     protected void onResume() {
         debug("onResume");
-        selectorQueue.dispatchAsync(new Runnable(){
-            public void run() {
-                fire(interestOps);
-            }
-        });
+        if( isCurrent(selectorQueue) ) {
+            fire(interestOps);
+        } else {
+            selectorQueue.dispatchAsync(new Runnable(){
+                public void run() {
+                    fire(interestOps);
+                }
+            });
+        }
     }
 
     @Override

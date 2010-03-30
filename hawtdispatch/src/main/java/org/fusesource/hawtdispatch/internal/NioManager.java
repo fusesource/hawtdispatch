@@ -21,6 +21,7 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Set;
 
 import static java.lang.String.*;
@@ -31,9 +32,10 @@ import static java.lang.String.*;
  */
 public class NioManager {
     
-    private final boolean DEBUG = false;
     private final Selector selector;
+    volatile protected int wakeupCounter;
     volatile protected int selectCounter;
+
     volatile protected boolean selecting;
 
     public NioManager() throws IOException {
@@ -52,11 +54,8 @@ public class NioManager {
      * Subclasses may override this to provide an alternative wakeup mechanism.
      */
     public void wakeup() {
-        debug("wakeup");
-        int was = selectCounter;
-        while( selecting && was==selectCounter) {
-            selector.wakeup();
-        }
+        ++wakeupCounter;
+        selector.wakeup();
     }
 
     /**
@@ -71,32 +70,26 @@ public class NioManager {
      * @throws IOException
      */
     public int select(long timeout) throws IOException {
-        try {
-            if (timeout == -1) {
-                selecting=true;
-                try {
-                    debug("entered blocking select");
-                    selector.select();
-                    debug("exited blocking select");
-                } finally {
-                    selectCounter++;
-                    selecting=false;
+        if (timeout == 0) {
+            selector.selectNow();
+        } else {
+            selecting=true;
+            try {
+                if( selectCounter == wakeupCounter) {
+                    if (timeout == -1) {
+                        trace("entered blocking select");
+                        selector.select();
+                        trace("exited blocking select");
+                    } else if (timeout > 0) {
+                        trace("entered blocking select with timeout");
+                        selector.select(timeout);
+                        trace("exited blocking select with timeout");
+                    }
                 }
-            } else if (timeout > 0) {
-                selecting=true;
-                try {
-                    debug("entered blocking select with timeout");
-                    selector.select(timeout);
-                    debug("exited blocking select with timeout");
-                } finally {
-                    selectCounter++;
-                    selecting=false;
-                }
-            } else {
-                selector.selectNow();
+            } finally {
+                selectCounter = wakeupCounter;
+                selecting=false;
             }
-        } catch (CancelledKeyException ignore) {
-            return 0;
         }
         return processSelected();
     }
@@ -111,7 +104,7 @@ public class NioManager {
         Set<SelectionKey> selectedKeys = selector.selectedKeys();
         int size = selectedKeys.size();
         if (size!=0) {
-            debug("selected: %d",size);
+            trace("selected: %d",size);
             for (Iterator<SelectionKey> i = selectedKeys.iterator(); i.hasNext();) {
                 SelectionKey key = i.next();
                 i.remove();
@@ -134,19 +127,16 @@ public class NioManager {
         selector.close();
     }
 
-    protected void debug(String str, Object... args) {
-        if (DEBUG) {
-            System.out.println(format("[DEBUG] NioManager %0#10x: ", System.identityHashCode(this))+format(str, args));
-        }
-    }
-
-    protected void debug(Throwable thrown, String str, Object... args) {
-        if (DEBUG) {
-            if (str != null) {
-                debug(str, args);
-            }
-            if (thrown != null) {
-                thrown.printStackTrace();
+    private final boolean TRACE = true;
+    private final LinkedList<String> traces = new LinkedList<String>();
+    protected void trace(String str, Object... args) {
+        if (TRACE) {
+            String msg = System.currentTimeMillis()+": "+format(str, args)+"\n";
+            synchronized(traces) {
+                traces.add(msg);
+                if( traces.size() > 100 ) {
+                    traces.removeFirst();
+                }
             }
         }
     }

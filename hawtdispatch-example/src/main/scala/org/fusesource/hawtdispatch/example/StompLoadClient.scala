@@ -186,6 +186,23 @@ object StompLoadClient {
       out.write('\n')
     }
 
+    def send(frame:Array[Byte]) = {
+      out.write(frame)
+      out.write(0)
+      out.write('\n')
+    }
+
+    def skip():Unit = {
+      var c = in.read;
+      while( c >= 0 ) {
+        if( c==0 ) {
+          return;
+        }
+        c = in.read()
+      }
+      throw new EOFException()
+    }
+
     def receive():String = {
       val buffer = new ByteArrayOutputStream(500)
       var c = in.read;
@@ -212,18 +229,18 @@ object StompLoadClient {
   class ProducerThread(val id: Int) extends Thread {
     val name: String = "producer " + id;
     var client:StompClient=null
-    val content = message(name)
+    val content = ("SEND\n" +
+              "destination:/queue/test"+id+"\n"+
+               { if(enableLength) "content-length:"+messageSize+"\n" else "" } +
+              "\n"+message(name)).getBytes("UTF-8")
+
     override def run() {
       while (!done.get) {
         StompClient.connect { client =>
           this.client=client
           var i =0;
           while (!done.get) {
-            client.send(
-              "SEND\n" +
-              "destination:/queue/test"+id+"\n"+
-               { if(enableLength) "content-length:"+messageSize+"\n" else "" } +
-              "\n"+content)
+            client.send(content)
             producerCounter.incrementAndGet();
             Thread.sleep(producerSleep);
             i += 1
@@ -264,7 +281,7 @@ destination:/queue/test"""+id+"""
           client.flush
 
           while (!done.get) {
-            client.receive("MESSAGE");
+            client.skip
             consumerCounter.incrementAndGet();
             Thread.sleep(consumerSleep);
           }
