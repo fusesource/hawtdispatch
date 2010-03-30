@@ -23,8 +23,9 @@ import java.util.concurrent.TimeUnit;
 import org.fusesource.hawtdispatch.DispatchOption;
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.internal.pool.SimplePool;
+import org.fusesource.hawtdispatch.internal.pool.StealingPool;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
-import org.fusesource.hawtdispatch.internal.WorkerPool;
 import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
 
 /**
@@ -43,7 +44,8 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         this.dispatcher = dispatcher;
         this.priority = priority;
         this.label=priority.toString();
-        this.workers = new WorkerPool(dispatcher.getLabel()+"-"+priority, threads, priority(priority));
+//        this.workers = new StealingPool(dispatcher.getLabel()+"-"+priority, threads, priority(priority));
+        this.workers = new SimplePool(dispatcher.getLabel()+"-"+priority, threads, priority(priority));
     }
 
     static private int priority(DispatchPriority priority) {

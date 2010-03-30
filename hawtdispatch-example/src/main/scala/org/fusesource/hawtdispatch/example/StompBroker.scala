@@ -16,6 +16,7 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.concurrent.TimeUnit
+import _root_.java.util.LinkedList
 import java.nio.channels.SelectionKey._
 import org.fusesource.hawtdispatch.ScalaSupport._
 
@@ -29,7 +30,7 @@ import java.nio.channels.{ServerSocketChannel}
  */
 object StompBroker {
 
-  type HeaderMap = collection.mutable.Map[AsciiBuffer, AsciiBuffer]
+  type HeaderMap = LinkedList[(AsciiBuffer, AsciiBuffer)]
 
   case class Delivery(headers:HeaderMap, content:Buffer) extends ServiceRetainer
   trait Producer {

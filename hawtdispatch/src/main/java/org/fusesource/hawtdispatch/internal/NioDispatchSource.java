@@ -124,14 +124,14 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
             state.key.cancel();
 
             // Running a select to remove the canceled key.
-            Selector selector =  WorkerThread.currentWorkerThread().ioManager.getSelector();
+            Selector selector =  WorkerThread.currentWorkerThread().getNioManager().getSelector();
             try {
                 selector.selectNow();
             } catch (IOException e) {
                 debug(e, "Error canceling");
             }
         }
-        debug("Canceled selector on "+WorkerThread.currentWorkerThread().dispatchQueue.getLabel() );
+        debug("Canceled selector on "+WorkerThread.currentWorkerThread().getDispatchQueue().getLabel() );
         keyState.remove();
     }
 
@@ -148,8 +148,8 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
             public void run() {
                 assert keyState.get()==null;
 
-                debug("Registering on selector "+WorkerThread.currentWorkerThread().dispatchQueue.getLabel() );
-                Selector selector = WorkerThread.currentWorkerThread().ioManager.getSelector();
+                debug("Registering on selector "+ WorkerThread.currentWorkerThread().getDispatchQueue().getLabel() );
+                Selector selector = WorkerThread.currentWorkerThread().getNioManager().getSelector();
                 try {
                     KeyState state = new KeyState();
                     state.key = channel.keyFor(selector);

@@ -57,8 +57,8 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         globalQueues = new GlobalDispatchQueue[3];
         for (int i = 0; i < 3; i++) {
             globalQueues[i] = new GlobalDispatchQueue(this, DispatchPriority.values()[i], config.getThreads());
-            for ( WorkerThread thread: globalQueues[i].workers.threads) {
-                thread.dispatchQueue = new ThreadDispatchQueue(this, thread, globalQueues[i]);
+            for ( WorkerThread thread: globalQueues[i].workers.getThreads()) {
+                thread.setDispatchQueue(new ThreadDispatchQueue(this, thread, globalQueues[i]));
             }
         }
         for (int i = 0; i < 3; i++) {
@@ -115,7 +115,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         if( thread ==null ) {
             return null;
         }
-        return thread.dispatchQueue;
+        return thread.getDispatchQueue();
     }
 
     public DispatchQueue getRandomThreadQueue() {
@@ -123,9 +123,9 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     }
 
     public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
-        WorkerThread[] threads = globalQueues[priority.ordinal()].workers.threads;
+        WorkerThread[] threads = globalQueues[priority.ordinal()].workers.getThreads();
         int i = random.nextInt(threads.length);
-        return threads[i].dispatchQueue;
+        return threads[i].getDispatchQueue();
     }
 
 }

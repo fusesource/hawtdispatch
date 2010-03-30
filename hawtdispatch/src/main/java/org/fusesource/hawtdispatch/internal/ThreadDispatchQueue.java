@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.fusesource.hawtdispatch.DispatchOption;
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.internal.pool.StealingThread;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
@@ -35,8 +36,8 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
 
     final String label;
 
-    final LinkedList<Work> localRunnables = new LinkedList<Work>();
-    final ConcurrentLinkedQueue<Work> sharedRunnables = new ConcurrentLinkedQueue<Work>();
+    final LinkedList<Runnable> localRunnables = new LinkedList<Runnable>();
+    final ConcurrentLinkedQueue<Runnable> sharedRunnables = new ConcurrentLinkedQueue<Runnable>();
 
     final WorkerThread thread;
     final GlobalDispatchQueue globalQueue;
@@ -58,37 +59,37 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     }
 
 
-    public void execute(Runnable runnable) {
+    public void execute(java.lang.Runnable runnable) {
         dispatchAsync(runnable);
     }
     
-    public void dispatchAsync(Runnable runnable) {
+    public void dispatchAsync(java.lang.Runnable runnable) {
         // We don't have to take the synchronization hit 
         if( Thread.currentThread()!=thread ) {
-            sharedRunnables.add(Work.wrap(runnable));
+            sharedRunnables.add(runnable);
             thread.unpark();
         } else {
-            localRunnables.add(Work.wrap(runnable));
+            localRunnables.add(runnable);
         }
     }
 
-    public Work poll() {
-        Work rc = localRunnables.poll();
+    public Runnable poll() {
+        Runnable rc = localRunnables.poll();
         if (rc ==null) {
             rc = sharedRunnables.poll();
         }
         return rc;
     }
 
-    public void dispatchAfter(Runnable runnable, long delay, TimeUnit unit) {
+    public void dispatchAfter(java.lang.Runnable runnable, long delay, TimeUnit unit) {
         throw new RuntimeException("TODO: implement me.");
     }
 
-    public void dispatchSync(final Runnable runnable) throws InterruptedException {
+    public void dispatchSync(final java.lang.Runnable runnable) throws InterruptedException {
         dispatchApply(1, runnable);
     }
     
-    public void dispatchApply(int iterations, final Runnable runnable) throws InterruptedException {
+    public void dispatchApply(int iterations, final java.lang.Runnable runnable) throws InterruptedException {
         QueueSupport.dispatchApply(this, iterations, runnable);
     }
 
@@ -112,7 +113,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         throw new UnsupportedOperationException();
     }
 
-    public void addReleaseWatcher(Runnable finalizer) {
+    public void addReleaseWatcher(java.lang.Runnable finalizer) {
         throw new UnsupportedOperationException();
     }
 

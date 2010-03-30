@@ -44,6 +44,10 @@ public class NioManager {
         return selector;
     }
 
+    public boolean isSelecting() {
+        return selecting;
+    }
+
     /**
      * Subclasses may override this to provide an alternative wakeup mechanism.
      */

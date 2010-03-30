@@ -36,7 +36,7 @@ import collection.mutable.{HashMap}
  */
 object StompConnection {
   val connectionCounter = new AtomicLong();
-  var bufferSize = 64*1204
+  var bufferSize = 1024*1204
   var maxOutboundSize = 10000
 }
 class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Producer,Consumer]) extends Queued {
@@ -174,8 +174,20 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
 
   var producerRoute:Route[AsciiBuffer, Producer, Consumer]=null
 
+
+  def get(headers:HeaderMap, name:AsciiBuffer):Option[AsciiBuffer] = {
+    val i = headers.iterator
+    while( i.hasNext ) {
+      val entry = i.next
+      if( entry._1 == name ) {
+        return Some(entry._2)
+      }
+    }
+    None
+  }
+
   def on_stomp_send(headers:HeaderMap, content:Buffer) = {
-    headers.get(Headers.Send.DESTINATION) match {
+    get(headers, Headers.Send.DESTINATION) match {
       case Some(dest)=>
         // create the producer route...
         if( producerRoute==null || producerRoute.destination!= dest ) {
@@ -226,7 +238,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
   }
 
   def on_stomp_subscribe(headers:HeaderMap) = {
-    headers.get(Headers.Subscribe.DESTINATION) match {
+    get(headers, Headers.Subscribe.DESTINATION) match {
       case Some(dest)=>
         if( consumer !=null ) {
           die("Only one subscription supported.")
@@ -245,7 +257,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
   private def die(msg:String) = {
     println("Shutting connection down due to: "+msg)
     read_source.suspend
-    send(StompFrame(Responses.ERROR, new HashMap(), ascii(msg)))
+    send(StompFrame(Responses.ERROR, new LinkedList(), ascii(msg)))
     ^ {
       close
     } ->: queue

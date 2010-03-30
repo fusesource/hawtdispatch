@@ -1,5 +1,6 @@
 package org.fusesource.hawtdispatch.example
 
+import _root_.java.util.LinkedList
 import buffer.{Buffer, AsciiBuffer}
 import collection.mutable.Map
 import collection.mutable.HashMap
@@ -13,7 +14,7 @@ object StompFrame{
  *
  * @author <a href="http://hiramchirino.com">chirino</a>
  */
-case class StompFrame(action:AsciiBuffer, headers:Map[AsciiBuffer, AsciiBuffer]=new HashMap(), content:Buffer=StompFrame.NO_DATA) {
+case class StompFrame(action:AsciiBuffer, headers:LinkedList[(AsciiBuffer, AsciiBuffer)]=new LinkedList(), content:Buffer=StompFrame.NO_DATA) {
 
 //    public StompFrame(AsciiBuffer command) {
 //    	this(command, null, null);
