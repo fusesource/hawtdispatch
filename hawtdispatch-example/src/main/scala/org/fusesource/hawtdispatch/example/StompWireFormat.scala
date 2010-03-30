@@ -347,7 +347,7 @@ class StompWireFormat {
 
   def read_content(contentLength:Int):Buffer = {
       val read_limit = read_bytebuffer.position
-      if( (read_limit-read_offset)+1 < contentLength ) {
+      if( (read_limit-read_offset) < contentLength+1 ) {
         read_pos = read_limit;
         null
       } else {

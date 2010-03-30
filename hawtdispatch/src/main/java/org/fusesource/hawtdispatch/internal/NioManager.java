@@ -127,7 +127,7 @@ public class NioManager {
         selector.close();
     }
 
-    private final boolean TRACE = true;
+    private final boolean TRACE = false;
     private final LinkedList<String> traces = new LinkedList<String>();
     protected void trace(String str, Object... args) {
         if (TRACE) {

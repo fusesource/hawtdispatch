@@ -44,7 +44,7 @@ object StompLoadClient {
   var uri = "stomp://127.0.0.1:61613";
   var bufferSize = 64*1204
   var messageSize = 1024;
-  var enableLength=false
+  var enableLength=true
 
   val producerCounter = new AtomicLong();
   val consumerCounter = new AtomicLong();

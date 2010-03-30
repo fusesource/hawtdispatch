@@ -207,9 +207,6 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
                 read_source.setTargetQueue(queue)
               }
 
-
-
-              
             } ->: queue
           }
 
