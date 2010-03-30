@@ -36,7 +36,7 @@ import collection.mutable.{HashMap}
  */
 object StompConnection {
   val connectionCounter = new AtomicLong();
-  var bufferSize = 1024*1204*4
+  var bufferSize = 1024*64
   var maxOutboundSize = 10000
 }
 class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Producer,Consumer]) extends Queued {

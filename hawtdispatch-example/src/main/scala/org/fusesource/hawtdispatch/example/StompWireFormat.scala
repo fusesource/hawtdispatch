@@ -26,7 +26,7 @@ import AsciiBuffer._
 import collection.mutable.{ListBuffer, HashMap}
 
 object StompWireFormat {
-    val READ_BUFFFER_SIZE = 1024*1024*4;
+    val READ_BUFFFER_SIZE = 1024*64;
     val MAX_COMMAND_LENGTH = 1024;
     val MAX_HEADER_LENGTH = 1024 * 10;
     val MAX_HEADERS = 1000;
