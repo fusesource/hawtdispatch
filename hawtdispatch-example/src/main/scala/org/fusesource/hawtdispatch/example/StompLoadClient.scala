@@ -38,8 +38,8 @@ object StompLoadClient {
 
   var producerSleep = 0;
   var consumerSleep = 0;
-  var producers = 5;
-  var consumers = 5;
+  var producers = 1;
+  var consumers = 1;
   var sampleInterval = 5 * 1000;
   var uri = "stomp://127.0.0.1:61613";
   var bufferSize = 64*1204
@@ -210,7 +210,7 @@ object StompLoadClient {
   class ProducerThread(val id: Int) extends Thread {
     val name: String = "producer " + id;
     var client:StompClient=null
-
+    val content = message(name)
     override def run() {
       while (!done.get) {
         StompClient.connect { client =>
@@ -220,8 +220,9 @@ object StompLoadClient {
             client.send("""
 SEND
 destination:/queue/test"""+id+"""
+content-length:"""+messageSize+"""
 
-""" + message(name, i))
+""" +content)
             producerCounter.incrementAndGet();
             Thread.sleep(producerSleep);
             i += 1
@@ -231,13 +232,18 @@ destination:/queue/test"""+id+"""
     }
   }
 
-  def message(name:String, counter:Int) = {
-    val rc = new StringBuffer(messageSize)
-    rc.append("Message #" + counter + " from " + name+"\n");
-    for( i <- rc.length to messageSize ) {
-      rc.append(('a'+(i%26)).toChar)
+  def message(name:String) = {
+    val buffer = new StringBuffer(messageSize)
+    buffer.append("Message from " + name+"\n");
+    for( i <- buffer.length to messageSize ) {
+      buffer.append(('a'+(i%26)).toChar)
     }
-    rc
+    var rc = buffer.toString
+    if( rc.length > messageSize ) {
+      rc.substring(0, messageSize)
+    } else {
+      rc
+    }
   }
 
   class ConsumerThread(val id: Int) extends Thread {

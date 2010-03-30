@@ -200,9 +200,16 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
 
           val producer = new Producer() {
             override def setTargetQueue(value:DispatchQueue):Unit = ^{
-              queue.setTargetQueue(value)
-              write_source.setTargetQueue(queue);
-              read_source.setTargetQueue(queue)
+              if( value ne queue.getTargetQueue ) {
+                println("sender changing target queue to: "+value.getLabel);
+                queue.setTargetQueue(value)
+                write_source.setTargetQueue(queue);
+                read_source.setTargetQueue(queue)
+              }
+
+
+
+              
             } ->: queue
           }
 
