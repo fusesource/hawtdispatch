@@ -37,7 +37,7 @@ import collection.mutable.{HashMap}
 object StompConnection {
   val connectionCounter = new AtomicLong();
   var bufferSize = 1024*64
-  var maxOutboundSize = 10000
+  var maxOutboundSize = bufferSize
 }
 class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Producer,Consumer]) extends Queued {
 
@@ -53,7 +53,8 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
 //    println("connected from: "+socket.socket.getRemoteSocketAddress)
 
   val wireFormat = new StompWireFormat()
-  var outbound = new LinkedList[(StompFrame,Retained)]()
+  var outbound = new LinkedList[(StompFrame,Delivery)]()
+  var outboundSize = 0;
   var closed = false;
   var consumer:SimpleConsumer = null
 
@@ -86,8 +87,9 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
       node match {
         case (frame,null)=>
           frame
-        case (frame,retained)=> {
-          retained.release
+        case (frame,delivery)=> {
+          outboundSize -= delivery.size
+          delivery.release
           frame
         }
       }
@@ -108,17 +110,24 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
   });
 
 
-  def send(frame:StompFrame, retained:Retained=null) = {
-    if( outbound.size < maxOutboundSize ) {
-      outbound.add((frame,null))
+  def send(frame:StompFrame) = {
+    outbound.add((frame, null))
+    if( outbound.size == 1 ) {
+      write_source.resume
+    }
+  }
+
+  def send(delivery:Delivery=null) = {
+    // we only start retaining once our outbound is full..
+    // retaining will cause the producers to slow down until
+    // we released
+    val frame = StompFrame(Responses.MESSAGE, delivery.headers, delivery.content)
+    if( maxOutboundSize < (outboundSize+delivery.size)  ) {
+      outboundSize += delivery.size
+      delivery.retain
+      outbound.add((frame, delivery))
     } else {
-      // we only start retaining once our outbound is full..
-      // retaining will cause the producers to slow down until
-      // we released
-      if( retained !=null ) {
-        retained.retain
-      }
-      outbound.add((frame,retained))
+      outbound.add((frame, null))
     }
 
     if( outbound.size == 1 ) {
@@ -148,19 +157,14 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
   def on_frame(frame:StompFrame) = {
     frame match {
       case StompFrame(Commands.CONNECT, headers, _) =>
-//          println("got CONNECT")
         on_stomp_connect(headers)
       case StompFrame(Commands.SEND, headers, content) =>
-//          println("got SEND")
-        on_stomp_send(headers, content)
+        on_stomp_send(Delivery(frame))
       case StompFrame(Commands.SUBSCRIBE, headers, content) =>
-//          println("got SUBSCRIBE")
         on_stomp_subscribe(headers)
       case StompFrame(Commands.ACK, headers, content) =>
-//          println("got ACK")
         // TODO:
       case StompFrame(Commands.DISCONNECT, headers, content) =>
-//          println("got DISCONNECT")
         close
       case StompFrame(unknown, _, _) =>
         die("Unsupported STOMP command: "+unknown);
@@ -186,8 +190,8 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
     None
   }
 
-  def on_stomp_send(headers:HeaderMap, content:Buffer) = {
-    get(headers, Headers.Send.DESTINATION) match {
+  def on_stomp_send(delivery:Delivery) = {
+    get(delivery.headers, Headers.Send.DESTINATION) match {
       case Some(dest)=>
         // create the producer route...
         if( producerRoute==null || producerRoute.destination!= dest ) {
@@ -216,21 +220,20 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
             route:Route[AsciiBuffer, Producer, Consumer] =>
               read_source.resume
               producerRoute = route
-              send_via_route(producerRoute, headers, content)
+              send_via_route(producerRoute, delivery)
           }
         } else {
           // we can re-use the existing producer route
-          send_via_route(producerRoute, headers, content)
+          send_via_route(producerRoute, delivery)
         }
       case None=>
         die("destination not set.")
     }
   }
 
-  def send_via_route(route:Route[AsciiBuffer, Producer, Consumer], headers:HeaderMap, content:Buffer) = {
+  def send_via_route(route:Route[AsciiBuffer, Producer, Consumer], delivery:Delivery) = {
     if( !route.targets.isEmpty ) {
       read_source.suspend
-      var delivery = Delivery(headers, content)
       delivery.addReleaseWatcher(^{
         read_source.resume
       })
@@ -270,7 +273,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
 
   class SimpleConsumer(val dest:AsciiBuffer, override val queue:DispatchQueue) extends Consumer {
     override def deliver(delivery:Delivery) = using(delivery) {
-      send(StompFrame(Responses.MESSAGE, delivery.headers, delivery.content), delivery)
+      send(delivery)
     } ->: queue
   }
 

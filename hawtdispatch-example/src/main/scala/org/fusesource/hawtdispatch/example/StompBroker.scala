@@ -32,7 +32,13 @@ object StompBroker {
 
   type HeaderMap = LinkedList[(AsciiBuffer, AsciiBuffer)]
 
-  case class Delivery(headers:HeaderMap, content:Buffer) extends ServiceRetainer
+  object Delivery {
+    def apply(frame:StompFrame) = new Delivery(frame.headers, frame.content, frame.headerSize)
+  }
+  
+  case class Delivery(headers:HeaderMap, content:Buffer, size:Int) extends ServiceRetainer {
+  }
+  
   trait Producer {
     def setTargetQueue(queue:DispatchQueue):Unit
   }
