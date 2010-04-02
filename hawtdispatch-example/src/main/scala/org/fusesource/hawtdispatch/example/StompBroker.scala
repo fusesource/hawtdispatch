@@ -24,29 +24,32 @@ import java.net.{InetAddress, InetSocketAddress}
 
 import buffer._
 import java.nio.channels.{ServerSocketChannel}
+
+object Delivery {
+  type HeaderMap = LinkedList[(AsciiBuffer, AsciiBuffer)]
+  def apply(frame:StompFrame) = new Delivery(frame.headers, frame.content, frame.headerSize)
+  def apply(d:Delivery) = new Delivery(d.headers, d.content, d.size)
+}
+  
+case class Delivery(headers:Delivery.HeaderMap, content:Buffer, size:Int) extends BaseRetained {
+}
+
+trait Producer {
+  def setTargetQueue(queue:DispatchQueue):Unit
+}
+
+trait Consumer extends Retained {
+  val queue:DispatchQueue;
+  def deliver(delivery:Delivery)
+}
+
+
 /**
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 object StompBroker {
 
-  type HeaderMap = LinkedList[(AsciiBuffer, AsciiBuffer)]
-
-  object Delivery {
-    def apply(frame:StompFrame) = new Delivery(frame.headers, frame.content, frame.headerSize)
-  }
-  
-  case class Delivery(headers:HeaderMap, content:Buffer, size:Int) extends ServiceRetainer {
-  }
-  
-  trait Producer {
-    def setTargetQueue(queue:DispatchQueue):Unit
-  }
-
-  trait Consumer extends QueuedRetained {
-    def deliver(delivery:Delivery)
-  }
-  
 
   def main(args:Array[String]) = {
     println("Starting stomp broker...")
@@ -63,10 +66,10 @@ object StompBroker {
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-class StompBroker extends Queued {
+class StompBroker {
   import StompBroker._
 
-  val router = new Router[AsciiBuffer,Producer,Consumer](createSerialQueue("router"))
+  val router = new Router(createSerialQueue("router"))
   val queue = createSerialQueue("broker")
 
     // Create the nio server socket...
@@ -114,20 +117,19 @@ class StompBroker extends Queued {
   // Try to periodically re-balance connections so that consumers/producers
   // are on the same thread.
   val reblance = ^{
-    router.each {
-      (destination, routes, targets) =>
+    router.each { (destination,node)=>
       // for now just move the producer to the consumer's thread..
-      if( !targets.isEmpty ) {
-        for( route <- routes ) {
-          route.producer.setTargetQueue( targets.head.queue.getTargetQueue )
+      if( !node.targets.isEmpty ) {
+        val target =  node.targets.head.queue.getTargetQueue
+        for( route <- node.routes ) {
+          route.producer.setTargetQueue( target )
         }
       }
-
     }
     schedualRebalance
   }
   def schedualRebalance:Unit = router.queue.dispatchAfter(reblance, 1000, TimeUnit.MILLISECONDS)
-  schedualRebalance
+//  schedualRebalance
 }
 
 

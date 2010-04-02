@@ -16,16 +16,14 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.{LinkedList}
-import _root_.org.fusesource.hawtdispatch.example.StompBroker.{Producer, Consumer}
+import _root_.org.fusesource.hawtdispatch.ScalaSupport
 import java.nio.channels.SelectionKey._
 import org.fusesource.hawtdispatch.ScalaSupport._
-
-import java.net.{InetAddress, InetSocketAddress}
 
 import buffer._
 import AsciiBuffer._
 import java.util.concurrent.atomic.AtomicLong
-import java.nio.channels.{SocketChannel, ServerSocketChannel}
+import java.nio.channels.{SocketChannel}
 import java.io.{IOException}
 import org.fusesource.hawtdispatch.example.Stomp.{Headers, Responses, Commands}
 import collection.mutable.{HashMap}
@@ -39,9 +37,9 @@ object StompConnection {
   var bufferSize = 1024*64
   var maxOutboundSize = bufferSize
 }
-class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Producer,Consumer]) extends Queued {
+class StompConnection(val socket:SocketChannel, var router:Router) {
 
-  import StompBroker._
+  import Delivery._
   import StompConnection._
 
   socket.socket.setSendBufferSize(bufferSize)
@@ -176,7 +174,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
     send(StompFrame(Responses.CONNECTED))
   }
 
-  var producerRoute:Route[AsciiBuffer, Producer, Consumer]=null
+  var producerRoute:ProducerRoute=null
 
 
   def get(headers:HeaderMap, name:AsciiBuffer):Option[AsciiBuffer] = {
@@ -217,7 +215,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
           // don't process frames until we are connected..
           read_source.suspend
           router.connect(dest, queue, producer) {
-            route:Route[AsciiBuffer, Producer, Consumer] =>
+            (route) =>
               read_source.resume
               producerRoute = route
               send_via_route(producerRoute, delivery)
@@ -231,7 +229,7 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
     }
   }
 
-  def send_via_route(route:Route[AsciiBuffer, Producer, Consumer], delivery:Delivery) = {
+  def send_via_route(route:ProducerRoute, delivery:Delivery) = {
     if( !route.targets.isEmpty ) {
       read_source.suspend
       delivery.addReleaseWatcher(^{
@@ -271,7 +269,14 @@ class StompConnection(val socket:SocketChannel, var router:Router[AsciiBuffer,Pr
     } ->: queue
   }
 
-  class SimpleConsumer(val dest:AsciiBuffer, override val queue:DispatchQueue) extends Consumer {
+  class SimpleConsumer(val dest:AsciiBuffer, override val queue:DispatchQueue) extends Consumer with BaseRetained {
+
+    // Retain the queue while we are retained.
+    queue.retain
+    addReleaseWatcher(^{
+      queue.release
+    })
+    
     override def deliver(delivery:Delivery) = using(delivery) {
       send(delivery)
     } ->: queue

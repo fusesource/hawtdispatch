@@ -22,12 +22,6 @@ import java.nio.channels.SelectableChannel
 object ScalaSupport {
 
   val dispatcher:Dispatcher = DispatchSystem.DISPATCHER;
-//  val dispatcher:Dispatcher = {
-//    val config = new DispatcherConfig
-//    config.setThreads(2)
-//    config.createDispatcher
-//  }
-
 
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
@@ -46,18 +40,91 @@ object ScalaSupport {
   def getCurrentQueue() = dispatcher.getCurrentQueue
 
 
+  def using(resource: Retained): (=> Unit) => Runnable = {
+    using(resource, resource) _
+  }
+
+  def using(resources: Seq[Retained]): (=> Unit) => Runnable = {
+    using(resources, resources) _
+  }
+
+  def retaining(resource: Retained): (=> Unit) => Runnable = {
+    using(resource, null) _
+  }
+
+  def retaining(resources: Seq[Retained]): (=> Unit) => Runnable = {
+    using(resources, null) _
+  }
+
+  def releasing(resource: Retained): (=> Unit) => Runnable = {
+    using(null, resource) _
+  }
+
+  def releasing(resources: Seq[Retained]): (=> Unit) => Runnable = {
+    using(null, resources) _
+  }
+
+  def retain(retainedResources: Seq[Retained]) = {
+    if (retainedResources != null) {
+      for (resource <- retainedResources) {
+        resource.retain
+      }
+    }
+  }
+
+  def release(releasedResources: Seq[Retained]) = {
+    if (releasedResources != null) {
+      for (resource <- releasedResources) {
+        resource.release
+      }
+    }
+  }
+
+  def ^(proc: => Unit): Runnable = new Runnable() {
+    def run() {
+      proc;
+    }
+  }
+
+  private def using(retainedResource: Retained, releasedResource: Retained)(proc: => Unit): Runnable = {
+    if (retainedResource != null) {
+      retainedResource.retain
+    }
+    new Runnable() {
+      def run = {
+        try {
+          proc;
+        } finally {
+          if (releasedResource != null) {
+            releasedResource.release
+          }
+        }
+      }
+    }
+  }
+
+  private def using(retainedResources: Seq[Retained], releasedResources: Seq[Retained])(proc: => Unit): Runnable = {
+    retain(retainedResources)
+    new Runnable() {
+      def run = {
+        try {
+          proc;
+        } finally {
+          release(releasedResources)
+        }
+      }
+    }
+  }
+
+
   trait Service {
     def startup() = {}
     def shutdown() = {}
   }
 
-  trait ServiceRetainer extends Retained {
-
-    protected def retainedService: Service = new Service {}
+  trait BaseRetained extends Retained {
+    protected val retained = new AtomicInteger(1);
     protected var releaseWatchers = List[Runnable]()
-
-    val retained = new AtomicInteger(1);
-    retainedService.startup
 
     override def retain = {
       assertRetained()
@@ -67,7 +134,6 @@ object ScalaSupport {
     override def release() = {
       assertRetained()
       if (retained.decrementAndGet() == 0) {
-        retainedService.shutdown
         for( onRelease <- releaseWatchers) {
           onRelease.run
         }
@@ -85,91 +151,13 @@ object ScalaSupport {
     }
 
     override def addReleaseWatcher(onRelease: Runnable) {
+      assertRetained()
       releaseWatchers = onRelease :: releaseWatchers;
     }
 
   }
-  trait Queued {
 
-    protected def using(resource: Retained): (=> Unit) => Runnable = {
-      using(resource, resource) _
-    }
-
-    protected def using(resources: Seq[Retained]): (=> Unit) => Runnable = {
-      using(resources, resources) _
-    }
-
-    protected def retaining(resource: Retained): (=> Unit) => Runnable = {
-      using(resource, null) _
-    }
-
-    protected def retaining(resources: Seq[Retained]): (=> Unit) => Runnable = {
-      using(resources, null) _
-    }
-
-    protected def releasing(resource: Retained): (=> Unit) => Runnable = {
-      using(null, resource) _
-    }
-
-    protected def releasing(resources: Seq[Retained]): (=> Unit) => Runnable = {
-      using(null, resources) _
-    }
-
-    protected def retain(retainedResources: Seq[Retained]) = {
-      if (retainedResources != null) {
-        for (resource <- retainedResources) {
-          resource.retain
-        }
-      }
-    }
-
-    protected def release(releasedResources: Seq[Retained]) = {
-      if (releasedResources != null) {
-        for (resource <- releasedResources) {
-          resource.release
-        }
-      }
-    }
-
-    protected def ^(proc: => Unit): Runnable = new Runnable() {
-      def run() {
-        proc;
-      }
-    }
-
-    private def using(retainedResource: Retained, releasedResource: Retained)(proc: => Unit): Runnable = {
-      if (retainedResource != null) {
-        retainedResource.retain
-      }
-      new Runnable() {
-        def run = {
-          try {
-            proc;
-          } finally {
-            if (releasedResource != null) {
-              releasedResource.release
-            }
-          }
-        }
-      }
-    }
-
-    private def using(retainedResources: Seq[Retained], releasedResources: Seq[Retained])(proc: => Unit): Runnable = {
-      retain(retainedResources)
-      new Runnable() {
-        def run = {
-          try {
-            proc;
-          } finally {
-            release(releasedResources)
-          }
-        }
-      }
-    }
-
-  }
-
-  trait QueuedService extends Queued with Service {
+  trait QueuedService extends Service {
     val queue: DispatchQueue
 
     override def startup() = {
@@ -184,20 +172,4 @@ object ScalaSupport {
     protected def onShutdown() = {}
   }
 
-  trait QueuedRetained extends Queued with ServiceRetainer {
-    val queue: DispatchQueue
-
-    protected override def retainedService = new Service {
-      override def startup() = {
-        queue.retain
-      }
-
-      override def shutdown() = {
-        queue << ^ {onShutdown}
-        queue.release
-      }
-    }
-
-    protected def onShutdown() = {}
-  }
 }

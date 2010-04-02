@@ -16,10 +16,16 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.concurrent.atomic.AtomicLong
+import _root_.org.fusesource.hawtdispatch.ScalaSupport
+import buffer.AsciiBuffer
 import java.util.HashMap
 import org.fusesource.hawtdispatch.ScalaSupport._
 import collection.JavaConversions
 
+object Router {
+  val TOPIC_PREFIX = new AsciiBuffer("/topic/")
+  val QUEUE_PREFIX = new AsciiBuffer("/topic/")
+}
 /**
  * Provides a non-blocking concurrent producer to consumer
  * routing implementation.
@@ -32,20 +38,32 @@ import collection.JavaConversions
  * to the destination. 
  *
  */
-class Router[D, P, T <: Retained](var queue:DispatchQueue) extends Queued {
+class Router(var queue:DispatchQueue) {
+  import Router._
+  
+  trait DestinationNode {
+    var targets = List[Consumer]()
+    var routes = List[ProducerRoute]()
 
-  class DestinationNode {
-    var targets = List[T]()
-    var routes = List[Route[D,P,T]]()
+    def on_bind(x:List[Consumer]):Unit
+    def on_unbind(x:List[Consumer]):Boolean
+    def on_connect(route:ProducerRoute):Unit
+    def on_disconnect(route:ProducerRoute):Boolean = {
+      routes = routes.filterNot({r=> route==r})
+      route.disconnected()
+      routes == Nil && targets == Nil
+    }
+  }
 
-    def on_bind(x:List[T]) =  {
+  class TopicDestinationNode extends DestinationNode {
+    def on_bind(x:List[Consumer]) =  {
       targets = x ::: targets
       routes.foreach({r=>
         r.bind(x)
       })
     }
 
-    def on_unbind(x:List[T]):Boolean = {
+    def on_unbind(x:List[Consumer]):Boolean = {
       targets = targets.filterNot({t=>x.contains(t)})
       routes.foreach({r=>
         r.unbind(x)
@@ -53,41 +71,59 @@ class Router[D, P, T <: Retained](var queue:DispatchQueue) extends Queued {
       routes == Nil && targets == Nil
     }
 
-    def on_connect(route:Route[D,P,T]) = {
+    def on_connect(route:ProducerRoute) = {
       routes = route :: routes
       route.connected(targets)
     }
+  }
 
-    def on_disconnect(route:Route[D,P,T]):Boolean = {
-      routes = routes.filterNot({r=> route==r})
-      route.disconnected()
+  class QueueDestinationNode(destination:AsciiBuffer) extends DestinationNode {
+    val queue = new StompQueue(destination)
+
+    def on_bind(x:List[Consumer]) =  {
+      targets = x ::: targets
+      queue.bind(x)
+    }
+
+    def on_unbind(x:List[Consumer]):Boolean = {
+      targets = targets.filterNot({t=>x.contains(t)})
+      queue.unbind(x)
       routes == Nil && targets == Nil
+    }
+
+    def on_connect(route:ProducerRoute) = {
+      routes = route :: routes
+      route.connected(queue :: Nil)
     }
   }
 
-  var destinations = new HashMap[D, DestinationNode]()
+  var destinations = new HashMap[AsciiBuffer, DestinationNode]()
 
-  private def get(destination:D) = {
+  private def get(destination:AsciiBuffer):DestinationNode = {
     var result = destinations.get(destination)
     if( result ==null ) {
-      result = new DestinationNode
+      if( isTopic(destination) ) {
+        result = new TopicDestinationNode
+      } else {
+        result = new QueueDestinationNode(destination)
+      }
       destinations.put(destination, result)
     }
     result
   }
 
-  def bind(destination:D, targets:List[T]) = retaining(targets) {
+  def bind(destination:AsciiBuffer, targets:List[Consumer]) = retaining(targets) {
       get(destination).on_bind(targets)
     } ->: queue
 
-  def unbind(destination:D, targets:List[T]) = releasing(targets) {
+  def unbind(destination:AsciiBuffer, targets:List[Consumer]) = releasing(targets) {
       if( get(destination).on_unbind(targets) ) {
         destinations.remove(destination)
       }
     } ->: queue
 
-  def connect(destination:D, routeQueue:DispatchQueue, producer:P)(completed: (Route[D,P,T])=>Unit) = {
-    val route = new Route[D,P,T](destination, routeQueue, producer) {
+  def connect(destination:AsciiBuffer, routeQueue:DispatchQueue, producer:Producer)(completed: (ProducerRoute)=>Unit) = {
+    val route = new ProducerRoute(destination, routeQueue, producer) {
       override def on_connected = {
         completed(this);
       }
@@ -97,47 +133,68 @@ class Router[D, P, T <: Retained](var queue:DispatchQueue) extends Queued {
     } ->: queue
   }
 
-  def disconnect(route:Route[D,P,T]) = releasing(route) {
+  def isTopic(destination:AsciiBuffer) = destination.startsWith(TOPIC_PREFIX)
+  def isQueue(destination:AsciiBuffer) = !isTopic(destination)
+
+  def disconnect(route:ProducerRoute) = releasing(route) {
       get(route.destination).on_disconnect(route)
     } ->: queue
 
 
- def each(proc:(D, List[Route[D,P,T]], List[T])=>Unit) = {
-   import JavaConversions._;
-   for( (destination, node) <- destinations ) {
-      proc(destination, node.routes, node.targets)
+   def each(proc:(AsciiBuffer, DestinationNode)=>Unit) = {
+     import JavaConversions._;
+     for( (destination, node) <- destinations ) {
+        proc(destination, node)
+     }
    }
- }
 
 }
 
+trait Route extends Retained {
 
-class Route[D, P, T <: Retained ](val destination:D, val queue:DispatchQueue, val producer:P) extends QueuedRetained {
-
+  val destination:AsciiBuffer
+  val queue:DispatchQueue
   val metric = new AtomicLong();
-  var targets = List[T]()
 
-  def connected(targets:List[T]) = retaining(targets) {
+  def connected(targets:List[Consumer]):Unit
+  def bind(targets:List[Consumer]):Unit
+  def unbind(targets:List[Consumer]):Unit
+  def disconnected():Unit
+
+}
+
+class ProducerRoute(val destination:AsciiBuffer, val queue:DispatchQueue, val producer:Producer) extends Route with BaseRetained {
+
+  // Retain the queue while we are retained.
+  queue.retain
+  addReleaseWatcher(^{
+    queue.release
+  })
+
+  var targets = List[Consumer]()
+
+  def connected(targets:List[Consumer]) = retaining(targets) {
       this.targets = this.targets ::: targets
       on_connected
     } ->: queue
 
-  def bind(targets:List[T]) = retaining(targets) {
+  def bind(targets:List[Consumer]) = retaining(targets) {
       this.targets = this.targets ::: targets
     } ->: queue
 
-  def unbind(targets:List[T]) = releasing(targets) {
+  def unbind(targets:List[Consumer]) = releasing(targets) {
       this.targets = this.targets.filterNot {
         t=>targets.contains(t)
       }
     } ->: queue
 
   def disconnected() = ^ {
-      release(targets)
+      ScalaSupport.release(targets)
       targets = Nil
       on_disconnected
     } ->: queue
 
   protected def on_connected = {}
   protected def on_disconnected = {}
+
 }

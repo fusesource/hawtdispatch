@@ -46,6 +46,9 @@ object StompLoadClient {
   var messageSize = 1024;
   var enableLength=true
 
+  var destinationType = "queue";
+  var destinationCount = 1;
+
   val producerCounter = new AtomicLong();
   val consumerCounter = new AtomicLong();
   val done = new AtomicBoolean()
@@ -123,6 +126,8 @@ object StompLoadClient {
     val rate_per_second: java.lang.Float = ((1.0f * c / nanos) * NANOS_PER_SECOND);
     println(format("%s rate: %,.3f per second", name, rate_per_second));
   }
+
+  def destination(i:Int) = "/"+destinationType+"/load-"+(i%destinationCount)
 
 
   object StompClient {
@@ -230,7 +235,7 @@ object StompLoadClient {
     val name: String = "producer " + id;
     var client:StompClient=null
     val content = ("SEND\n" +
-              "destination:/queue/test"+id+"\n"+
+              "destination:"+destination(id)+"\n"+
                { if(enableLength) "content-length:"+messageSize+"\n" else "" } +
               "\n"+message(name)).getBytes("UTF-8")
 
@@ -275,7 +280,7 @@ object StompLoadClient {
           val headers = Map[AsciiBuffer, AsciiBuffer]();
           client.send("""
 SUBSCRIBE
-destination:/queue/test"""+id+"""
+destination:"""+destination(id)+"""
 
 """)
           client.flush
