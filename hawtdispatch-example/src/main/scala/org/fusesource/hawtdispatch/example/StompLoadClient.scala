@@ -44,7 +44,7 @@ object StompLoadClient {
   var uri = "stomp://127.0.0.1:61613";
   var bufferSize = 64*1204
   var messageSize = 1024;
-  var enableLength=true
+  var useContentLength=true
 
   var destinationType = "queue";
   var destinationCount = 1;
@@ -119,6 +119,23 @@ object StompLoadClient {
     println("Shutdown");
     println("=======================")
 
+  }
+
+  override def toString() = {
+    "--------------------------------------\n"+
+    "StompLoadClient Properties\n"+
+    "--------------------------------------\n"+
+    "uri              = "+uri+"\n"+
+    "producers        = "+producers+"\n"+
+    "consumers        = "+consumers+"\n"+
+    "destinationType  = "+destinationType+"\n"+
+    "destinationCount = "+destinationCount+"\n" +
+    "messageSize      = "+messageSize+"\n"+
+    "producerSleep    = "+producerSleep+"\n"+
+    "consumerSleep    = "+consumerSleep+"\n"+
+    "bufferSize       = "+bufferSize+"\n"+
+    "useContentLength = "+useContentLength+"\n"+
+    "sampleInterval   = "+sampleInterval+"\n"
   }
 
   def printRate(name: String, counter: AtomicLong, nanos: Long) = {
@@ -236,7 +253,7 @@ object StompLoadClient {
     var client:StompClient=null
     val content = ("SEND\n" +
               "destination:"+destination(id)+"\n"+
-               { if(enableLength) "content-length:"+messageSize+"\n" else "" } +
+               { if(useContentLength) "content-length:"+messageSize+"\n" else "" } +
               "\n"+message(name)).getBytes("UTF-8")
 
     override def run() {

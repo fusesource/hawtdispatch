@@ -110,8 +110,11 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
 
   def disconnected() = throw new RuntimeException("unsupported")
 
-  def setTargetQueue(queue:DispatchQueue):Unit = {
-    this.queue.setTargetQueue(queue)
+  def colocate(value:DispatchQueue):Unit = {
+    if( value.getTargetQueue ne queue.getTargetQueue ) {
+      println(queue.getLabel+" co-locating with: "+value.getLabel);
+      this.queue.setTargetQueue(value.getTargetQueue)
+    }
   }
 
   def deliver(delivery:Delivery) = using(delivery) {

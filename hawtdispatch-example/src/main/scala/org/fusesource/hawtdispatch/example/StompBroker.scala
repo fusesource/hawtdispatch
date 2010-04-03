@@ -35,7 +35,7 @@ case class Delivery(headers:Delivery.HeaderMap, content:Buffer, size:Int) extend
 }
 
 trait Producer {
-  def setTargetQueue(queue:DispatchQueue):Unit
+  def colocate(queue:DispatchQueue):Unit
 }
 
 trait Consumer extends Retained {
@@ -120,16 +120,17 @@ class StompBroker {
     router.each { (destination,node)=>
       // for now just move the producer to the consumer's thread..
       if( !node.targets.isEmpty ) {
-        val target =  node.targets.head.queue.getTargetQueue
+        val target =  node.targets.head.queue
         for( route <- node.routes ) {
-          route.producer.setTargetQueue( target )
+          route.producer.colocate( target )
         }
       }
     }
     schedualRebalance
   }
+  
   def schedualRebalance:Unit = router.queue.dispatchAfter(reblance, 1000, TimeUnit.MILLISECONDS)
-//  schedualRebalance
+  schedualRebalance
 }
 
 
