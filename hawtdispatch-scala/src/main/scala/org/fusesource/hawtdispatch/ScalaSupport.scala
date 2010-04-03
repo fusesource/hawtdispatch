@@ -16,6 +16,7 @@
  */
 package org.fusesource.hawtdispatch
 
+import internal.Dispatcher
 import java.util.concurrent.atomic.AtomicInteger
 import java.nio.channels.SelectableChannel
 
@@ -29,11 +30,13 @@ object ScalaSupport {
   type DispatchQueue = org.fusesource.hawtdispatch.DispatchQueue
   type DispatchSource = org.fusesource.hawtdispatch.DispatchSource
   type DispatchPriority = org.fusesource.hawtdispatch.DispatchPriority
+  type EventAggregator[Event, MergedEvent] = org.fusesource.hawtdispatch.EventAggregator[Event, MergedEvent]
 
   def mainQueue() = dispatcher.getMainQueue
   def globalQueue(priority: DispatchPriority=DispatchPriority.DEFAULT) = dispatcher.getGlobalQueue(priority)
   def createSerialQueue(name: String=null) = dispatcher.createSerialQueue(name)
   def createSource(channel:SelectableChannel, interestOps:Int, queue:DispatchQueue) = dispatcher.createSource(channel, interestOps, queue)
+  def createSource[Event, MergedEvent](aggregator:EventAggregator[Event,MergedEvent], queue:DispatchQueue) = dispatcher.createSource(aggregator, queue)  
 
   def getRandomThreadQueue() = dispatcher.getRandomThreadQueue
   def getCurrentThreadQueue() = dispatcher.getCurrentThreadQueue
@@ -170,6 +173,19 @@ object ScalaSupport {
     }
 
     protected def onShutdown() = {}
+  }
+
+  case class ListEventAggregator[T] extends EventAggregator[T, List[T]] {
+    def mergeEvent(previous:List[T], event:T) = {
+      if( previous == null ) {
+        event :: Nil
+      } else {
+        previous ::: List(event)
+      }
+    }
+    def mergeEvents(previous:List[T], events:List[T]):List[T] = {
+      previous ::: events
+    }
   }
 
 }

@@ -57,7 +57,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
 
     public void dispatchAsync(Runnable runnable) {
         assert runnable != null;
-       assertRetained();
+        assertRetained();
 
         long sizeWas = size.getAndIncrement();
 

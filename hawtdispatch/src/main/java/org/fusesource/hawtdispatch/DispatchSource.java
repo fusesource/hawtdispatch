@@ -27,5 +27,5 @@ public interface DispatchSource extends DispatchObject {
     
     public void setCancelHandler(Runnable cancelHandler);
     public void setEventHandler(Runnable eventHandler);
-    
+
 }

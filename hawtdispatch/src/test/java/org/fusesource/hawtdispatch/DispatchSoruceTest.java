@@ -27,8 +27,8 @@ import java.nio.channels.SocketChannel;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.DispatchSource;
-import org.fusesource.hawtdispatch.DispatcherConfig;
-import org.fusesource.hawtdispatch.internal.HawtDispatcher;
+import org.fusesource.hawtdispatch.internal.Dispatcher;
+import org.fusesource.hawtdispatch.internal.DispatcherConfig;
 import org.fusesource.hawtdispatch.internal.util.RunnableCountDownLatch;
 import org.junit.Test;
 

@@ -20,12 +20,9 @@ import java.nio.channels.SelectableChannel;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.fusesource.hawtdispatch.DispatchOption;
-import org.fusesource.hawtdispatch.DispatchPriority;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.DispatchSource;
-import org.fusesource.hawtdispatch.Dispatcher;
-import org.fusesource.hawtdispatch.DispatcherConfig;
+import org.fusesource.hawtdispatch.*;
+import org.fusesource.hawtdispatch.internal.Dispatcher;
+import org.fusesource.hawtdispatch.internal.DispatcherConfig;
 import org.fusesource.hawtdispatch.internal.SerialDispatchQueue;
 import org.fusesource.hawtdispatch.internal.NioDispatchSource;
 
@@ -92,6 +89,10 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {
         return new NioDispatchSource(this, channel, interestOps, queue);
+    }
+
+    public <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
+        return new HawtCustomDispatchSource(this, aggregator, queue);
     }
 
     @Override

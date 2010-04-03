@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-package org.fusesource.hawtdispatch;
+package org.fusesource.hawtdispatch.internal;
+
+import org.fusesource.hawtdispatch.*;
 
 import java.nio.channels.SelectableChannel;
 
@@ -40,6 +42,7 @@ public interface Dispatcher extends Retained {
     public DispatchQueue getCurrentThreadQueue();
 
     public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue);
+    public <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue);
 
     
 }

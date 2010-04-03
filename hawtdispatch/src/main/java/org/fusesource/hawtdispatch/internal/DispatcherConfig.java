@@ -14,17 +14,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch;
+package org.fusesource.hawtdispatch.internal;
 
+import org.fusesource.hawtdispatch.internal.HawtDispatcher;
 
 /**
- * Handy interface to signal classes which would like an Dispatcher instance
- * injected into them.
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public interface DispatcherAware {
+public class DispatcherConfig {
+    
+    private String label="default";
+    private int threads=Runtime.getRuntime().availableProcessors();
 
-	public void setDispatcher(Dispatcher dispatcher);
-	
+    public static Dispatcher create(String name, int threads) {
+        DispatcherConfig config = new DispatcherConfig();
+        config.label=name;
+        config.threads=threads;
+        return config.createDispatcher();
+    }
+
+    public Dispatcher createDispatcher() {
+        return new HawtDispatcher(this);
+    }
+    
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String name) {
+        this.label = name;
+    }
+
+    public int getThreads() {
+        return threads;
+    }
+
+    public void setThreads(int threads) {
+        this.threads = threads;
+    }
+
+
 }

@@ -16,6 +16,9 @@
  */
 package org.fusesource.hawtdispatch;
 
+import org.fusesource.hawtdispatch.internal.Dispatcher;
+import org.fusesource.hawtdispatch.internal.DispatcherConfig;
+
 import java.nio.channels.SelectableChannel;
 
 
@@ -73,6 +76,10 @@ public class DispatchSystem {
                 return next.createSource(channel, interestOps, queue);
             }
 
+            public <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
+                return next.createSource(aggregator, queue);
+            }
+
             public void addReleaseWatcher(Runnable onRelease) {
             }
 
@@ -119,6 +126,10 @@ public class DispatchSystem {
 
     public static DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {
         return DISPATCHER.createSource(channel, interestOps, queue);
+    }
+
+    public static <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
+        return DISPATCHER.createSource(aggregator, queue);
     }
 
     public static DispatchQueue getRandomThreadQueue() {

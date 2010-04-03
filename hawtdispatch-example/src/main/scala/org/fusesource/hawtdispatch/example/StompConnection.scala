@@ -276,7 +276,23 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
     addReleaseWatcher(^{
       queue.release
     })
-    
+
+//    // use a event aggregating source to coalesce cross thread events.
+//    val source = createSource(ListEventAggregator[Delivery](), queue)
+//    source.setEventHandler(^{
+//      val deliveries = source.getData
+//      deliveries.foreach { delivery=>
+//        send(delivery)
+//        delivery.release
+//      }
+//    });
+//    source.resume
+//
+//    override def deliver(delivery:Delivery) = {
+//      delivery.retain
+//      source.merge(delivery)
+//    }
+
     override def deliver(delivery:Delivery) = using(delivery) {
       send(delivery)
     } ->: queue

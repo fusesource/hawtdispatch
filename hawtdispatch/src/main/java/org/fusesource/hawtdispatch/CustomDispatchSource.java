@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009, Progress Software Corporation and/or its
+ * Copyright (C) 2010, Progress Software Corporation and/or its
  * subsidiaries or affiliates.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,10 @@
  */
 package org.fusesource.hawtdispatch;
 
-public interface Suspendable extends Retained {
-    public void suspend();
-    public void resume();
-    public boolean isSuspended();
+/**
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ */
+public interface CustomDispatchSource<Event, MergedEvent> extends DispatchSource {
+    public MergedEvent getData();
+    public void merge(Event event);
 }

@@ -19,7 +19,6 @@ package org.fusesource.hawtdispatch;
 import java.util.concurrent.CountDownLatch;
 
 import jsr166y.ForkJoinPool;
-import org.fusesource.hawtdispatch.internal.util.RunnableCountDownLatch;
 import org.junit.Test;
 
 import static java.lang.String.format;
