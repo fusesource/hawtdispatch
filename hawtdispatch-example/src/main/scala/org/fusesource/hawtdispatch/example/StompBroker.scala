@@ -35,12 +35,22 @@ case class Delivery(headers:Delivery.HeaderMap, content:Buffer, size:Int) extend
 }
 
 trait Producer {
-  def colocate(queue:DispatchQueue):Unit
+  def collocate(queue:DispatchQueue):Unit
 }
 
 trait Consumer extends Retained {
   val queue:DispatchQueue;
   def deliver(delivery:Delivery)
+}
+
+trait CreditingProducer extends Producer {
+  def credit(from:CreditingConsumer, credits:Int)
+}
+
+trait CreditingConsumer extends Consumer {
+  def addProducer(from:CreditingProducer)
+  def removeProducer(from:CreditingProducer)  
+  def deliver(from:CreditingProducer, delivery:Array[Delivery])
 }
 
 
@@ -118,11 +128,14 @@ class StompBroker {
   // are on the same thread.
   val reblance = ^{
     router.each { (destination,node)=>
-      // for now just move the producer to the consumer's thread..
+      // for now just collocate the producer to the consumer's thread..
       if( !node.targets.isEmpty ) {
         val target =  node.targets.head.queue
+        if( node.isInstanceOf[Router#QueueDestinationNode] ) {
+          node.asInstanceOf[Router#QueueDestinationNode].queue.collocate(target)
+        }
         for( route <- node.routes ) {
-          route.producer.colocate( target )
+          route.producer.collocate( target )
         }
       }
     }

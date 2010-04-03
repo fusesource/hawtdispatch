@@ -201,7 +201,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
           }
 
           val producer = new Producer() {
-            override def colocate(value:DispatchQueue):Unit = ^{
+            override def collocate(value:DispatchQueue):Unit = ^{
               if( value.getTargetQueue ne queue.getTargetQueue ) {
                 println("sender on "+queue.getLabel+" co-locating with: "+value.getLabel);
                 queue.setTargetQueue(value.getTargetQueue)
