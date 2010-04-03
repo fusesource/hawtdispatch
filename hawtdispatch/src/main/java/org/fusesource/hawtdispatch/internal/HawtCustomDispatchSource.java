@@ -45,7 +45,7 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
 
     public HawtCustomDispatchSource(HawtDispatcher dispatcher, EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
         this.aggregator = aggregator;
-        this.targetQueue = targetQueue;
+        this.targetQueue = queue;
         this.suspended.incrementAndGet();
         this.queue = dispatcher.createSerialQueue("custom dispatch source");
     }
@@ -59,26 +59,34 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
     protected final AtomicLong size = new AtomicLong();
 
     public void merge(Event event) {
+        debug("merge called");
         assertRetained();
         WorkerThread thread = WorkerThread.currentWorkerThread();
         if( thread!=null ) {
             MergedEvent previous = outboundEvent.get();
             MergedEvent next = aggregator.mergeEvent(previous, event);
             if( next==null ) {
+                debug("merge resulted in cancel");
                 outboundEvent.remove();
             } else {
                 outboundEvent.set(next);
                 if( previous==null ) {
+                    debug("first merge, posting deferred fire event");
                     thread.getDispatchQueue().execute(this);
+                } else {
+                    debug("there was a previous merge, no need to post deferred fire event");
                 }
             }
         } else {
+            debug("merge not called from a worker thread.. triggering fire event now");
             fireEvent(aggregator.mergeEvent(null, event));
         }
     }
 
     public void run() {
+        debug("deferred fire event executing");
         fireEvent(outboundEvent.get());
+        outboundEvent.remove();
     }
 
     private void fireEvent(final MergedEvent event) {
@@ -86,9 +94,11 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
             targetQueue.execute(new Runnable() {
                 public void run() {
                     if( isCanceled() ) {
+                        debug("canceled");
                         return;
                     }
                     if( isSuspended() ) {
+                        debug("fired.. but suspended");
                         synchronized(HawtCustomDispatchSource.this) {
                             pendingEvent = aggregator.mergeEvents(pendingEvent, event);
                         }
@@ -99,13 +109,16 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
                             pendingEvent = null;
                         }
                         if( e!=null ) {
+                            debug("fired.. mergined with previous pending event..");
                             e = aggregator.mergeEvents(e, event);
                         } else {
+                            debug("fired.. no previous pending event..");
                             e = event;
                         }
                         firedEvent.set(e);
                         eventHandler.run();
                         firedEvent.remove();
+                        debug("eventHandler done");
                     }
                 }
             });
