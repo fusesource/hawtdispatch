@@ -5,6 +5,7 @@ import org.fusesource.hawtdispatch.internal.ThreadDispatchQueue;
 import org.fusesource.hawtdispatch.internal.WorkerThread;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static java.lang.String.format;
@@ -16,10 +17,16 @@ public class SimpleThread extends WorkerThread {
     private SimplePool pool;
     private ThreadDispatchQueue threadQueue;
     private final NioManager nioManager;
-
+    private final LinkedList<Runnable> sourceQueue= new LinkedList<Runnable>();
+    
     public SimpleThread(SimplePool pool) throws IOException {
         this.pool = pool;
         this.nioManager = new NioManager();
+    }
+
+    @Override
+    public LinkedList<Runnable> getSourceQueue() {
+        return sourceQueue;
     }
 
     @Override
@@ -52,6 +59,9 @@ public class SimpleThread extends WorkerThread {
                 Runnable runnable = threadQueue.poll();
                 if( runnable==null ) {
                     runnable = sharedQueue.poll();
+                    if( runnable==null ) {
+                        runnable = sourceQueue.poll();
+                    }
                 }
 
                 if( runnable == null ) {

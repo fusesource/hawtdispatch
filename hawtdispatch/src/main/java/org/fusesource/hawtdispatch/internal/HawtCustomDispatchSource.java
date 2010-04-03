@@ -72,7 +72,7 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
                 outboundEvent.set(next);
                 if( previous==null ) {
                     debug("first merge, posting deferred fire event");
-                    thread.getDispatchQueue().execute(this);
+                    thread.getSourceQueue().add(this);
                 } else {
                     debug("there was a previous merge, no need to post deferred fire event");
                 }

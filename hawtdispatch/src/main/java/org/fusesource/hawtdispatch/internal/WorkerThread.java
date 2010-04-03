@@ -16,6 +16,8 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
+import java.util.LinkedList;
+
 /**
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
@@ -26,6 +28,7 @@ abstract public class WorkerThread extends Thread {
 
     public abstract void unpark();
     public abstract NioManager getNioManager();
+    public abstract LinkedList<Runnable> getSourceQueue();
 
     public static WorkerThread currentWorkerThread() {
         Thread thread = Thread.currentThread();
@@ -34,5 +37,7 @@ abstract public class WorkerThread extends Thread {
         }
         return null;
     }
+
+
 
 }

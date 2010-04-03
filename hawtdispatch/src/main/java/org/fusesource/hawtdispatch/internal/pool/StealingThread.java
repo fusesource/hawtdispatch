@@ -27,6 +27,7 @@ import org.fusesource.hawtdispatch.internal.ThreadDispatchQueue;
 import org.fusesource.hawtdispatch.internal.WorkerThread;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.concurrent.*;
 
 import java.util.Collection;
@@ -126,6 +127,8 @@ public class StealingThread extends WorkerThread {
      * The number of nested execution that have occurred on this thread.
      */
     int nestedExecutions;
+    
+    private final LinkedList<Runnable> sourceQueue= new LinkedList<Runnable>();
 
     /**
      * Creates a WorkerThread operating in the given pool.
@@ -410,7 +413,7 @@ public class StealingThread extends WorkerThread {
                 }
             }
         }
-        return null;
+        return sourceQueue.poll();
     }
 
     /**
@@ -731,5 +734,10 @@ public class StealingThread extends WorkerThread {
 
     public NioManager getNioManager() {
         return ioManager;
+    }
+    
+    @Override
+    public LinkedList<Runnable> getSourceQueue() {
+        return sourceQueue;
     }
 }
