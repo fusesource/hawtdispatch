@@ -27,7 +27,7 @@ import java.nio.channels.{ServerSocketChannel}
 
 object Delivery {
   type HeaderMap = LinkedList[(AsciiBuffer, AsciiBuffer)]
-  def apply(frame:StompFrame) = new Delivery(frame.headers, frame.content, frame.headerSize)
+  def apply(frame:StompFrame) = new Delivery(frame.headers, frame.content, frame.size)
   def apply(d:Delivery) = new Delivery(d.headers, d.content, d.size)
 }
   

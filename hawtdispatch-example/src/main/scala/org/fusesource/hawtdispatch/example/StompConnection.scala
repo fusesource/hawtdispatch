@@ -35,7 +35,7 @@ import collection.mutable.{HashMap}
 object StompConnection {
   val connectionCounter = new AtomicLong();
   var bufferSize = 1024*64
-  var maxOutboundSize = bufferSize
+  var maxOutboundSize = 100;
 }
 class StompConnection(val socket:SocketChannel, var router:Router) {
 
@@ -51,8 +51,11 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
 //    println("connected from: "+socket.socket.getRemoteSocketAddress)
 
   val wireFormat = new StompWireFormat()
-  var outbound = new LinkedList[(StompFrame,Delivery)]()
-  var outboundSize = 0;
+
+
+  val outboundChannel  = new Channel
+  var outbound = new LinkedList[StompFrame]()
+
   var closed = false;
   var consumer:SimpleConsumer = null
 
@@ -79,21 +82,18 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
 
   read_source.resume();
 
-  def drain_outbound_data = wireFormat.drain_source(socket) {
-    val node = outbound.poll
-    if( node !=null ) {
-      node match {
-        case (frame,null)=>
-          frame
-        case (frame,delivery)=> {
-          outboundSize -= delivery.size
-          delivery.release
-          frame
-        }
+  def drain_outbound_data = wireFormat.drain_source(socket) { poll_outbound }
+
+  def poll_outbound = {
+    var rc = outbound.poll
+    if( rc==null ) {
+      val delivery = outboundChannel.receive
+      if( delivery!=null ) {
+        rc = StompFrame(Responses.MESSAGE, delivery.headers, delivery.content)
+        outboundChannel.ack(delivery)
       }
-    } else {
-      null
     }
+    rc
   }
 
   write_source.setEventHandler(^{
@@ -109,26 +109,19 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
 
 
   def send(frame:StompFrame) = {
-    outbound.add((frame, null))
-    if( outbound.size == 1 ) {
+    outbound.add(frame)
+    if( outbound.size == 1 && outboundChannel.isEmpty ) {
       write_source.resume
     }
   }
 
-  def send(delivery:Delivery=null) = {
-    // we only start retaining once our outbound is full..
-    // retaining will cause the producers to slow down until
-    // we released
-    val frame = StompFrame(Responses.MESSAGE, delivery.headers, delivery.content)
-    if( maxOutboundSize < (outboundSize+delivery.size)  ) {
-      outboundSize += delivery.size
-      delivery.retain
-      outbound.add((frame, delivery))
-    } else {
-      outbound.add((frame, null))
-    }
 
-    if( outbound.size == 1 ) {
+  def send(delivery:Delivery=null) = {
+    outboundChannel.send(delivery);
+  }
+
+  outboundChannel.eventHandler = ^{
+    if( outbound.isEmpty && outboundChannel.size==1 ) {
       write_source.resume
     }
   }

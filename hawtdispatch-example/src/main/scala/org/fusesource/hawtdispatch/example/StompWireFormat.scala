@@ -138,6 +138,9 @@ class StompWireFormat {
         var frame = source
         while( frame!=null ) {
           marshall(buffer, frame)
+          if( buffer.size > 1024*45  ) {
+            println("too big");
+          }
           frame = source
         }
 
@@ -161,7 +164,12 @@ class StompWireFormat {
     // we can optimize a little if the headers and content are in the same buffer..
     if( !frame.headers.isEmpty && !frame.content.isEmpty &&
             ( frame.headers.getFirst._1.data eq frame.content.data ) ) {
-      buffer.write( frame.content.data, frame.headers.getFirst._1.offset, (frame.content.offset-frame.headers.getFirst._1.offset)+ frame.content.length )
+
+      val offset = frame.headers.getFirst._1.offset;
+      val buffer1 = frame.headers.getFirst._1;
+      val buffer2 = frame.content;
+      val length = (buffer2.offset-buffer1.offset)+buffer2.length
+      buffer.write( buffer1.data, offset, length)
 
     } else {
       val i = frame.headers.iterator

@@ -38,6 +38,15 @@ case class StompFrame(action:AsciiBuffer, headers:LinkedList[(AsciiBuffer, Ascii
     }
   }
 
+  def size = {
+     if( action.data eq content.data ) {
+        (content.offset-action.offset)+content.length
+     } else {
+       action.length + 1 +
+       headerSize + 1 + content.length
+     }
+  }
+
 //    public StompFrame(AsciiBuffer command) {
 //    	this(command, null, null);
 //    }

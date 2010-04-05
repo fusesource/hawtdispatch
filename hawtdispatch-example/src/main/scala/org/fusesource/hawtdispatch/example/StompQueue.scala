@@ -40,17 +40,14 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
     queue.release
   })
 
-  var inbound = new LinkedList[Delivery]()
-  var outbound = new LinkedList[Delivery]()
-  var outboundSize = 0;
+
+  val channel  = new Channel
 
   class ConsumerState(val consumer:Consumer) {
-//    var dispatched = new LinkedList[Delivery]()
     var bound=true
 
     def deliver(value:Delivery):Unit = {
       val delivery = Delivery(value)
-//      dispatched.addLast(delivery)
       delivery.addReleaseWatcher(^{
         ^{ completed(delivery) } ->:queue
       })
@@ -59,28 +56,12 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
     }
 
     def completed(delivery:Delivery) = {
-
       // Lets get back on the readyList if  we are still bound.
       if( bound ) {
         readyConsumers.addLast(this)
       }
-
-      // When a message is delivered to the consumer, we release
-      // used capacity in the outbound queue, and can drain the inbound
-      // queue
-      val wasBlocking = isBlockingProducers
-      outboundSize -= delivery.size
-      if( wasBlocking && !isBlockingProducers) {
-        // draining the inbound will also trigger draining the outbound
-        drainInbound
-      } else {
-        // lets just drain the out abound to give this consumer some
-        // messages.
-        drainOutbound
-      }
-
+      channel.ack(delivery)
     }
-
   }
 
   var allConsumers = Map[Consumer,ConsumerState]()
@@ -93,7 +74,7 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
         allConsumers += consumer->cs
         readyConsumers.addLast(cs)
       }
-      drainOutbound
+      channel.eventHandler.run
     } ->: queue
 
   def unbind(consumers:List[Consumer]) = releasing(consumers) {
@@ -123,40 +104,16 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
 
 
   def send(delivery:Delivery=null):Unit = {
-    // do we have the capacity to accept new messages??
-    if( isBlockingProducers ) {
-      // Stuff in the inbound queue is remains acquired by us so that
-      // producer that sent it to use remains flow controlled.
-      delivery.retain
-      inbound.addLast(delivery)
-    } else {
-      outbound.add(delivery)
-      outboundSize += delivery.size
-      drainOutbound
-    }
+    channel.send(delivery)
   }
 
-  def isBlockingProducers = outboundSize >= maxOutboundSize
-
-  def drainInbound = {
-    while( !isBlockingProducers && !inbound.isEmpty) {
-      val delivery = inbound.removeFirst
-      delivery.release
-
-      outbound.add(delivery)
-      outboundSize += delivery.size
-    }
-    drainOutbound
-  }
-
-  def drainOutbound = {
-    while( !readyConsumers.isEmpty && !outbound.isEmpty ) {
+  channel.eventHandler = ^{
+    while( !readyConsumers.isEmpty && !channel.isEmpty ) {
       val cs = readyConsumers.removeFirst
-      val delivery = outbound.removeFirst
+      val delivery = channel.receive
       cs.deliver(delivery)
     }
   }
-
 
 
 }
