@@ -165,34 +165,46 @@ trait Route extends Retained {
 
 class ProducerRoute(val destination:AsciiBuffer, val queue:DispatchQueue, val producer:Producer) extends Route with BaseRetained {
 
+
   // Retain the queue while we are retained.
   queue.retain
   addReleaseWatcher(^{
     queue.release
   })
 
-  var targets = List[Consumer]()
+  var targets = List[ConsumerSession]()
 
   def connected(targets:List[Consumer]) = retaining(targets) {
-      this.targets = this.targets ::: targets
-      on_connected
-    } ->: queue
+    internal_bind(targets)
+    on_connected
+  } ->: queue
 
   def bind(targets:List[Consumer]) = retaining(targets) {
-      this.targets = this.targets ::: targets
-    } ->: queue
+    internal_bind(targets)
+  } ->: queue
+
+  private def internal_bind(values:List[Consumer]) = {
+    values.foreach{ x=>
+      targets = x.open_session :: targets
+    }
+  }
 
   def unbind(targets:List[Consumer]) = releasing(targets) {
-      this.targets = this.targets.filterNot {
-        t=>targets.contains(t)
+    this.targets = this.targets.filterNot { x=>
+      val rc = targets.contains(x.consumer)
+      if( rc ) {
+        x.close
       }
-    } ->: queue
+      rc
+    }
+  } ->: queue
 
   def disconnected() = ^ {
-      ScalaSupport.release(targets)
-      targets = Nil
-      on_disconnected
-    } ->: queue
+    this.targets.foreach { x=>
+      x.close
+      x.consumer.release
+    }    
+  } ->: queue
 
   protected def on_connected = {}
   protected def on_disconnected = {}

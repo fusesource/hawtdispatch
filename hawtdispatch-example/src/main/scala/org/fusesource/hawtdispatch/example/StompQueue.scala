@@ -41,15 +41,15 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
   })
 
 
-  val channel  = new Channel
+  val delivery_buffer  = new DeliveryBuffer
 
-  class ConsumerState(val consumer:Consumer) {
+  class ConsumerState(val consumer:ConsumerSession) {
     var bound=true
 
     def deliver(value:Delivery):Unit = {
       val delivery = Delivery(value)
       delivery.addReleaseWatcher(^{
-        ^{ completed(delivery) } ->:queue
+        ^{ completed(value) } ->:queue
       })
       consumer.deliver(delivery);
       delivery.release
@@ -60,7 +60,7 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
       if( bound ) {
         readyConsumers.addLast(this)
       }
-      channel.ack(delivery)
+      delivery_buffer.ack(delivery)
     }
   }
 
@@ -70,11 +70,11 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
   def connected(consumers:List[Consumer]) = bind(consumers)
   def bind(consumers:List[Consumer]) = retaining(consumers) {
       for ( consumer <- consumers ) {
-        val cs = new ConsumerState(consumer)
+        val cs = new ConsumerState(consumer.open_session)
         allConsumers += consumer->cs
         readyConsumers.addLast(cs)
       }
-      channel.eventHandler.run
+      delivery_buffer.eventHandler.run
     } ->: queue
 
   def unbind(consumers:List[Consumer]) = releasing(consumers) {
@@ -82,6 +82,7 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
         allConsumers.get(consumer) match {
           case Some(cs)=>
             cs.bound = false
+            cs.consumer.close
             allConsumers -= consumer
             readyConsumers.remove(cs)
           case None=>
@@ -98,22 +99,28 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
     }
   }
 
-  def deliver(delivery:Delivery) = using(delivery) {
-    send(delivery)
-  } ->: queue
 
-
-  def send(delivery:Delivery=null):Unit = {
-    channel.send(delivery)
-  }
-
-  channel.eventHandler = ^{
-    while( !readyConsumers.isEmpty && !channel.isEmpty ) {
+  delivery_buffer.eventHandler = ^{
+    while( !readyConsumers.isEmpty && !delivery_buffer.isEmpty ) {
       val cs = readyConsumers.removeFirst
-      val delivery = channel.receive
+      val delivery = delivery_buffer.receive
       cs.deliver(delivery)
     }
   }
 
+  def open_session = new ConsumerSession {
+    val consumer = StompQueue.this
+    val deliveryQueue = new DeliveryOverflowBuffer(delivery_buffer)
+    retain
 
+    def deliver(delivery:Delivery) = using(delivery) {
+      deliveryQueue.send(delivery)
+    } ->: queue
+
+    def close = {
+      release
+    }
+  }
+
+  
 }

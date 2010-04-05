@@ -53,7 +53,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
   val wireFormat = new StompWireFormat()
 
 
-  val outboundChannel  = new Channel
+  val outboundChannel  = new DeliveryBuffer
   var outbound = new LinkedList[StompFrame]()
 
   var closed = false;
@@ -115,13 +115,8 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
     }
   }
 
-
-  def send(delivery:Delivery=null) = {
-    outboundChannel.send(delivery);
-  }
-
   outboundChannel.eventHandler = ^{
-    if( outbound.isEmpty && outboundChannel.size==1 ) {
+    if( outbound.isEmpty && outboundChannel.deliveries.size==1 ) {
       write_source.resume
     }
   }
@@ -243,7 +238,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
           die("Only one subscription supported.")
 
         } else {
-          consumer = new SimpleConsumer(dest, queue);
+          consumer = new SimpleConsumer(dest);
           router.bind(dest, consumer :: Nil)
           consumer.release
         }
@@ -262,33 +257,27 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
     } ->: queue
   }
 
-  class SimpleConsumer(val dest:AsciiBuffer, override val queue:DispatchQueue) extends Consumer with BaseRetained {
+  class SimpleConsumer(val dest:AsciiBuffer) extends Consumer with BaseRetained {
 
-    // Retain the queue while we are retained.
-    queue.retain
+    val queue:DispatchQueue = StompConnection.this.queue
     addReleaseWatcher(^{
       queue.release
     })
 
-//    // use a event aggregating source to coalesce cross thread events.
-//    val source = createSource(ListEventAggregator[Delivery](), queue)
-//    source.setEventHandler(^{
-//      val deliveries = source.getData
-//      deliveries.foreach { delivery=>
-//        send(delivery)
-//        delivery.release
-//      }
-//    });
-//    source.resume
-//
-//    override def deliver(delivery:Delivery) = {
-//      delivery.retain
-//      source.merge(delivery)
-//    }
+    def open_session = new ConsumerSession {
+      val consumer = SimpleConsumer.this
+      val deliveryQueue = new DeliveryOverflowBuffer(outboundChannel)
+      retain
 
-    override def deliver(delivery:Delivery) = using(delivery) {
-      send(delivery)
-    } ->: queue
+      def deliver(delivery:Delivery) = using(delivery) {
+        deliveryQueue.send(delivery)
+      } ->: queue
+
+      def close = {
+        release
+      }
+    }
+    
   }
-
+    
 }

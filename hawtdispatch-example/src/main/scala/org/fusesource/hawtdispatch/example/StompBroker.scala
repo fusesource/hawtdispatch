@@ -15,6 +15,7 @@
  */
 package org.fusesource.hawtdispatch.example
 
+import _root_.java.util.concurrent.atomic.AtomicInteger
 import _root_.java.util.concurrent.TimeUnit
 import _root_.java.util.LinkedList
 import java.nio.channels.SelectionKey._
@@ -40,19 +41,15 @@ trait Producer {
 
 trait Consumer extends Retained {
   val queue:DispatchQueue;
+  def open_session:ConsumerSession
+
+}
+
+trait ConsumerSession {
+  val consumer:Consumer
   def deliver(delivery:Delivery)
+  def close:Unit
 }
-
-trait CreditingProducer extends Producer {
-  def credit(from:CreditingConsumer, credits:Int)
-}
-
-trait CreditingConsumer extends Consumer {
-  def addProducer(from:CreditingProducer)
-  def removeProducer(from:CreditingProducer)  
-  def deliver(from:CreditingProducer, delivery:Array[Delivery])
-}
-
 
 /**
  *

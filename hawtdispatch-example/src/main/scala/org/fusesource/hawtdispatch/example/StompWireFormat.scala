@@ -138,9 +138,6 @@ class StompWireFormat {
         var frame = source
         while( frame!=null ) {
           marshall(buffer, frame)
-          if( buffer.size > 1024*45  ) {
-            println("too big");
-          }
           frame = source
         }
 
