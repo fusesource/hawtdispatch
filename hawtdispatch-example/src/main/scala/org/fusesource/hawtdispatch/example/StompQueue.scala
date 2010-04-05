@@ -70,7 +70,7 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
   def connected(consumers:List[Consumer]) = bind(consumers)
   def bind(consumers:List[Consumer]) = retaining(consumers) {
       for ( consumer <- consumers ) {
-        val cs = new ConsumerState(consumer.open_session)
+        val cs = new ConsumerState(consumer.open_session(queue))
         allConsumers += consumer->cs
         readyConsumers.addLast(cs)
       }
@@ -108,19 +108,33 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
     }
   }
 
-  def open_session = new ConsumerSession {
+
+  val deliveryQueue = new DeliveryCreditBufferProtocol(delivery_buffer, queue)
+  def open_session(producer_queue:DispatchQueue) = new ConsumerSession {
+    val session = deliveryQueue.session(producer_queue)
     val consumer = StompQueue.this
-    val deliveryQueue = new DeliveryOverflowBuffer(delivery_buffer)
     retain
 
-    def deliver(delivery:Delivery) = using(delivery) {
-      deliveryQueue.send(delivery)
-    } ->: queue
-
+    def deliver(delivery:Delivery) = session.send(delivery)
     def close = {
+      session.close
       release
     }
   }
+
+//  def open_session(producer_queue:DispatchQueue) = new ConsumerSession {
+//    val consumer = StompQueue.this
+//    val deliveryQueue = new DeliveryOverflowBuffer(delivery_buffer)
+//    retain
+//
+//    def deliver(delivery:Delivery) = using(delivery) {
+//      deliveryQueue.send(delivery)
+//    } ->: queue
+//
+//    def close = {
+//      release
+//    }
+//  }
 
   
 }

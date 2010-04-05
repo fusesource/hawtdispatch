@@ -185,7 +185,7 @@ class ProducerRoute(val destination:AsciiBuffer, val queue:DispatchQueue, val pr
 
   private def internal_bind(values:List[Consumer]) = {
     values.foreach{ x=>
-      targets = x.open_session :: targets
+      targets = x.open_session(queue) :: targets
     }
   }
 

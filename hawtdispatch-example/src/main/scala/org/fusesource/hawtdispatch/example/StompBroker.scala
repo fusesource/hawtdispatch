@@ -41,7 +41,7 @@ trait Producer {
 
 trait Consumer extends Retained {
   val queue:DispatchQueue;
-  def open_session:ConsumerSession
+  def open_session(producer_queue:DispatchQueue):ConsumerSession
 
 }
 

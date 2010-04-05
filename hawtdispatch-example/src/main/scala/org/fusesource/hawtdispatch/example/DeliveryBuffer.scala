@@ -112,13 +112,17 @@ class DeliveryCreditBufferProtocol(val delivery_buffer:DeliveryBuffer, val queue
 
   // use a event aggregating source to coalesce multiple events from the same thread.
   val source = createSource(ListEventAggregator[Delivery](), queue)
-  source.setEventHandler(^{
+  source.setEventHandler(^{drain_source});
+  source.resume
+
+  def drain_source = {
     val deliveries = source.getData
     deliveries.foreach { delivery=>
       delivery_buffer.send(delivery)
+      delivery.release
     }
-  });
-  source.resume
+  }
+
 
   class CreditServer(val producer_queue:DispatchQueue) {
     private var _capacity = 0
@@ -154,7 +158,7 @@ class DeliveryCreditBufferProtocol(val delivery_buffer:DeliveryBuffer, val queue
         producer_queue.release
       }
 
-      override def full = credits > 0
+      override def full = credits <= 0
 
       override protected def send_to_delivery_queue(value:Delivery) = {
         var delivery = Delivery(value)
@@ -164,7 +168,6 @@ class DeliveryCreditBufferProtocol(val delivery_buffer:DeliveryBuffer, val queue
         })
         internal_credit(-delivery.size)
         source.merge(delivery)
-        delivery.release
       }
 
       def internal_credit(value:Int) = {

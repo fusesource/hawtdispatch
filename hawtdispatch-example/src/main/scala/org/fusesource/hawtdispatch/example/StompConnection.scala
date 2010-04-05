@@ -263,21 +263,44 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
     addReleaseWatcher(^{
       queue.release
     })
+    val deliveryQueue = new DeliveryCreditBufferProtocol(outboundChannel, queue)
 
-    def open_session = new ConsumerSession {
+    def open_session(producer_queue:DispatchQueue) = new ConsumerSession {
+      val session = deliveryQueue.session(producer_queue)
+
       val consumer = SimpleConsumer.this
-      val deliveryQueue = new DeliveryOverflowBuffer(outboundChannel)
       retain
 
-      def deliver(delivery:Delivery) = using(delivery) {
-        deliveryQueue.send(delivery)
-      } ->: queue
+      def deliver(delivery:Delivery) = session.send(delivery)
 
       def close = {
+        session.close
         release
       }
     }
     
   }
     
+//  class SimpleConsumer(val dest:AsciiBuffer) extends Consumer with BaseRetained {
+//
+//    val queue:DispatchQueue = StompConnection.this.queue
+//    addReleaseWatcher(^{
+//      queue.release
+//    })
+//
+//    def open_session = new ConsumerSession {
+//      val consumer = SimpleConsumer.this
+//      val deliveryQueue = new DeliveryOverflowBuffer(outboundChannel)
+//      retain
+//
+//      def deliver(delivery:Delivery) = using(delivery) {
+//        deliveryQueue.send(delivery)
+//      } ->: queue
+//
+//      def close = {
+//        release
+//      }
+//    }
+//
+//  }
 }
