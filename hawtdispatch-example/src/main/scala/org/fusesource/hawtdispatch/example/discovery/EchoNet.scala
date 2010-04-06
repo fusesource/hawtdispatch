@@ -18,9 +18,10 @@ package org.fusesource.hawtdispatch.example.discovery
 
 
 import _root_.java.io.{EOFException, ByteArrayOutputStream}
+import _root_.java.net.{ConnectException, InetSocketAddress, URI}
 import _root_.java.util.concurrent.TimeUnit
-import java.net.InetSocketAddress;
-import java.net.URI;
+
+
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
@@ -41,6 +42,9 @@ object EchoNet {
     val a = new Server(4444).start();
     val b = new Server(5555).start();
     val c = new Server(6666).start();
+
+    Thread.sleep(200);
+
     a.connect(3333);
     a.connect(b);
     b.connect(c);
@@ -131,10 +135,16 @@ object EchoNet {
       val connect_source = createSource(socketChannel, SelectionKey.OP_CONNECT, queue);
       connect_source.setEventHandler(^ {
         connect_source.release
-        socketChannel.finishConnect
-        trace("connected " + uri);
-        val session = new Session(this, socketChannel, address, uri)
-        session.start_write_greeting
+        try {
+          socketChannel.finishConnect
+          trace("connected " + uri);
+          val session = new Session(this, socketChannel, address, uri)
+          session.start_write_greeting
+        }
+        catch {
+          case e:ConnectException =>
+            trace("connect to "+uri+" FAILED.");
+        }
       })
       connect_source.resume
       seen = uri :: seen;
@@ -146,7 +156,6 @@ object EchoNet {
     }
 
   }
-
 
   class Session(val server:Server, val channel: SocketChannel, val address: InetSocketAddress, val uri: URI) {
 
@@ -271,7 +280,6 @@ object EchoNet {
     def write_data(buffer:ByteBuffer, onDone:Runnable) = ^ {
       channel.write(buffer)
       if (buffer.remaining == 0) {
-        trace("write completed.");
         write_source.suspend
         onDone.run
       }

@@ -180,7 +180,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
 
 
     public void fire(int readyOps) {
-        KeyState state = keyState.get();
+        final KeyState state = keyState.get();
         if( state==null ) {
             return;
         }
@@ -190,7 +190,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
             targetQueue.dispatchAsync(new Runnable() {
                 public void run() {
                     if( !isSuspended() && !isCanceled()) {
-                        debug("fired %d", interestOps);
+                        debug("fired %d %s", interestOps, state.toString());
                         eventHandler.run();
                         updateInterest();
                     }
@@ -249,11 +249,21 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     protected void onResume() {
         debug("onResume");
         if( isCurrent(selectorQueue) ) {
-            fire(interestOps);
+            KeyState state = keyState.get();
+            if( state==null || state.readyOps==0 ) {
+                updateInterest();
+            } else {
+                fire(state.readyOps);
+            }
         } else {
             selectorQueue.dispatchAsync(new Runnable(){
                 public void run() {
-                    fire(interestOps);
+                    KeyState state = keyState.get();
+                    if( state==null || state.readyOps==0 ) {
+                        updateInterest();
+                    } else {
+                        fire(interestOps);
+                    }
                 }
             });
         }
