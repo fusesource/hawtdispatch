@@ -43,6 +43,7 @@
       <groupId>jsr166y</groupId>
       <artifactId>jsr166y</artifactId>
       <version>1.0-SNAPSHOT</version>
+      <optional>true</optional>
       <scope>system</scope>
       <systemPath>${basedir}/lib/jsr166y.jar</systemPath>
     </dependency>
@@ -74,7 +75,7 @@
     <plugins>
       
       <!-- create an uber jar which includes the jsr166y dependency -->
-      <plugin>
+      <!-- <plugin>
         <groupId>org.fusesource.mvnplugins</groupId>
         <artifactId>maven-uberize-plugin</artifactId>
         <version>1.6</version>
@@ -93,7 +94,7 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
+      </plugin> -->
       
     </plugins>
   </build>

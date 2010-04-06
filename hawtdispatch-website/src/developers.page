@@ -1,0 +1,45 @@
+---
+title: Developers
+in_menu: false
+--- name:overview
+
+# Developers
+Various links for developers 
+
+--- name:content 
+
+
+<div class="left" markdown="1">
+# Developer Links
+</div>
+<div class="right" markdown="1">
+* [Building](building.html)
+* [Contributing](contributing.html)
+* [Release Guide](committers/release-guide.html)
+</div>
+
+
+<div class="left" markdown="1">
+# JavaDocs 
+</div>
+<div class="right" markdown="1">
+## Version {project_version:}
+* [TemplateEngine](http://hawtdispatch.fusesource.org/maven/{project_version:}/hawtdispatch-core/scaladocs/org/fusesource/hawtdispatch/TemplateEngine.html) is the main class you need to start with
+* [org.fusesource.hawtdispatch](http://hawtdispatch.fusesource.org/maven/{project_version:}/hawtdispatch-core/scaladocs/org/fusesource/hawtdispatch/package.html) the core hawtdispatch package has the core public API you need if you want to work directly with the API
+* [full javadoc](http://hawtdispatch.fusesource.org/maven/{project_version:}/hawtdispatch-core/scaladocs/index.html) contains the full detail of all packages if you want to write a plugin or work on the implementation or integration layers
+</div>
+
+<div class="left" markdown="1">
+# Maven reports
+</div>
+<div class="right" markdown="1">
+## Snapshots
+
+* [1.0-SNAPSHOT](http://hawtdispatch.fusesource.org/maven/1.0-SNAPSHOT/)
+
+<!--
+## Releases
+
+* [1.0](http://hawtdispatch.fusesource.org/maven/1.0/)
+-->
+</div>
