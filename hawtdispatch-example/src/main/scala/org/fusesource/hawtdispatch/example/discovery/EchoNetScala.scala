@@ -32,7 +32,7 @@ import org.fusesource.hawtdispatch.ScalaSupport._
 /**
  * An example of a networks of servers which advertise connection information to each other.
  */
-object EchoNet {
+object EchoNetScala {
 
   def main(args:Array[String]):Unit = {
     run
