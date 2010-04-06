@@ -17,20 +17,17 @@
 package org.fusesource.hawtdispatch.example.discovery;
 
 import org.fusesource.hawtdispatch.*;
-import scala.collection.immutable.Nil;
 
-import static org.fusesource.hawtdispatch.DispatchSystem.*;
+import static org.fusesource.hawtdispatch.Dispatch.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -69,7 +66,7 @@ public class EchoNetJava {
             this.serverChannel = ServerSocketChannel.open();
             serverChannel.socket().bind(new InetSocketAddress(port));
             serverChannel.configureBlocking(false);
-            queue = createSerialQueue(me.toString());
+            queue = createQueue(me.toString());
             accept_source = createSource(serverChannel, SelectionKey.OP_ACCEPT, queue);
 
             accept_source.setEventHandler(new Runnable() {
@@ -210,7 +207,7 @@ public class EchoNetJava {
             this.address = address;
             this.uri = uri;
 
-            this.queue = createSerialQueue(uri.toString());
+            this.queue = createQueue(uri.toString());
             this.read_source = createSource(channel, SelectionKey.OP_READ, queue);
             this.write_source = createSource(channel, SelectionKey.OP_WRITE, queue);
             this.seen = new ArrayList<URI>(server.seen);
@@ -328,7 +325,7 @@ public class EchoNetJava {
         }
 
         public void start_write_hearbeat() {
-            queue.dispatchAfter(new Runnable() {
+            queue.dispatchAfter(1, TimeUnit.SECONDS, new Runnable() {
                 public void run() {
                     try {
                         trace("ping");
@@ -341,7 +338,7 @@ public class EchoNetJava {
                         e.printStackTrace();
                     }
                 }
-            }, 1, TimeUnit.SECONDS);
+            });
         }
 
 

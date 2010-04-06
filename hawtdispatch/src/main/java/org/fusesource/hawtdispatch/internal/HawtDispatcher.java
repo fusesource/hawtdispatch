@@ -77,8 +77,8 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         return globalQueues[priority.ordinal()];
     }
 
-    public SerialDispatchQueue createSerialQueue(String label, DispatchOption... options) {
-        SerialDispatchQueue rc = new SerialDispatchQueue(label, options);
+    public SerialDispatchQueue createQueue(String label) {
+        SerialDispatchQueue rc = new SerialDispatchQueue(label);
         rc.setTargetQueue(getGlobalQueue());
         return rc;
     }

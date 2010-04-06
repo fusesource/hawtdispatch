@@ -1,5 +1,6 @@
 /**
- * Copyright (C) 2010, Progress Software Corporation and/or its
+ * Copyright (c) 2008-2009 Apple Inc. All rights reserved.
+ * Copyright (C) 2009-2010, Progress Software Corporation and/or its
  * subsidiaries or affiliates.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,13 +13,37 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.fusesource.hawtdispatch;
 
 /**
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ * A dispatch source that is used to coalesce multiple application generated
+ * events for later processing by the dispatch source event handler.
+ *
+ * @param <Event>
+ * @param <MergedEvent>
  */
 public interface CustomDispatchSource<Event, MergedEvent> extends DispatchSource {
+
+    /**
+     * Returns pending data for the dispatch source.
+     * <br/>
+     * This function is intended to be called from within the event handler block.
+     * The result of calling this function outside of the event handler callback is
+     * undefined.
+     *
+     * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+     */
     public MergedEvent getData();
-    public void merge(Event event);
+
+    /**
+     * Merges data into a dispatch source and submits its event handler block to its
+     * target queue.
+     *
+     * @param value
+     * The value to coalesce with the pending data using the {@link EventAggregator}
+     * that was specified when this dispach source was created.
+     */
+    public void merge(Event value);
 }

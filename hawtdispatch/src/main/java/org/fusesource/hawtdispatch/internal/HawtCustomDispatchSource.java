@@ -47,7 +47,7 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
         this.aggregator = aggregator;
         this.targetQueue = queue;
         this.suspended.incrementAndGet();
-        this.queue = dispatcher.createSerialQueue("custom dispatch source");
+        this.queue = dispatcher.createQueue("custom dispatch source");
     }
 
     public MergedEvent getData() {

@@ -16,19 +16,12 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.LinkedList;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.fusesource.hawtdispatch.DispatchOption;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.internal.util.IntegerCounter;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
@@ -49,9 +42,8 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     private final ThreadLocal<Boolean> executing = new ThreadLocal<Boolean>();
     
 
-    public SerialDispatchQueue(String label, DispatchOption...options) {
+    public SerialDispatchQueue(String label) {
         this.label = label;
-//        this.options = set(options);
     }
 
 
@@ -148,12 +140,6 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         }
     }
 
-    static private Set<DispatchOption> set(DispatchOption[] options) {
-        if( options==null || options.length==0 )
-            return Collections.emptySet() ;
-        return Collections.unmodifiableSet(EnumSet.copyOf(Arrays.asList(options)));
-    }
-
     public String getLabel() {
         return label;
     }
@@ -199,19 +185,13 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         QueueSupport.dispatchApply(this, iterations, runnable);
     }
 
-    public Set<DispatchOption> getOptions() {
-       assertRetained();
-//       return options;
-        return Collections.emptySet();
-    }
-
-    public void dispatchAfter(Runnable runnable, long delay, TimeUnit unit) {
+    public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable) {
         getDispatcher().timerThread.addRelative(runnable, this, delay, unit);
     }
 
 
-    public SerialDispatchQueue createSerialQueue(String label, DispatchOption... options) {
-        SerialDispatchQueue rc = getDispatcher().createSerialQueue(label, options);
+    public SerialDispatchQueue createSerialQueue(String label) {
+        SerialDispatchQueue rc = getDispatcher().createQueue(label);
         rc.setTargetQueue(this);
         return rc;
     }

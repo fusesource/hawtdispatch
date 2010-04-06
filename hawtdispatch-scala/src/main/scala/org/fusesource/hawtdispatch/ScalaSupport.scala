@@ -22,7 +22,7 @@ import java.nio.channels.SelectableChannel
 
 object ScalaSupport {
 
-  val dispatcher:Dispatcher = DispatchSystem.DISPATCHER;
+  val dispatcher:Dispatcher = Dispatch.DISPATCHER;
 
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
@@ -34,7 +34,7 @@ object ScalaSupport {
 
   def mainQueue() = dispatcher.getMainQueue
   def globalQueue(priority: DispatchPriority=DispatchPriority.DEFAULT) = dispatcher.getGlobalQueue(priority)
-  def createSerialQueue(name: String=null) = dispatcher.createSerialQueue(name)
+  def createSerialQueue(name: String=null) = dispatcher.createQueue(name)
   def createSource(channel:SelectableChannel, interestOps:Int, queue:DispatchQueue) = dispatcher.createSource(channel, interestOps, queue)
   def createSource[Event, MergedEvent](aggregator:EventAggregator[Event,MergedEvent], queue:DispatchQueue) = dispatcher.createSource(aggregator, queue)  
 

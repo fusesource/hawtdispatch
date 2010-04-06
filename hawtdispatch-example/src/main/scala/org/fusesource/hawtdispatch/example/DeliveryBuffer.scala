@@ -142,7 +142,7 @@ class DeliveryCreditBufferProtocol(val delivery_buffer:DeliveryBuffer, val queue
     class CreditClient() extends DeliveryOverflowBuffer(delivery_buffer) {
 
       producer_queue.retain
-      val credit_adder = createSource(EventAggregator.INTEGER_ADDER , producer_queue)
+      val credit_adder = createSource(EventAggregator.INTEGER_ADD , producer_queue)
       credit_adder.setEventHandler(^{
         internal_credit(credit_adder.getData.intValue)
       });

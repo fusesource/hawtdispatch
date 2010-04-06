@@ -1,12 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright (c) 2008-2009 Apple Inc. All rights reserved.
+ * Copyright (C) 2009-2010, Progress Software Corporation and/or its
+ * subsidiaries or affiliates.  All rights reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,11 +19,29 @@
 package org.fusesource.hawtdispatch;
 
 /**
- * 
+ * Defines the supported global/concurrent queue priorities.
+ *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public enum DispatchPriority {
+    /**
+     * Items dispatched to the queue will run at high priority,
+     * i.e. the queue will be scheduled for execution before
+     * any default priority or low priority queue.
+     */
     HIGH,
+    /**
+     * Items dispatched to the queue will run at the default
+     * priority, i.e. the queue will be scheduled for execution
+     * after all high priority queues have been scheduled, but
+     * before any low priority queues have been scheduled.
+     */
     DEFAULT,
+    /**
+     * Items dispatched to the queue will run at low priority,
+     * i.e. the queue will be scheduled for execution after all
+     * default priority and high priority queues have been
+     * scheduled.
+     */
     LOW;
 }

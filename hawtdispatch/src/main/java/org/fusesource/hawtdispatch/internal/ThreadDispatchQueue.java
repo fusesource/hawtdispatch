@@ -16,16 +16,12 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
-import java.util.Collections;
 import java.util.LinkedList;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.fusesource.hawtdispatch.DispatchOption;
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.internal.pool.StealingThread;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
@@ -81,7 +77,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return rc;
     }
 
-    public void dispatchAfter(java.lang.Runnable runnable, long delay, TimeUnit unit) {
+    public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable) {
         throw new RuntimeException("TODO: implement me.");
     }
 
@@ -138,10 +134,6 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return false;
     }
 
-    public Set<DispatchOption> getOptions() {
-        return Collections.emptySet();
-    }
-
     public GlobalDispatchQueue isGlobalDispatchQueue() {
         return null;
     }
@@ -154,8 +146,8 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return this;
     }
 
-    public DispatchQueue createSerialQueue(String label, DispatchOption... options) {
-        DispatchQueue rc = dispatcher.createSerialQueue(label, options);
+    public DispatchQueue createSerialQueue(String label) {
+        DispatchQueue rc = dispatcher.createQueue(label);
         rc.setTargetQueue(this);
         return rc;
     }

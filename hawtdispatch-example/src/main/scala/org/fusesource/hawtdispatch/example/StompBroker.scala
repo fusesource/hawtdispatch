@@ -139,7 +139,7 @@ class StompBroker {
     schedualRebalance
   }
   
-  def schedualRebalance:Unit = router.queue.dispatchAfter(reblance, 1000, TimeUnit.MILLISECONDS)
+  def schedualRebalance:Unit = router.queue.dispatchAfter(1000, TimeUnit.MILLISECONDS, reblance)
   schedualRebalance
 }
 

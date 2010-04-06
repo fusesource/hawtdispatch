@@ -1,12 +1,13 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright (c) 2008-2009 Apple Inc. All rights reserved.
+ * Copyright (C) 2009-2010, Progress Software Corporation and/or its
+ * subsidiaries or affiliates.  All rights reserved.
+
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,11 +18,11 @@
 package org.fusesource.hawtdispatch;
 
 /**
- * Implemented by objects which use a reference counted life cycle.
+ * Implemented by dispatch objects which use a reference counted life cycle.
  *
- * Objects start with a ref count of one.  Retaining the object increments the counter,
+ * Dispatch objects start with a ref count of one.  Retaining the object increments the counter,
  * releasing, decrements the counter.  When the counter reaches zero, the object should
- * not longer be accessed as it will release any resources it needed to perform normal
+ * not longer be accessed as it will release any resources it needs to perform normal
  * processing.
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
@@ -29,12 +30,20 @@ package org.fusesource.hawtdispatch;
 public interface Retained {
 
     /**
-     * Increments the reference counter
+     * Increment the reference count of this object.
+     *
+     * Calls to {@link #retain()} must be balanced with calls to
+     * {@link #release()}.
      */
     public void retain();
 
     /**
-     * Decrements the reference counter
+     * Decrement the reference count of this object.
+     *
+     * An object is asynchronously disposed once all references are
+     * released. Using a disposed object will cause undefined errors.
+     * The system does not guarantee that a given client is the last or
+     * only reference to a given object.
      */
     public void release();
 
@@ -44,10 +53,15 @@ public interface Retained {
     public boolean isReleased();
 
     /**
-     * adds a runnable which will be executed once this object's
-     * reference counter reaches zero.
-     * @param onRelease
+     * Adds a disposer callback that is executed once the object is disposed.
+     *
+     * A dispatch object's callback runnable will be invoked on the object's target queue
+     * after all references to the object have been released. This disposer may be
+     * used by the application to release any resources associated with the object.
+     *
+     * @param disposer
      */
-    public void addReleaseWatcher(Runnable onRelease);
+    // TODO: rename to setDisposer  
+    public void addReleaseWatcher(Runnable disposer);
 
 }
