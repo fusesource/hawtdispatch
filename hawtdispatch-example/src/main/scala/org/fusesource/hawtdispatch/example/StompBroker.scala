@@ -19,7 +19,7 @@ import _root_.java.util.concurrent.atomic.AtomicInteger
 import _root_.java.util.concurrent.TimeUnit
 import _root_.java.util.LinkedList
 import java.nio.channels.SelectionKey._
-import org.fusesource.hawtdispatch.ScalaSupport._
+import org.fusesource.hawtdispatch.ScalaDispatch._
 
 import java.net.{InetAddress, InetSocketAddress}
 

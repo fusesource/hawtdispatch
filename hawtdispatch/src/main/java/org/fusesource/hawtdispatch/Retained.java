@@ -69,6 +69,6 @@ public interface Retained {
      *
      * @param disposer
      */
-    public void addReleaseWatcher(Runnable disposer);
+    public void setDisposer(Runnable disposer);
 
 }

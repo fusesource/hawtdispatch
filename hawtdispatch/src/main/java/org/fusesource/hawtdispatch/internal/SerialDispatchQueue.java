@@ -50,9 +50,11 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     public void dispatchAsync(Runnable runnable) {
         assert runnable != null;
         assertRetained();
+        enqueue(runnable);
+    }
 
+    private void enqueue(Runnable runnable) {
         long sizeWas = size.getAndIncrement();
-
         // We can take a shortcut...
         if( executing.get()!=null ) {
             localQueue.add(runnable);
@@ -69,6 +71,19 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         }
     }
 
+    @Override
+    protected void dispose() {
+        // Runs the disposer on this queue
+        enqueue(new Runnable(){
+            public void run() {
+                Runnable disposer = SerialDispatchQueue.this.disposer;
+                if( disposer!=null ) {
+                    disposer.run();
+                }
+            }
+        });
+        targetQueue.release();
+    }
 
     public void run() {
         HawtDispatchQueue original = HawtDispatcher.CURRENT_QUEUE.get();
@@ -215,4 +230,5 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     public GlobalDispatchQueue isGlobalDispatchQueue() {
         return null;
     }
+
 }

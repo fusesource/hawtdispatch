@@ -16,10 +16,10 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.concurrent.atomic.AtomicLong
-import _root_.org.fusesource.hawtdispatch.ScalaSupport
+import _root_.org.fusesource.hawtdispatch.ScalaDispatch
 import buffer.AsciiBuffer
 import java.util.HashMap
-import org.fusesource.hawtdispatch.ScalaSupport._
+import org.fusesource.hawtdispatch.ScalaDispatch._
 import collection.JavaConversions
 
 object Router {
@@ -163,12 +163,12 @@ trait Route extends Retained {
 
 }
 
-class ProducerRoute(val destination:AsciiBuffer, val queue:DispatchQueue, val producer:Producer) extends Route with BaseRetained {
+class ProducerRoute(val destination:AsciiBuffer, val queue:DispatchQueue, val producer:Producer) extends BaseRetained with Route {
 
 
   // Retain the queue while we are retained.
   queue.retain
-  addReleaseWatcher(^{
+  setDisposer(^{
     queue.release
   })
 

@@ -118,7 +118,7 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         throw new UnsupportedOperationException();
     }
 
-    public void addReleaseWatcher(Runnable finalizer) {
+    public void setDisposer(Runnable finalizer) {
         throw new UnsupportedOperationException();
     }
 

@@ -96,7 +96,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     }
 
     @Override
-    public void onShutdown() {
+    public void dispose() {
         for (int i = 0; i < 3; i++) {
             globalQueues[i].workers.shutdown();
         }

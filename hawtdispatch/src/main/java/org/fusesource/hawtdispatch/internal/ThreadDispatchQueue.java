@@ -109,7 +109,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         throw new UnsupportedOperationException();
     }
 
-    public void addReleaseWatcher(java.lang.Runnable finalizer) {
+    public void setDisposer(java.lang.Runnable finalizer) {
         throw new UnsupportedOperationException();
     }
 

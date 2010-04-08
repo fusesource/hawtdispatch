@@ -27,9 +27,21 @@ abstract public class AbstractDispatchObject extends BaseSuspendable implements 
 
     protected volatile HawtDispatchQueue targetQueue;
 
-    public void setTargetQueue(DispatchQueue targetQueue) {
+    public void setTargetQueue(DispatchQueue next) {
+
         assertRetained();
-        this.targetQueue = (HawtDispatchQueue)targetQueue;
+        if( next!=targetQueue ) {
+            // Don't see why someone would concurrently try to set the target..
+            // IF we wanted to protect against that we would need to use cas operations here..
+
+            next.retain();
+            DispatchQueue previous = this.targetQueue;
+            this.targetQueue = (HawtDispatchQueue)next;
+            if( previous !=null ) {
+                previous.release();
+            }
+        }
+
     }
 
     public HawtDispatchQueue getTargetQueue() {
@@ -37,4 +49,17 @@ abstract public class AbstractDispatchObject extends BaseSuspendable implements 
         return this.targetQueue;
     }
 
+    @Override
+    protected void dispose() {
+        // Runs the disposer on the target queue
+        targetQueue.dispatchAsync(new Runnable(){
+            public void run() {
+                Runnable disposer = AbstractDispatchObject.this.disposer;
+                if( disposer!=null ) {
+                    disposer.run();
+                }
+            }
+        });
+        targetQueue.release();
+    }
 }

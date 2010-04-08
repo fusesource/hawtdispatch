@@ -17,7 +17,7 @@ package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.{LinkedList}
 import buffer.AsciiBuffer
-import org.fusesource.hawtdispatch.ScalaSupport._
+import org.fusesource.hawtdispatch.ScalaDispatch._
 
 import collection.mutable.{HashMap}
 import collection.immutable.Queue
@@ -30,13 +30,13 @@ object StompQueue {
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with Producer with BaseRetained {
+class StompQueue(val destination:AsciiBuffer) extends BaseRetained with Route with Consumer with Producer {
   
   import StompQueue._;
   
   override val queue:DispatchQueue = createQueue("queue:"+destination);
   queue.setTargetQueue(getRandomThreadQueue)
-  addReleaseWatcher(^{
+  setDisposer(^{
     queue.release
   })
 
@@ -48,7 +48,7 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
 
     def deliver(value:Delivery):Unit = {
       val delivery = Delivery(value)
-      delivery.addReleaseWatcher(^{
+      delivery.setDisposer(^{
         ^{ completed(value) } ->:queue
       })
       consumer.deliver(delivery);

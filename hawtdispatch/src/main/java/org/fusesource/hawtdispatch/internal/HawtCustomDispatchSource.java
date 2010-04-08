@@ -29,14 +29,12 @@ import static java.lang.String.format;
 /**
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSuspendable implements CustomDispatchSource<Event, MergedEvent>, Runnable {
+final public class HawtCustomDispatchSource<Event, MergedEvent> extends AbstractDispatchObject implements CustomDispatchSource<Event, MergedEvent>, Runnable {
     public static final boolean DEBUG = false;
 
     final AtomicBoolean canceled = new AtomicBoolean();
-    private volatile DispatchQueue targetQueue;
     private Runnable cancelHandler;
     private Runnable eventHandler;
-    private DispatchQueue queue;
 
     private final ThreadLocal<MergedEvent> outboundEvent = new ThreadLocal<MergedEvent>();
     private final ThreadLocal<MergedEvent> firedEvent = new ThreadLocal<MergedEvent>();
@@ -45,9 +43,8 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
 
     public HawtCustomDispatchSource(HawtDispatcher dispatcher, EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
         this.aggregator = aggregator;
-        this.targetQueue = queue;
         this.suspended.incrementAndGet();
-        this.queue = dispatcher.createQueue("custom dispatch source");
+        setTargetQueue(queue);
     }
 
     public MergedEvent getData() {
@@ -135,6 +132,13 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
 
     public void cancel() {
         if( canceled.compareAndSet(false, true) ) {
+            targetQueue.execute(new Runnable() {
+                public void run() {
+                    if( cancelHandler!=null ) {
+                        cancelHandler.run();
+                    }
+                }
+            });
         }
     }
 
@@ -163,8 +167,9 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
     }
 
     @Override
-    protected void onShutdown() {
+    protected void dispose() {
         cancel();
+
     }
 
     public boolean isCanceled() {
@@ -177,24 +182,6 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends BaseSusp
 
     public void setEventHandler(Runnable eventHandler) {
         this.eventHandler = eventHandler;
-    }
-
-    public void setTargetQueue(DispatchQueue next) {
-        if( next!=targetQueue ) {
-            // Don't see why someone would concurrently try to set the target..
-            // IF we wanted to protect against that we would need to use cas operations here..
-
-            next.retain();
-            DispatchQueue previous = this.targetQueue;
-            this.targetQueue = next;
-            if( previous !=null ) {
-                previous.release();
-            }
-        }
-    }
-
-    public DispatchQueue getTargetQueue() {
-        return this.targetQueue;
     }
 
     protected void debug(String str, Object... args) {

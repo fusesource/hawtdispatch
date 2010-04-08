@@ -19,6 +19,7 @@ package org.fusesource.hawtdispatch.internal;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.fusesource.hawtdispatch.BaseRetained;
 import org.fusesource.hawtdispatch.Suspendable;
 
 /**

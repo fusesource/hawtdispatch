@@ -16,8 +16,8 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.LinkedList
-import _root_.org.fusesource.hawtdispatch.ScalaSupport._
-import _root_.org.fusesource.hawtdispatch.{EventAggregator, ScalaSupport, DispatchQueue}
+import _root_.org.fusesource.hawtdispatch.ScalaDispatch._
+import _root_.org.fusesource.hawtdispatch.{EventAggregator, ScalaDispatch, DispatchQueue}
 
 /**
  *
@@ -85,7 +85,7 @@ class DeliveryOverflowBuffer(val delivery_buffer:DeliveryBuffer) {
 
   protected def send_to_delivery_queue(value:Delivery) = {
     var delivery = Delivery(value)
-    delivery.addReleaseWatcher(^{
+    delivery.setDisposer(^{
       drainOverflow
     })
     delivery_buffer.send(delivery)
@@ -105,13 +105,13 @@ class DeliveryCreditBufferProtocol(val delivery_buffer:DeliveryBuffer, val queue
   var session_max_credits = session_credit_capacity;
 
   queue.retain
-  addReleaseWatcher(^{
+  setDisposer(^{
     source.release
     queue.release
   })
 
   // use a event aggregating source to coalesce multiple events from the same thread.
-  val source = createSource(ListEventAggregator[Delivery](), queue)
+  val source = createSource(new ListEventAggregator[Delivery](), queue)
   source.setEventHandler(^{drain_source});
   source.resume
 
@@ -162,7 +162,7 @@ class DeliveryCreditBufferProtocol(val delivery_buffer:DeliveryBuffer, val queue
 
       override protected def send_to_delivery_queue(value:Delivery) = {
         var delivery = Delivery(value)
-        delivery.addReleaseWatcher(^{
+        delivery.setDisposer(^{
           // This is called from the server/consumer thread
           credit_adder.merge(delivery.size);
         })

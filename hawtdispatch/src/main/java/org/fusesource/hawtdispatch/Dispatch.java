@@ -102,7 +102,7 @@ public class Dispatch {
                 return next.createSource(aggregator, queue);
             }
 
-            public void addReleaseWatcher(Runnable onRelease) {
+            public void setDisposer(Runnable onRelease) {
             }
 
             public void retain() {

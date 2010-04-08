@@ -39,7 +39,7 @@ import static org.fusesource.hawtdispatch.DispatchQueue.QueueType.THREAD_QUEUE;
  * @author cmacnaug
  * @version 1.0
  */
-final public class NioDispatchSource extends BaseSuspendable implements DispatchSource {
+final public class NioDispatchSource extends AbstractDispatchObject implements DispatchSource {
 
     public static final boolean DEBUG = false;
 
@@ -49,7 +49,6 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     final AtomicBoolean canceled = new AtomicBoolean();
     final int interestOps;
 
-    private volatile DispatchQueue targetQueue;
     private Runnable cancelHandler;
     private Runnable eventHandler;
 
@@ -68,9 +67,9 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
         }
         this.channel = channel;
         this.selectorQueue = pickThreadQueue(dispatcher, targetQueue);
-        this.targetQueue = targetQueue;
         this.interestOps = interestOps;
         this.suspended.incrementAndGet();
+        this.setTargetQueue(targetQueue);
     }
 
 
@@ -270,11 +269,11 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     }
 
     @Override
-    protected void onShutdown() {
+    protected void dispose() {
         cancel();
         selectorQueue.dispatchAsync(new Runnable(){
             public void run() {
-                NioDispatchSource.super.onShutdown();
+                NioDispatchSource.super.dispose();
             }
         });
     }
@@ -296,17 +295,7 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
     }
 
     public void setTargetQueue(DispatchQueue next) {
-        if( next!=targetQueue ) {
-            // Don't see why someone would concurrently try to set the target..
-            // IF we wanted to protect against that we would need to use cas operations here..
-
-            next.retain();
-            DispatchQueue previous = this.targetQueue;
-            this.targetQueue = next;
-            if( previous !=null ) {
-                previous.release();
-            }
-        }
+        super.setTargetQueue(next);
 
         // The target thread queue might be different. Optimize by switching the selector to it.
         // Do we need to switch selector threads?
@@ -319,13 +308,10 @@ final public class NioDispatchSource extends BaseSuspendable implements Dispatch
             debug("Switching to "+queue.getLabel());
             register_on(queue);
             selectorQueue = queue;
-            cancel_on(previous);
+            if( previous!=null ) {
+                cancel_on(previous);
+            }
         }
-    }
-
-
-    public DispatchQueue getTargetQueue() {
-        return this.targetQueue;
     }
 
     protected void debug(String str, Object... args) {

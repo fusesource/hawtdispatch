@@ -16,32 +16,49 @@
  */
 package org.fusesource.hawtdispatch
 
-import internal.Dispatcher
-import java.util.concurrent.atomic.AtomicInteger
+import _root_.java.lang.String
 import java.nio.channels.SelectableChannel
 
-object ScalaSupport {
-
-  val dispatcher:Dispatcher = Dispatch.DISPATCHER;
-
-  implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
+/**
+ * Provides Scala applications enhanced syntactic sugar to the HawtDispatch API.
+ */
+object ScalaDispatch {
 
   type Retained = org.fusesource.hawtdispatch.Retained
   type DispatchQueue = org.fusesource.hawtdispatch.DispatchQueue
   type DispatchSource = org.fusesource.hawtdispatch.DispatchSource
   type DispatchPriority = org.fusesource.hawtdispatch.DispatchPriority
   type EventAggregator[Event, MergedEvent] = org.fusesource.hawtdispatch.EventAggregator[Event, MergedEvent]
+  type BaseRetained = org.fusesource.hawtdispatch.BaseRetained
 
-  def mainQueue() = dispatcher.getMainQueue
-  def globalQueue(priority: DispatchPriority=DispatchPriority.DEFAULT) = dispatcher.getGlobalQueue(priority)
-  def createQueue(name: String=null) = dispatcher.createQueue(name)
-  def createSource(channel:SelectableChannel, interestOps:Int, queue:DispatchQueue) = dispatcher.createSource(channel, interestOps, queue)
-  def createSource[Event, MergedEvent](aggregator:EventAggregator[Event,MergedEvent], queue:DispatchQueue) = dispatcher.createSource(aggregator, queue)  
+  /**
+   * Enriches the DispatchQueue interfaces with additional Scala friendly methods.
+   */
+  final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy with Function1[Runnable, Unit]  {
+    // Proxy
+    def self: Any = queue
 
-  def getRandomThreadQueue() = dispatcher.getRandomThreadQueue
-  def getCurrentThreadQueue() = dispatcher.getCurrentThreadQueue
-  def getCurrentQueue() = dispatcher.getCurrentQueue
+    // Function1[Runnable, Unit]
+    def apply(task: Runnable) = queue.dispatchAsync(task)
+  
+    def <<(task: Runnable) = {apply(task); this}
+    def ->:(task: Runnable) = {apply(task); this}
+  }
 
+  implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
+
+  def getRandomThreadQueue = Dispatch.getRandomThreadQueue
+  def getCurrentThreadQueue = Dispatch.getCurrentQueue
+  def createSource[Event, MergedEvent](aggregator: EventAggregator[Event, MergedEvent], queue: DispatchQueue) =
+    Dispatch.createSource(aggregator, queue)
+  def createSource(channel: SelectableChannel, interestOps: Int, queue: DispatchQueue) =
+    Dispatch.createSource(channel, interestOps, queue)
+  def getCurrentQueue = Dispatch.getCurrentQueue
+  def dispatchMain = Dispatch.dispatchMain
+  def createQueue(label: String=null) = Dispatch.createQueue(label)
+  def getGlobalQueue(priority: DispatchPriority) = Dispatch.getGlobalQueue(priority)
+  def getGlobalQueue = Dispatch.getGlobalQueue
+  def getMainQueue = Dispatch.getMainQueue
 
   def using(resource: Retained): (=> Unit) => Runnable = {
     using(resource, resource) _
@@ -119,63 +136,7 @@ object ScalaSupport {
     }
   }
 
-
-  trait Service {
-    def startup() = {}
-    def shutdown() = {}
-  }
-
-  trait BaseRetained extends Retained {
-    protected val retained = new AtomicInteger(1);
-    protected var releaseWatchers = List[Runnable]()
-
-    override def retain = {
-      assertRetained()
-      retained.getAndIncrement()
-    }
-
-    override def release() = {
-      assertRetained()
-      if (retained.decrementAndGet() == 0) {
-        for( onRelease <- releaseWatchers) {
-          onRelease.run
-        }
-      }
-    }
-
-    override def isReleased() = {
-      retained.get() <= 0;
-    }
-
-    protected def assertRetained() {
-      if (retained.get() <= 0) {
-        throw new IllegalStateException(format("%s: Use of object not allowed after it has been released", this.toString()));
-      }
-    }
-
-    override def addReleaseWatcher(onRelease: Runnable) {
-      assertRetained()
-      releaseWatchers = onRelease :: releaseWatchers;
-    }
-
-  }
-
-  trait QueuedService extends Service {
-    val queue: DispatchQueue
-
-    override def startup() = {
-      queue.retain
-    }
-
-    override def shutdown() = {
-      queue << ^ {onShutdown}
-      queue.release
-    }
-
-    protected def onShutdown() = {}
-  }
-
-  case class ListEventAggregator[T] extends EventAggregator[T, List[T]] {
+  class ListEventAggregator[T] extends EventAggregator[T, List[T]] {
     def mergeEvent(previous:List[T], event:T) = {
       if( previous == null ) {
         event :: Nil

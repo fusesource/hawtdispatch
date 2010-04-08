@@ -16,9 +16,9 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.{LinkedList}
-import _root_.org.fusesource.hawtdispatch.ScalaSupport
+import _root_.org.fusesource.hawtdispatch.ScalaDispatch
 import java.nio.channels.SelectionKey._
-import org.fusesource.hawtdispatch.ScalaSupport._
+import org.fusesource.hawtdispatch.ScalaDispatch._
 
 import buffer._
 import AsciiBuffer._
@@ -62,7 +62,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
   val write_source = createSource(socket, OP_WRITE, queue);
   val read_source = createSource(socket, OP_READ, queue);
 
-  queue.addReleaseWatcher(^{
+  queue.setDisposer(^{
     socket.close();
   })
 
@@ -220,7 +220,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
   def send_via_route(route:ProducerRoute, delivery:Delivery) = {
     if( !route.targets.isEmpty ) {
       read_source.suspend
-      delivery.addReleaseWatcher(^{
+      delivery.setDisposer(^{
         read_source.resume
       })
       route.targets.foreach(consumer=>{
@@ -257,10 +257,10 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
     } ->: queue
   }
 
-  class SimpleConsumer(val dest:AsciiBuffer) extends Consumer with BaseRetained {
+  class SimpleConsumer(val dest:AsciiBuffer) extends BaseRetained with Consumer {
 
     val queue:DispatchQueue = StompConnection.this.queue
-    addReleaseWatcher(^{
+    setDisposer(^{
       queue.release
     })
     val deliveryQueue = new DeliveryCreditBufferProtocol(outboundChannel, queue)
@@ -284,7 +284,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
 //  class SimpleConsumer(val dest:AsciiBuffer) extends Consumer with BaseRetained {
 //
 //    val queue:DispatchQueue = StompConnection.this.queue
-//    addReleaseWatcher(^{
+//    setDisposer(^{
 //      queue.release
 //    })
 //
