@@ -2,6 +2,7 @@
 title: HawtDispatch
 in_menu: true
 sort_info: 1
+api_dir: http://hawtdispatch.fusesource.org/maven/1.0-SNAPSHOT/hawtdispatch/apidocs/org/fusesource/hawtdispatch
 --- name:overview pipeline:haml,tags
 
 %h1 {project_name:}
@@ -19,25 +20,32 @@ model simplifies solving many of the problems that plague multi-threaded
 NIO development.
 
 ## Features
+<div style="font-size: 90%;" markdown="1">
 * Java 1.5 API
 * Scala 2.8 API
 * Thread Pooling
 * Delayed Task Execution
 * Priority Task Execution
 * NIO Handling
+</div>
 
 ## DispatchQueue Usage
 
-The most important objects in the {project_name:} API, are the DispatchQueue
+The most important objects in the {project_name:} API, are the [DispatchQueue][]
 objects.  They are Executor objects which will execute submitted runnable 
 objects at a later time.  They come in 2 flavors:
 
-* __Concurrent__: The tasks submitted to the concurrent dispatch queues will execute 
+[DispatchQueue]: {api_dir:}/DispatchQueue.html 
+
+* __Concurrent Dispatch Queue__: The tasks submitted to the concurrent dispatch queues will execute 
   concurrently and therefore must be thread safe.  The order of execution of the tasks
   is non deterministic.  There are only 3 concurrent queues shared system wide.  One for
-  each priority level and can be accessed using the `Dispatch.getGlobalQueue` method.
-  Example:
+  each priority level and can be accessed using the [`Dispatch.getGlobalQueue`][Dispatch_getGlobalQueue]
+  method.
   
+  [Dispatch_getGlobalQueue]: {api_dir:}/Dispatch.html#getGlobalQueue(org.fusesource.hawtdispatch.DispatchPriority)
+  
+  Example:
   {pygmentize_and_compare::}
   -----------------------------
   java: In Java
@@ -49,11 +57,15 @@ objects at a later time.  They come in 2 flavors:
   val queue = getGlobalQueue(HIGH)
   {pygmentize_and_compare}
   
-* __Serial__: Execute the submitted runnable tasks in FIFO order. A serial dispatch queue will 
+* __Serial Dispatch Queue__: Execute the submitted runnable tasks in FIFO order. A serial dispatch queue will 
   only invoke one runnable at a time, but independent queues may each execute their 
   runnable objects concurrently with respect to each other.  Serial dispatch queues are created
-  by the application using the `Dispatch.createQueue` method.  Example:
-
+  by the application using the [`Dispatch.createQueue`][Dispatch_createQueue]
+  method.  
+  
+  [Dispatch_createQueue]: {api_dir:}/Dispatch.html#createQueue(java.lang.String)
+  
+  Example:
   {pygmentize_and_compare::}
   -----------------------------
   java: In Java
@@ -110,16 +122,21 @@ queue << ^{
 } ->: queue
 {pygmentize_and_compare}
 
-
 ## Using NIO
 
-NIO integration is accomplished via a dispatch source object which is
-created using the `Dispatch.createSource` method.  You supply it
-the `SelectableChannel` and the operations your interested in receiving events for
-like `OP_READ` or `OP_WRITE` and when it's that NIO event is raised, 
+NIO integration is accomplished via a [DispatchSource][] object which is
+created using the [`Dispatch.createSource`][Dispatch_createSource] method.  You supply it
+the [`SelectableChannel`][SelectableChannel] and the operations your interested in receiving events for
+like [`OP_READ`][OP_READ] or [`OP_WRITE`][OP_WRITE] and when it's that NIO event is raised, 
 it will execute a runnable callback you configure on a dispatch queue 
 you specify. {project_name:} takes care of setting up and managing the
 NIO selectors and selector keys for you.
+
+[DispatchSource]: {api_dir:}/DispatchSource.html 
+[Dispatch_createSource]: {api_dir:}/Dispatch.html#createSource(java.nio.channels.SelectableChannel,%20int,%20org.fusesource.hawtdispatch.DispatchQueue) 
+[SelectableChannel]: http://java.sun.com/j2se/1.5.0/docs/api/java/nio/channels/SelectableChannel.html
+[OP_READ]: http://java.sun.com/j2se/1.5.0/docs/api/java/nio/channels/SelectionKey.html#OP_READ
+[OP_WRITE]: http://java.sun.com/j2se/1.5.0/docs/api/java/nio/channels/SelectionKey.html#OP_WRITE
 
 Example:
 
@@ -160,9 +177,12 @@ source.resume
 {pygmentize_and_compare}
 </div>
 
-Dispatch sources are initially created in a suspended state.  Once the `DispatchSource.resume` method 
+Dispatch sources are initially created in a suspended state.  Once the [`DispatchSource.resume`][DispatchSource_resume] method 
 is called it will start executing the event handler on the specified queue.  If you later
-want to stop processing events for a period of time, call the `DispatchSource.suspend` method.
+want to stop processing events for a period of time, call the [`DispatchSource.suspend`][DispatchSource_suspend] method.
+
+[DispatchSource_resume]: {api_dir:}/Suspendable.html#resume()
+[DispatchSource_suspend]: {api_dir:}/Suspendable.html#suspend()
 
 ## Restrictions on Executed Runnables
 
@@ -197,8 +217,11 @@ On many occasions there is a resource associated with concurrent processing, and
 up once the concurrent processing has completed.
 
 This can be easily done by configuring a disposer callback on the dispatch queue or dispatch source.  These object support
-being reference counted using the `retain` and `release` method calls.  They are initially created with a retain count of 1.  
+being reference counted using the [`retain`][Retained_retain] and [`release`][Retained_release] method calls.  They are initially created with a retain count of 1.  
 Once the retain count reaches zero, the disposer runnable is executed on the associated queue.
+
+[Retained_retain]: {api_dir:}/Retained.html#retain()
+[Retained_release]: {api_dir:}/Retained.html#release()
 
 The following example tries to simulate a case were multiple concurrent tasks are using a shared resource and once
 they finish executing that shared resource gets closed.
@@ -241,4 +264,4 @@ queue.release
 
 ## References
 
-Try checkout the [Documentation](documentation/index.html)
+[Full API]({api_dir:}/package-summary.html)

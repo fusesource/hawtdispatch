@@ -60,6 +60,6 @@ You should ensure you have the {project_name:} Snapshot Maven repository defined
 </div>
 
 <div class="right" markdown="1">
-If you prefer you can try building from [the source code](source.html) and [building it](building.html)
+If you prefer you can try checking out [the source code](source.html) and then [build it](building.html)
 </div>
 

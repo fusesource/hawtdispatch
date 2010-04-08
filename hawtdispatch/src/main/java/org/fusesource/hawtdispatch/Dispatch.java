@@ -51,76 +51,11 @@ import java.nio.channels.SelectionKey;
  */
 public class Dispatch {
 
-    final public static Dispatcher DISPATCHER = create();
+    final private static Dispatcher DISPATCHER = new DispatcherConfig().createDispatcher();
 
     public static final DispatchPriority HIGH    = DispatchPriority.HIGH;
     public static final DispatchPriority DEFAULT = DispatchPriority.DEFAULT;
     public static final DispatchPriority LOW     = DispatchPriority.LOW;
-
-    private static Dispatcher create() {
-        return new Dispatcher() {
-
-            final Dispatcher next = new DispatcherConfig().createDispatcher();
-
-            public DispatchQueue getRandomThreadQueue() {
-                return next.getRandomThreadQueue();
-            }
-
-            public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
-                return next.getRandomThreadQueue(priority);
-            }
-
-            public DispatchQueue getGlobalQueue() {
-                return next.getGlobalQueue();
-            }
-
-            public DispatchQueue getGlobalQueue(DispatchPriority priority) {
-                return next.getGlobalQueue(priority);
-            }
-
-            public DispatchQueue createQueue(String label) {
-                return next.createQueue(label);
-            }
-
-            public DispatchQueue getMainQueue() {
-                return next.getMainQueue();
-            }
-
-            public void dispatchMain() {
-                next.dispatchMain();
-            }
-
-            public DispatchQueue getCurrentQueue() {
-                return next.getCurrentQueue();
-            }
-
-            public DispatchQueue getCurrentThreadQueue() {
-                return next.getCurrentThreadQueue();
-            }
-
-            public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {
-                return next.createSource(channel, interestOps, queue);
-            }
-
-            public <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
-                return next.createSource(aggregator, queue);
-            }
-
-            public void setDisposer(Runnable onRelease) {
-            }
-
-            public void retain() {
-            }
-
-            public void release() {
-            }
-
-            public boolean isReleased() {
-                return false;
-            }
-
-        };
-    }
 
     /**
      * <p>

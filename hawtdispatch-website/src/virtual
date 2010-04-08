@@ -16,10 +16,10 @@
 
 in_menu: false
 --- name:content pipeline:tags
-\--- !omap
-- /development.html:
-    title: Maven Reports
-    in_menu: false
+\--- !omap    
+- /api.html:
+    title: API
+    in_menu: true
     sort_info: 100
-    url: http://hawtdispatch.fusesource.org/maven/1.0-SNAPSHOT/
+    url: http://hawtdispatch.fusesource.org/maven/1.0-SNAPSHOT/hawtdispatch/apidocs/index.html
     

@@ -24,7 +24,8 @@
   project_forums_url: 'http://hawtdispatch.fusesource.org/community.html'
   project_wiki_url: 'http://wiki.github.com/chirino/hawtdispatch/'
   project_logo: "/images/project-logo.png"
-  project_version: '1.0-SNAPSHOT'
+  release_version: '1.0'
+  snapshot_version: '1.0-SNAPSHOT'
 
   # -------------------------------------------------------------------
   # TODO it would be nice to define these in terms of the project_id variable!
