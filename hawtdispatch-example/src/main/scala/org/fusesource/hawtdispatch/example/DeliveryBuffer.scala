@@ -16,8 +16,8 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.LinkedList
-import _root_.org.fusesource.hawtdispatch.ScalaDispatch._
-import _root_.org.fusesource.hawtdispatch.{EventAggregator, ScalaDispatch, DispatchQueue}
+import _root_.org.fusesource.hawtdispatch._
+import ScalaDispatch._
 
 /**
  *

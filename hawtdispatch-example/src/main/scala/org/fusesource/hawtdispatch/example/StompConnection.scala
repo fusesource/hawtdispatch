@@ -16,9 +16,9 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.{LinkedList}
-import _root_.org.fusesource.hawtdispatch.ScalaDispatch
 import java.nio.channels.SelectionKey._
-import org.fusesource.hawtdispatch.ScalaDispatch._
+import _root_.org.fusesource.hawtdispatch._
+import ScalaDispatch._
 
 import buffer._
 import AsciiBuffer._

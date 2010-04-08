@@ -16,10 +16,10 @@
 package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.concurrent.atomic.AtomicLong
-import _root_.org.fusesource.hawtdispatch.ScalaDispatch
+import _root_.org.fusesource.hawtdispatch._
+import ScalaDispatch._
 import buffer.AsciiBuffer
 import java.util.HashMap
-import org.fusesource.hawtdispatch.ScalaDispatch._
 import collection.JavaConversions
 
 object Router {

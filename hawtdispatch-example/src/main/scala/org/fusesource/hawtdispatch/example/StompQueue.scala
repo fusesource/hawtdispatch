@@ -17,7 +17,8 @@ package org.fusesource.hawtdispatch.example
 
 import _root_.java.util.{LinkedList}
 import buffer.AsciiBuffer
-import org.fusesource.hawtdispatch.ScalaDispatch._
+import _root_.org.fusesource.hawtdispatch._
+import ScalaDispatch._
 
 import collection.mutable.{HashMap}
 import collection.immutable.Queue

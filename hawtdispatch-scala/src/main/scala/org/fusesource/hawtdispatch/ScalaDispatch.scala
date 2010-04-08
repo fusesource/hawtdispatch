@@ -24,13 +24,6 @@ import java.nio.channels.SelectableChannel
  */
 object ScalaDispatch {
 
-  type Retained = org.fusesource.hawtdispatch.Retained
-  type DispatchQueue = org.fusesource.hawtdispatch.DispatchQueue
-  type DispatchSource = org.fusesource.hawtdispatch.DispatchSource
-  type DispatchPriority = org.fusesource.hawtdispatch.DispatchPriority
-  type EventAggregator[Event, MergedEvent] = org.fusesource.hawtdispatch.EventAggregator[Event, MergedEvent]
-  type BaseRetained = org.fusesource.hawtdispatch.BaseRetained
-
   /**
    * Enriches the DispatchQueue interfaces with additional Scala friendly methods.
    */
