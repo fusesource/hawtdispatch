@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.example;
+package org.fusesource.hawtdispatch.example.stomp;
 
-import org.fusesource.hawtdispatch.example.buffer.AsciiBuffer;
-import org.fusesource.hawtdispatch.example.buffer.Buffer;
+import org.fusesource.hawtdispatch.example.stomp.buffer.AsciiBuffer;
+import org.fusesource.hawtdispatch.example.stomp.buffer.Buffer;
 
 public interface Stomp {
     

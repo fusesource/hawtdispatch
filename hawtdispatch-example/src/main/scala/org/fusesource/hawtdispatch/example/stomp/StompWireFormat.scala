@@ -13,15 +13,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  */
-package org.fusesource.hawtdispatch.example
+package org.fusesource.hawtdispatch.example.stomp
 
 import _root_.java.util.{LinkedList, ArrayList}
 import java.nio.channels.{SocketChannel}
 import java.nio.ByteBuffer
-import org.fusesource.hawtdispatch.example.Stomp._
-import org.fusesource.hawtdispatch.example.Stomp.Headers._
+import org.fusesource.hawtdispatch.example.stomp.Stomp._
+import org.fusesource.hawtdispatch.example.stomp.Stomp.Headers._
 import java.io.{EOFException, IOException}
-import org.fusesource.hawtdispatch.example.buffer._
+import buffer._
 import AsciiBuffer._
 import collection.mutable.{ListBuffer, HashMap}
 

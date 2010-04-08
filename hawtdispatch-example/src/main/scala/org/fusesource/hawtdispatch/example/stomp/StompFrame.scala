@@ -1,4 +1,4 @@
-package org.fusesource.hawtdispatch.example
+package org.fusesource.hawtdispatch.example.stomp
 
 import _root_.java.util.LinkedList
 import buffer.{Buffer, AsciiBuffer}

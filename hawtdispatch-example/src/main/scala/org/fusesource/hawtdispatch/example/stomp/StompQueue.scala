@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  */
-package org.fusesource.hawtdispatch.example
+package org.fusesource.hawtdispatch.example.stomp
 
 import _root_.java.util.{LinkedList}
 import buffer.AsciiBuffer

@@ -13,7 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  */
-package org.fusesource.hawtdispatch.example
+package org.fusesource.hawtdispatch.example.stomp
 
 import _root_.java.util.{LinkedList}
 import java.nio.channels.SelectionKey._
@@ -25,7 +25,7 @@ import AsciiBuffer._
 import java.util.concurrent.atomic.AtomicLong
 import java.nio.channels.{SocketChannel}
 import java.io.{IOException}
-import org.fusesource.hawtdispatch.example.Stomp.{Headers, Responses, Commands}
+import org.fusesource.hawtdispatch.example.stomp.Stomp.{Headers, Responses, Commands}
 import collection.mutable.{HashMap}
 
 /**

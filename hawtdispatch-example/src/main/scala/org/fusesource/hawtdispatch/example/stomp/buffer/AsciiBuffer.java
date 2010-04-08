@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch.example.buffer;
+package org.fusesource.hawtdispatch.example.stomp.buffer;
 
 /**
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
