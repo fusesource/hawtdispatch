@@ -18,9 +18,12 @@
 package org.fusesource.hawtdispatch;
 
 /**
+ * <p>
  * The EventAggregator interface is used by the {@link CustomDispatchSource} objects to handle
  * coalescing data before passing it to the application.  Implementations of this class should
  * be stateless to remain thread-safe.  You can also use one of several built in implementations:
+ * </p>
+ *
  * <ul>
  * <li>{@link #INTEGER_ADD}</li>
  * <li>{@link #INTEGER_OR}</li>
@@ -33,7 +36,9 @@ package org.fusesource.hawtdispatch;
 public interface EventAggregator<Event, MergedEvent> {
 
     /**
+     * <p>
      * Merge the given event with the previous event values.
+     * </p>
      *
      * @param previous may be null
      * @param event the value that should be merged
@@ -42,7 +47,9 @@ public interface EventAggregator<Event, MergedEvent> {
     public MergedEvent mergeEvent(MergedEvent previous, Event event);
 
     /**
+     * <p>
      * Merge the given events with the previous event values.
+     * </p>
      *
      * @param previous the value of previous merges
      * @param events the value of more merges

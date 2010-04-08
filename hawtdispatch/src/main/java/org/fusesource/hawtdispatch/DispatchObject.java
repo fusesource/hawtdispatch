@@ -18,24 +18,28 @@
 package org.fusesource.hawtdispatch;
 
 /**
+ * <p>
  * Implemented by dispatch objects that can be configured with a target queue
  * that it uses for executing the object's asynchronous tasks.
+ * </p>
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public interface DispatchObject extends Suspendable {
 
     /**
+     * <p>
      * Sets the target queue for this object.
-     *
+     * </p><p>
      * An object's target queue is responsible for processing the object.
-     *
+     * </p><p>
      * A dispatch queue's priority is inherited by its target queue. Use the
      * {@link Dispatch#getGlobalQueue()} method to obtain suitable target queue
      * of the desired priority.
-     *
+     * </p><p>
      * A dispatch source's target queue specifies where its event handler and
-     * cancellation handler blocks will be submitted.
+     * cancellation handler runnables will be submitted.
+     * </p>
      *
      * @param       queue
      * The new target queue for the object. The queue is retained, and the
@@ -45,7 +49,9 @@ public interface DispatchObject extends Suspendable {
     public void setTargetQueue(DispatchQueue queue);
 
     /**
+     * <p>
      * Gets the target queue for this object.
+     * </p>
      *
      * @see #setTargetQueue(DispatchQueue)  
      * @return the target queue of this object.

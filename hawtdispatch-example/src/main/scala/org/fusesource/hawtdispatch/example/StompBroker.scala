@@ -76,8 +76,8 @@ object StompBroker {
 class StompBroker {
   import StompBroker._
 
-  val router = new Router(createSerialQueue("router"))
-  val queue = createSerialQueue("broker")
+  val router = new Router(createQueue("router"))
+  val queue = createQueue("broker")
 
     // Create the nio server socket...
   val channel = ServerSocketChannel.open();

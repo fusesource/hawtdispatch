@@ -24,8 +24,29 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 
 /**
- * Provides easy access to a system wide Dispatcher.
- * 
+ * <p>
+ * Provides access to HawtDispatch.
+ * </p><p>
+ * HawtDispatch is an abstract model for expressing concurrency via simple but
+ * powerful API.
+ * </p><p>
+ * At the core, HawtDispatch provides serial FIFO queues to which runnables may be
+ * submitted. Runnables submitted to these dispatch queues are invoked on a pool
+ * of threads fully managed by the system. No guarantee is made regarding
+ * which thread a runnable will be invoked on; however, it is guaranteed that only
+ * one runnable submitted to the FIFO dispatch queue will be invoked at a time.
+ * </p><p>
+ * HawtDispatch also provides dispatch sources to handle converting
+ * events like NIO Socket readiness events into callbacks to runnables
+ * executed on the dispatch queues.
+ * </p><p>
+ * It is encouraged that end users of this api do a static import of the
+ * methods defined in this class.
+ * </p>
+ * <pre>
+ * import static org.fusesource.hawtdispatch.Dispatch.*;
+ * </pre>
+ *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class Dispatch {
@@ -98,11 +119,13 @@ public class Dispatch {
     }
 
     /**
+     * <p>
      * Returns the default queue that is bound to the main thread.
-     * <br/>
+     * </p><p>
      * In order to invoke runnables submitted to the main queue, the application must
      * call {@link #dispatchMain()}}.
-     * <br/>
+     * </p>
+     *
      * @return the main queue.
      */
     public static DispatchQueue getMainQueue() {
@@ -110,7 +133,9 @@ public class Dispatch {
     }
 
     /**
+     * <p>
      * Returns the global concurrent queue of default priority.
+     * </p>
      *
      * @see #getGlobalQueue(DispatchPriority)  
      * @return the default priority global queue.
@@ -120,15 +145,16 @@ public class Dispatch {
     }
 
     /**
+     * <p>
      * Returns a well-known global concurrent queue of a given priority level.
-     * <br/>
+     * </p><p>
      * The well-known global concurrent queues may not be modified. Calls to
      * {@link Suspendable#suspend()}, {@link Suspendable#resume()}, etc., will
      * have no effect when used with queues returned by this function.
+     * </p>
      *
      * @param priority
      * A priority defined in dispatch_queue_priority_t
-
      * @return the requested global queue.
      */
     public static DispatchQueue getGlobalQueue(DispatchPriority priority) {
@@ -136,20 +162,22 @@ public class Dispatch {
     }
 
     /**
+     * <p>
      * Creates a new serial dispatch queue to which runnable objects may be submitted.
-     * <br/>
-     * Serial dispatch queues invoke blocks submitted to them serially in FIFO order. A
+     * </p><p>
+     * Serial dispatch queues execute runnables submitted to them serially in FIFO order. A
      * queue will only invoke one runnable at a time, but independent queues may each
-     * invoke their blocks concurrently with respect to each other.
-     * <br/>
+     * execute their runnables concurrently with respect to each other.
+     * </p><p>
      * Conceptually a dispatch queue may have its own thread of execution, and
      * interaction between queues is highly asynchronous.
-     * <br/>
+     * </p><p>
      * When the dispatch queue is no longer needed, it should be released.
      * Dispatch queues are reference counted via calls to {@link Retained#retain()} and
      * {@link Retained#release()}. Pending runnables submitted to a queue also hold a
      * reference to the queue until they have finished. Once all references to a
      * queue have been released, the queue will be disposed.
+     * </p>
      *
      * @param label the label to assign the dispatch queue, can be null
      * @return the newly created dispatch queue
@@ -159,20 +187,24 @@ public class Dispatch {
     }
 
     /**
-     * Execute blocks submitted to the main queue.
-     * <br/>
-     * This function "parks" the main thread and waits for blocks to be submitted
+     * <p>
+     * Execute runnables submitted to the main queue.
+     * </p><p>
+     * This function "parks" the main thread and waits for runnables to be submitted
      * to the main queue. This function never returns.
+     * </p>
      */
     public static void dispatchMain() {
         DISPATCHER.dispatchMain();
     }
 
     /**
+     * <p>
      * Returns the queue on which the currently executing runnable is running.
-     * <br/>
+     * </p><p>
      * When {@link #getCurrentQueue()} is called outside of the context of a
      * submitted runnable, it will return the default concurrent queue.
+     * </p>
      *
      * @return the queue on which the currently executing runnable is running.
      */
@@ -181,11 +213,13 @@ public class Dispatch {
     }
 
     /**
+     * <p>
      * Creates a new {@link DispatchSource} to monitor {@link SelectableChannel} objects and
-     * automatically submit a handler block to a dispatch queue in response to events.
-     *
+     * automatically submit a handler runnable to a dispatch queue in response to events.
+     * </p><p>
      * You are allowed to create multiple dispatch sources to the same {@link SelectableChannel}
      * object.
+     * </p>
      *
      * @param channel the channel to monitor.
      * @param interestOps A mask of interest ops ({@link SelectionKey#OP_ACCEPT},
@@ -200,10 +234,12 @@ public class Dispatch {
     }
 
     /**
+     * <p>
      * Creates a new {@link CustomDispatchSource} to monitor events merged into
-     * the dispatch source and automatically submit a handler block to a dispatch queue
+     * the dispatch source and automatically submit a handler runnable to a dispatch queue
      * in response to the events.
-     *
+     * </p>
+     * 
      * @param aggregator the data aggregation strategy to use.
      * @param queue The dispatch queue to which the event handler tasks will be submited.
      *

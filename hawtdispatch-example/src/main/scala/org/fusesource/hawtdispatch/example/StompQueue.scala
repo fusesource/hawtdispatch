@@ -34,7 +34,7 @@ class StompQueue(val destination:AsciiBuffer) extends Route with Consumer with P
   
   import StompQueue._;
   
-  override val queue:DispatchQueue = createSerialQueue("queue:"+destination);
+  override val queue:DispatchQueue = createQueue("queue:"+destination);
   queue.setTargetQueue(getRandomThreadQueue)
   addReleaseWatcher(^{
     queue.release

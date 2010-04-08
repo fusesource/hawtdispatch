@@ -1,0 +1,26 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<h2>HawtDispatch</h2>
+<p>
+    HawtDispatch is an abstract model for expressing concurrency via simple but
+    powerful API.
+</p>
+<p>
+    At the core, HawtDispatch provides serial FIFO queues to which runnables may be
+    submitted. Runnables submitted to these dispatch queues are invoked on a pool
+    of threads fully managed by the system. No guarantee is made regarding
+    which thread a runnable will be invoked on; however, it is guaranteed that only
+    one runnable submitted to the FIFO dispatch queue will be invoked at a time.
+</p>
+<p>
+    HawtDispatch also provides dispatch sources to handle converting
+    events like NIO Socket readiness events into callbacks to runnables
+    executed on the dispatch queues.
+</p>
+</body>
+</html>

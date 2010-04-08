@@ -45,7 +45,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
   socket.socket.setSendBufferSize(bufferSize)
   socket.socket.setReceiveBufferSize(bufferSize)
 
-  val queue = createSerialQueue("connection:"+connectionCounter.incrementAndGet)
+  val queue = createQueue("connection:"+connectionCounter.incrementAndGet)
   queue.setTargetQueue(getRandomThreadQueue)
 
 //    println("connected from: "+socket.socket.getRemoteSocketAddress)

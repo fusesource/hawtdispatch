@@ -19,7 +19,9 @@
 package org.fusesource.hawtdispatch;
 
 /**
+ * <p>
  * Defines the supported global/concurrent queue priorities.
+ * </p>
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */

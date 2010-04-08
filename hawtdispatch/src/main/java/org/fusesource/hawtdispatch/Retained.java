@@ -18,19 +18,23 @@
 package org.fusesource.hawtdispatch;
 
 /**
+ * <p>
  * Implemented by dispatch objects which use a reference counted life cycle.
- *
- * Dispatch objects start with a ref count of one.  Retaining the object increments the counter,
+ * </p><p>
+ * Dispatch objects start with a retained count of one.  Retaining the object increments the retain counter,
  * releasing, decrements the counter.  When the counter reaches zero, the object should
  * not longer be accessed as it will release any resources it needs to perform normal
  * processing.
+ * </p>
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public interface Retained {
 
     /**
+     * <p>
      * Increment the reference count of this object.
+     * </p>
      *
      * Calls to {@link #retain()} must be balanced with calls to
      * {@link #release()}.
@@ -38,30 +42,33 @@ public interface Retained {
     public void retain();
 
     /**
+     * <p>
      * Decrement the reference count of this object.
-     *
+     * </p><p>
      * An object is asynchronously disposed once all references are
      * released. Using a disposed object will cause undefined errors.
      * The system does not guarantee that a given client is the last or
      * only reference to a given object.
+     * </p>
      */
     public void release();
 
     /**
-     * @return true if the reference counter is zero
+     * @return true if the retain counter is zero
      */
     public boolean isReleased();
 
     /**
-     * Adds a disposer callback that is executed once the object is disposed.
-     *
-     * A dispatch object's callback runnable will be invoked on the object's target queue
-     * after all references to the object have been released. This disposer may be
+     * <p>
+     * Adds a disposer runnable that is executed once the object is disposed.
+     * </p><p>
+     * A dispatch object's disposer runnable will be invoked on the object's target queue
+     * once the object's retain counter reaches zero. This disposer may be
      * used by the application to release any resources associated with the object.
+     * </p>
      *
      * @param disposer
      */
-    // TODO: rename to setDisposer  
     public void addReleaseWatcher(Runnable disposer);
 
 }

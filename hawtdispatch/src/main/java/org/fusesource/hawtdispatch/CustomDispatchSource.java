@@ -27,19 +27,23 @@ package org.fusesource.hawtdispatch;
 public interface CustomDispatchSource<Event, MergedEvent> extends DispatchSource {
 
     /**
+     * <p>
      * Returns pending data for the dispatch source.
-     * <br/>
-     * This function is intended to be called from within the event handler block.
-     * The result of calling this function outside of the event handler callback is
+     * </p><p>
+     * This function is intended to be called from within the event handler runnable.
+     * The result of calling this function outside of the event handler runnable is
      * undefined.
+     * </p>
      *
      * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
      */
     public MergedEvent getData();
 
     /**
-     * Merges data into a dispatch source and submits its event handler block to its
+     * <p>
+     * Merges data into a dispatch source and submits its event handler runnable to its
      * target queue.
+     * </p>
      *
      * @param value
      * The value to coalesce with the pending data using the {@link EventAggregator}

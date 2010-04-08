@@ -33,17 +33,70 @@ import static org.objectweb.asm.Type.*;
 import static org.objectweb.asm.ClassWriter.*;
 
 /**
+ * <p>
  * This class creates proxy objects that allow you to easily service all
  * method calls to an interface via a {@link DispatchQueue}.
+ * </p><p>
+ * The general idea is that proxy asynchronously invoke the delegate using
+ * the dispatch queue.  The proxy implementation is generated using ASM
+ * using the following code generation pattern:
+ * </p>
+ * <pre>
+ * class <<interface-class>>$__ACTOR_PROXY__ implements <<interface-class>> {
+ *
+ *    private final <<interface-class>> target;
+ *    private final DispatchQueue queue;
+ *
+ *    public <<interface-class>>$__ACTOR_PROXY__(<<interface-class>> target, DispatchQueue queue) {
+ *        this.target = target;
+ *        this.queue = queue;
+ *    }
+ *
+ *    <<for each method in interface-class>>
+ *
+ *      <<method-signature>> {
+ *          queue.dispatchAsync( new Runnable() {
+ *             public void run() {
+ *                 this.target.<<method-call>>;
+ *             }
+ *          } );
+ *      }
+ *    <<for each end>>
+ * }
+ * </pre>
+ *
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class DispachQueueProxy {
 
+    /**
+     * Create an asynchronous dispatch proxy to the target object via the dispatch queue.  The
+     * class loader of the generated proxy will be the same as the class loader of the target
+     * object.
+     *
+     * @param interfaceClass the interface that will be implemented by the proxy
+     * @param target the delegate object the proxy will asynchronously invoke
+     * @param queue the dispatch queue that the asynchronous runnables will execute on
+     * @param <T> the type of the interface class
+     * @return the new asynchronous dispatch proxy
+     * @throws IllegalArgumentException
+     */
     public static <T> T create(Class<T> interfaceClass, T target, DispatchQueue queue) throws IllegalArgumentException {
         return create(target.getClass().getClassLoader(), interfaceClass, target, queue);
     }
-    
+
+    /**
+     * Create an asynchronous dispatch proxy to the target object via the dispatch queue.
+     *
+     * @param classLoader the classloader which the proxy class should use
+     * @param interfaceClass the interface that will be implemented by the proxy
+     * @param target the delegate object the proxy will asynchronously invoke
+     * @param queue the dispatch queue that the asyncronous runnables will execute on
+     * @param <T> the type of the interface asynchronous
+     * @return the new asynchronous dispatch proxy
+     * @throws IllegalArgumentException
+     */
     synchronized public static <T> T create(ClassLoader classLoader, Class<T> interfaceClass, T target, DispatchQueue queue) throws IllegalArgumentException {
         Class<T> proxyClass = getProxyClass(classLoader, interfaceClass);
         Constructor<?> constructor = proxyClass.getConstructors()[0];

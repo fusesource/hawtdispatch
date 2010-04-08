@@ -58,7 +58,7 @@ object EchoNetScala {
     serverChannel.configureBlocking(false);
 
     var seen = List[URI]()
-    val queue = createSerialQueue(me.toString)
+    val queue = createQueue(me.toString)
     val accept_source = createSource(serverChannel, SelectionKey.OP_ACCEPT, queue);
     accept_source.setEventHandler(^ {
 
@@ -165,7 +165,7 @@ object EchoNetScala {
 
     val read_buffer = ByteBuffer.allocate(1024);
 
-    val queue = createSerialQueue(uri.toString)
+    val queue = createQueue(uri.toString)
     val read_source = createSource(channel, SelectionKey.OP_READ, queue);
     val write_source = createSource(channel, SelectionKey.OP_WRITE, queue);
     val seen = server.seen

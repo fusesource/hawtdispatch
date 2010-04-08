@@ -18,27 +18,33 @@
 package org.fusesource.hawtdispatch;
 
 /**
+ * <p>
  * Implemented by dispatch objects which can suspend the
  * execution of dispatch tasks.
+ * </p>
  */
 public interface Suspendable extends Retained {
 
     /**
+     * <p>
      * Suspends the invocation of tasks on a dispatch object.
-     *
+     * </p><p>
      * A suspended object will not invoke any tasks associated with it. The
-     * suspension of an object will occur after any running block associated with
+     * suspension of an object will occur after any running runnable associated with
      * the object completes.
-     *
+     * </p><p>
      * Calls to {@link #suspend()} must be balanced with calls
      * to {@link #resume()}.
+     * </p>
      *
      * @see #resume()
      */
     public void suspend();
 
     /**
+     * <p>
      * Resumes the invocation of tasks on a dispatch object.
+     * </p>
      *
      * @see #suspend()
      */
