@@ -25,7 +25,7 @@ import java.nio.channels.SelectableChannel;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public interface Dispatcher extends Retained {
+public interface Dispatcher {
 
     public DispatchQueue getRandomThreadQueue();
     public DispatchQueue getRandomThreadQueue(DispatchPriority priority);

@@ -47,11 +47,12 @@ object ScalaDispatch {
   def createSource(channel: SelectableChannel, interestOps: Int, queue: DispatchQueue) =
     Dispatch.createSource(channel, interestOps, queue)
   def getCurrentQueue = Dispatch.getCurrentQueue
-  def dispatchMain = Dispatch.dispatchMain
   def createQueue(label: String=null) = Dispatch.createQueue(label)
   def getGlobalQueue(priority: DispatchPriority) = Dispatch.getGlobalQueue(priority)
   def getGlobalQueue = Dispatch.getGlobalQueue
-  def getMainQueue = Dispatch.getMainQueue
+
+//  def dispatchMain = Dispatch.dispatchMain
+//  def getMainQueue = Dispatch.getMainQueue
 
   def using(resource: Retained): (=> Unit) => Runnable = {
     using(resource, resource) _

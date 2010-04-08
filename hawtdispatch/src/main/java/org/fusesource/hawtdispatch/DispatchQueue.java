@@ -24,7 +24,8 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>
  * Dispatch queues are lightweight objects to which runnable objects
- * may be submitted for asynchronous execution.
+ * may be submitted for asynchronous execution and therefore are
+ * {@linke Executor} objects.
  * </p>
  *
  *
@@ -78,6 +79,15 @@ public interface DispatchQueue extends DispatchObject, Executor {
     public DispatchQueue createSerialQueue(String label);
 
     /**
+     * Does the same thing as {@link #dispatchAsync(Runnable)}.
+     *
+     * @see #dispatchAsync(Runnable)
+     * @param runnable
+     * The runnable to submit to the dispatch queue.
+     */
+    void execute(Runnable runnable);
+
+    /**
      * <p>
      * Submits a runnable for asynchronous execution on a dispatch queue.
      * </p><p>
@@ -101,25 +111,6 @@ public interface DispatchQueue extends DispatchObject, Executor {
 
     /**
      * <p>
-     * Submits a runnable for synchronous execution on a dispatch queue.
-     * </p><p>
-     * Submits a runnable to a dispatch queue like dispatch_async(), however
-     * {@link #dispatchSync(Runnable)} will not return until the runnable
-     * has finished.
-     * </p><p>
-     * Calls to {@link #dispatchSync(Runnable)} targeting the current queue will result
-     * in dead-lock. Use of {@link #dispatchSync(Runnable)} is also subject to the same
-     * multi-party dead-lock problems that may result from the use of a mutex.
-     * Use of {@link #dispatchAsync(Runnable)} is preferred.
-     * </p>
-     *
-     * @param runnable
-     * The runnable to be invoked on the target dispatch queue.
-     */
-    public void dispatchSync(Runnable runnable) throws InterruptedException;
-
-    /**
-     * <p>
      * Schedule a runnable for execution on a given queue at a specified time.
      * </p>
      *
@@ -130,23 +121,50 @@ public interface DispatchQueue extends DispatchObject, Executor {
      */
     public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable);
 
-    /**
-     * <p>
-     * Submits a runnable to a dispatch queue for multiple invocations.
-     * </p><p>
-     * This function
-     * waits for the task runnable to complete before returning. If the target queue
-     * is a concurrent queue returned by {@link Dispatch#getGlobalQueue()}, the runnable
-     * may be invoked concurrently, and it must therefore be thread safe.
-     * </p>
-     *
-     * @param iterations
-     * The number of iterations to perform.
-     * <br/>
-     * @param runnable
-     * The runnable to be invoked the specified number of iterations.
-     */
-    public void dispatchApply(int iterations, Runnable runnable) throws InterruptedException;
+//
+//  This is an API method that libdispatch supports, but even they don't recommend it's
+//  use.  Due to the static nature of our thread pool implementation it's even more dangerous.
+//  so leaving it commented out for now so that folks don't use it.  Perhaps we can enable it
+//  in a future release.
+//
+//    /**
+//     * <p>
+//     * Submits a runnable for synchronous execution on a dispatch queue.
+//     * </p><p>
+//     * Submits a runnable to a dispatch queue like dispatch_async(), however
+//     * {@link #dispatchSync(Runnable)} will not return until the runnable
+//     * has finished.
+//     * </p><p>
+//     * Calls to {@link #dispatchSync(Runnable)} targeting the current queue will result
+//     * in dead-lock. Use of {@link #dispatchSync(Runnable)} is also subject to the same
+//     * multi-party dead-lock problems that may result from the use of a mutex.
+//     * Use of {@link #dispatchAsync(Runnable)} is preferred.
+//     * </p>
+//     *
+//     * @param runnable
+//     * The runnable to be invoked on the target dispatch queue.
+//     */
+//    public void dispatchSync(Runnable runnable) throws InterruptedException;
+
+//  Ditto..
+//
+//    /**
+//     * <p>
+//     * Submits a runnable to a dispatch queue for multiple invocations.
+//     * </p><p>
+//     * This function
+//     * waits for the task runnable to complete before returning. If the target queue
+//     * is a concurrent queue returned by {@link Dispatch#getGlobalQueue()}, the runnable
+//     * may be invoked concurrently, and it must therefore be thread safe.
+//     * </p>
+//     *
+//     * @param iterations
+//     * The number of iterations to perform.
+//     * <br/>
+//     * @param runnable
+//     * The runnable to be invoked the specified number of iterations.
+//     */
+//    public void dispatchApply(int iterations, Runnable runnable) throws InterruptedException;
 
     /**
      * <p>

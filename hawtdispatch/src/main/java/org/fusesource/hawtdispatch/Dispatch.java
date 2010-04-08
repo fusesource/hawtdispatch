@@ -120,20 +120,6 @@ public class Dispatch {
 
     /**
      * <p>
-     * Returns the default queue that is bound to the main thread.
-     * </p><p>
-     * In order to invoke runnables submitted to the main queue, the application must
-     * call {@link #dispatchMain()}}.
-     * </p>
-     *
-     * @return the main queue.
-     */
-    public static DispatchQueue getMainQueue() {
-        return DISPATCHER.getMainQueue();
-    }
-
-    /**
-     * <p>
      * Returns the global concurrent queue of default priority.
      * </p>
      *
@@ -188,18 +174,6 @@ public class Dispatch {
 
     /**
      * <p>
-     * Execute runnables submitted to the main queue.
-     * </p><p>
-     * This function "parks" the main thread and waits for runnables to be submitted
-     * to the main queue. This function never returns.
-     * </p>
-     */
-    public static void dispatchMain() {
-        DISPATCHER.dispatchMain();
-    }
-
-    /**
-     * <p>
      * Returns the queue on which the currently executing runnable is running.
      * </p><p>
      * When {@link #getCurrentQueue()} is called outside of the context of a
@@ -249,11 +223,65 @@ public class Dispatch {
         return DISPATCHER.createSource(aggregator, queue);
     }
 
+    /**
+     * <p>
+     * Gets a dispatch queue which is associated with the current dispatch thread.  Returns
+     * null if not called from the context of a runnable being executed by the dispatch system.
+     * </p><p>
+     * The method is flagged as deprecated since exposing this kind control to the application might
+     * prevent the system from being able to more dynamically control the number of threads used
+     * to service concurrent requests.
+     * </p>
+     * @return
+     */
+    @Deprecated
     public static DispatchQueue getCurrentThreadQueue() {
         return DISPATCHER.getCurrentThreadQueue();
     }
 
+    /**
+     * <p>
+     * Gets a random dispatch queue which is associated with the an available thread.
+     * </p><p>
+     * The method is flagged as deprecated since exposing this kind control to the application might
+     * prevent the system from being able to more dynamically control the number of threads used
+     * to service concurrent requests.
+     * </p>
+     * @return
+     */
+    @Deprecated
     public static DispatchQueue getRandomThreadQueue() {
         return DISPATCHER.getRandomThreadQueue();
     }
+
+// Being able to execute stuff on the main thread is critical for some GUI implementations.  For now
+// we will not expose these interfaces until are fully cooked / have good test cases for them.
+//
+//    /**
+//     * <p>
+//     * Returns the default queue that is bound to the main thread.
+//     * </p><p>
+//     * In order to invoke runnables submitted to the main queue, the application must
+//     * call {@link #dispatchMain()}}.
+//     * </p>
+//     *
+//     * @return the main queue.
+//     */
+//    public static DispatchQueue getMainQueue() {
+//        return DISPATCHER.getMainQueue();
+//    }
+//
+//    /**
+//     * <p>
+//     * Execute runnables submitted to the main queue.
+//     * </p><p>
+//     * This function "parks" the main thread and waits for runnables to be submitted
+//     * to the main queue. This function never returns.
+//     * </p>
+//     */
+//    public static void dispatchMain() {
+//        DISPATCHER.dispatchMain();
+//    }
+//
+
 }
