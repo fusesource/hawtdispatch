@@ -53,6 +53,10 @@ public class Dispatch {
 
     final public static Dispatcher DISPATCHER = create();
 
+    public static final DispatchPriority HIGH    = DispatchPriority.HIGH;
+    public static final DispatchPriority DEFAULT = DispatchPriority.DEFAULT;
+    public static final DispatchPriority LOW     = DispatchPriority.LOW;
+
     private static Dispatcher create() {
         return new Dispatcher() {
 

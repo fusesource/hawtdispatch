@@ -8,9 +8,237 @@ sort_info: 1
 
 {project_slogan:}
 
---- name:content pipeline:markdown,tags 
+--- name:content pipeline:tags,markdown 
 
-TODO:
+{project_name:} is a thread pooling and NIO handling framework API modeled
+after the `libdispatch` API that Apple created to power the Grand Central 
+Dispatch (GCD) technology in OS X.  It allows you to more easily develop 
+multi-threaded applications which can more easily scale to take advantage
+of all the processing cores on your machine.  At the same time, it's development
+model simplifies solving many of the problems that plague multi-threaded 
+NIO development.
+
+## Features
+* Java 1.5 API
+* Scala 2.8 API
+* Thread Pooling
+* Delayed Task Execution
+* Priority Task Execution
+* NIO Handling
+
+## DispatchQueue Usage
+
+The most important objects in the {project_name:} API, are the DispatchQueue
+objects.  They are Executor objects which will execute submitted runnable 
+objects at a later time.  They come in 2 flavors:
+
+* __Concurrent__: The tasks submitted to the concurrent dispatch queues will execute 
+  concurrently and therefore must be thread safe.  The order of execution of the tasks
+  is non deterministic.  There are only 3 concurrent queues shared system wide.  One for
+  each priority level and can be accessed using the `Dispatch.getGlobalQueue` method.
+  Example:
+  
+  {pygmentize_and_compare::}
+  -----------------------------
+  java: In Java
+  -----------------------------
+  DispatchQueue queue = getGlobalQueue(HIGH);
+  -----------------------------
+  scala: In Scala
+  -----------------------------
+  val queue = getGlobalQueue(HIGH)
+  {pygmentize_and_compare}
+  
+* __Serial__: Execute the submitted runnable tasks in FIFO order. A serial dispatch queue will 
+  only invoke one runnable at a time, but independent queues may each execute their 
+  runnable objects concurrently with respect to each other.  Serial dispatch queues are created
+  by the application using the `Dispatch.createQueue` method.  Example:
+
+  {pygmentize_and_compare::}
+  -----------------------------
+  java: In Java
+  -----------------------------
+  DispatchQueue queue = createQueue("My queue");
+  -----------------------------
+  scala: In Scala
+  -----------------------------
+  val queue = createQueue("My Queue")
+  {pygmentize_and_compare}
+  
+### Handy imports
+The examples in this document assume that you have 
+added the following imports:
+
+<div class="wide">
+{pygmentize_and_compare::}
+-----------------------------
+java: In Java
+-----------------------------
+import org.fusesource.hawtdispatch.*;
+import static org.fusesource.hawtdispatch.Dispatch.*;
+-----------------------------
+scala: In Scala
+-----------------------------
+import _root_.org.fusesource.hawtdispatch._;
+import _root_.org.fusesource.hawtdispatch.ScalaDispatch._;
+{pygmentize_and_compare}
+</div>
+
+### Submitting Runnable Objects
+
+Once you have a reference to a queue object you can use it to 
+perform some asynchronous processing.  Example:
+
+{pygmentize_and_compare::}
+-----------------------------
+java: In Java
+-----------------------------
+queue.execute(new Runnable(){
+  public void run() {
+    System.out.println("Hi!");
+  }
+});
+-----------------------------
+scala: in Scala
+-----------------------------
+queue << ^{
+  System.out.println("Hi!");
+}
+// or
+^{
+  System.out.println("Hi!");
+} ->: queue
+{pygmentize_and_compare}
+
+
+## Using NIO
+
+NIO integration is accomplished via a dispatch source object which is
+created using the `Dispatch.createSource` method.  You supply it
+the `SelectableChannel` and the operations your interested in receiving events for
+like `OP_READ` or `OP_WRITE` and when it's that NIO event is raised, 
+it will execute a runnable callback you configure on a dispatch queue 
+you specify. {project_name:} takes care of setting up and managing the
+NIO selectors and selector keys for you.
+
+Example:
+
+<div class="wide">
+{pygmentize_and_compare::}
+-----------------------------
+java: In Java
+-----------------------------
+SelectableChannel channel = ...
+DispatchQueue queue = createQueue()
+DispatchSource source = createSource(channel, OP_READ, queue);
+source.setEventHandler(new Runnable(){
+  public void run() {
+    ByteBuffer buffer = ByteBuffer.allocate(1024);
+    int count;
+    while( (c=channel.read(buffer)) > 0 ) {
+      // just dump it to the console
+      System.out.write(buffer.array(), buffer.offset(), buffer.position());
+    }
+  }
+});
+source.resume();
+-----------------------------
+scala: In Scala
+-----------------------------
+val channel:SelectableChannel = ...
+val queue = createQueue
+val source = createSource(channel, OP_READ, queue)
+source.setEventHandler(^{
+  val buffer = ByteBuffer.allocate(1024)
+  var count=0
+  while( (c=channel.read(buffer)) > 0 ) {
+    // just dump it to the console
+    System.out.write(buffer.array(), buffer.offset(), buffer.position());
+  }
+});
+source.resume
+{pygmentize_and_compare}
+</div>
+
+Dispatch sources are initially created in a suspended state.  Once the `DispatchSource.resume` method 
+is called it will start executing the event handler on the specified queue.  If you later
+want to stop processing events for a period of time, call the `DispatchSource.suspend` method.
+
+## Restrictions on Executed Runnables
+
+All runnable actions executed asynchronously by {project_name:} should be non-blocking
+and avoid waiting on any synchronized objects.  If a blocking call has to performed, it should be done 
+asynchronously in a new thread not managed by {project_name:}.
+
+## Common Patterns
+
+### Protecting Mutable State
+A common pattern that shows up to use a serial queue to synchronize access to the mutable state of an 
+object.  Example:
+
+{pygmentize:: scala}
+  class MyCounter {
+    val queue = createQueue()
+    var counter = 0;
+    
+    def add(value:Int) = ^{
+      counter += value
+    } ->: queue
+    
+    def sub(value:Int) = ^{
+      counter -= value
+    } ->: queue
+  }
+{pygmentize}
+
+### Asynchronous Cleanup
+
+On many occasions there is a resource associated with concurrent processing, and it needs to be released/cleaned 
+up once the concurrent processing has completed.
+
+This can be easily done by configuring a disposer callback on the dispatch queue or dispatch source.  These object support
+being reference counted using the `retain` and `release` method calls.  They are initially created with a retain count of 1.  
+Once the retain count reaches zero, the disposer runnable is executed on the associated queue.
+
+The following example tries to simulate a case were multiple concurrent tasks are using a shared resource and once
+they finish executing that shared resource gets closed.
+
+{pygmentize:: scala}
+val stream:PrintStream = ...
+val queue = createQueue()
+queue.setDisposer(^{ stream.close })
+
+for( i <- 1 to 10 ) {
+  queue.retain
+  getGlobalQueue << ^ {
+    // Concurrently compute some values and send then to 
+    // the stream.
+    val value = "Hello "+i
+    queue << ^{ stream.println(value) }
+    // the stream is closed once the last release executes.
+    queue.release
+  }
+}
+queue.release
+{pygmentize}
+
+Its' also important to note that the enqueued runnable objects increment the retain counter.  The following
+version of the above example also only closes the stream after all the values are sent
+to the stream:
+
+{pygmentize:: scala}
+val stream:PrintStream = ...
+val queue = createQueue()
+queue.setDisposer(^{ stream.close })
+for( i <- 1 to 10 ) {
+  val value = "Hello "+i
+  queue << ^{ stream.println(value) }
+}
+queue.release
+{pygmentize}
+
+
+
+## References
 
 Try checkout the [Documentation](documentation/index.html)
-

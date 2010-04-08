@@ -17,7 +17,7 @@
   # pages using the {var:} syntax.
   # -------------------------------------------------------------------
   project_name: "HawtDispatch"
-  project_slogan: 'HawtDispatch: The libdispatch API for Java and Scala'
+  project_slogan: 'HawtDispatch: The libdispatch style API for Java and Scala'
   project_id: 'hawtdispatch'
   project_jira_key: 'HAWTDISPATCH'
   project_issue_url: 'http://hawtdispatch.assembla.com/spaces/hawtdispatch/support/tickets'
