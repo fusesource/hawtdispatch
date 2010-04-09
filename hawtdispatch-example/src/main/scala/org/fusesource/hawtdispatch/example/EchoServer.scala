@@ -63,9 +63,6 @@ object EchoServer {
           socket.close
       }
     });
-    accept_source.setCancelHandler(^ {
-      channel.close();
-    });
 
     println("Listening on port: "+port);
 
@@ -76,7 +73,14 @@ object EchoServer {
 
     def stop() = {
       accept_source.release
+      queue.release
     }
+
+    accept_source.setDisposer(^{
+      channel.close();
+      println("Closed port: "+port);
+    });
+    
   }
 
   class Session(val channel: SocketChannel) {

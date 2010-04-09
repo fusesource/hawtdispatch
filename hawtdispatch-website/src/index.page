@@ -263,5 +263,5 @@ queue.release
 
 
 ## References
-
-[Full API]({api_dir:}/package-summary.html)
+* [Echo Server Example](http://github.com/chirino/hawtdispatch/blob/master/hawtdispatch-example/src/main/scala/org/fusesource/hawtdispatch/example/EchoServer.scala#L34)
+* [Full API]({api_dir:}/package-summary.html)
