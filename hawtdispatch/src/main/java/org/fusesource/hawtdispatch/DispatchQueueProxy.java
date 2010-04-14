@@ -68,7 +68,7 @@ import static org.objectweb.asm.ClassWriter.*;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class DispachQueueProxy {
+public class DispatchQueueProxy {
 
     /**
      * Create an asynchronous dispatch proxy to the target object via the dispatch queue.  The

@@ -25,10 +25,10 @@ package org.fusesource.hawtdispatch;
  * </p>
  *
  * <ul>
- * <li>{@link #INTEGER_ADD}</li>
- * <li>{@link #INTEGER_OR}</li>
- * <li>{@link #LONG_ADD}</li>
- * <li>{@link #LONG_OR}</li> 
+ * <li>{@link EventAggregators#INTEGER_ADD}</li>
+ * <li>{@link EventAggregators#INTEGER_OR}</li>
+ * <li>{@link EventAggregators#LONG_ADD}</li>
+ * <li>{@link EventAggregators#LONG_OR}</li> 
  * </ul>
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
@@ -57,71 +57,4 @@ public interface EventAggregator<Event, MergedEvent> {
      */
     public MergedEvent mergeEvents(MergedEvent previous, MergedEvent events);
 
-    /**
-     * An EventAggregator that coalesces integer data obtained via calls to
-     * {@link CustomDispatchSource#merge(Object)}. Addition is used to coalesce the data.
-     */
-    public static final EventAggregator<Integer,Integer> INTEGER_ADD = new EventAggregator<Integer,Integer>() {
-        public Integer mergeEvent(Integer previous, Integer event) {
-            if( previous == null ) {
-                return event;
-            }
-            return previous + event;
-        }
-
-        public Integer mergeEvents(Integer previous, Integer events) {
-            return previous + events;
-        }
-    };
-
-    /**
-     * An EventAggregator that coalesces long data obtained via calls to
-     * {@link CustomDispatchSource#merge(Object)}. Addition is used to coalesce the data.
-     */
-    public static final EventAggregator<Long,Long> LONG_ADD = new EventAggregator<Long,Long>() {
-        public Long mergeEvent(Long previous, Long event) {
-            if( previous == null ) {
-                return event;
-            }
-            return previous + event;
-        }
-
-        public Long mergeEvents(Long previous, Long events) {
-            return previous + events;
-        }
-    };
-
-    /**
-     * An EventAggregator that coalesces integer data obtained via calls to
-     * {@link CustomDispatchSource#merge(Object)}. Bit-wise or is used to coalesce the data.
-     */
-    public static final EventAggregator<Integer,Integer> INTEGER_OR = new EventAggregator<Integer,Integer>() {
-        public Integer mergeEvent(Integer previous, Integer event) {
-            if( previous == null ) {
-                return event;
-            }
-            return previous + event;
-        }
-
-        public Integer mergeEvents(Integer previous, Integer events) {
-            return previous + events;
-        }
-    };
-
-    /**
-     * An EventAggregator that coalesces long data obtained via calls to
-     * {@link CustomDispatchSource#merge(Object)}. Bit-wise or is used to coalesce the data.
-     */
-    public static final EventAggregator<Long,Long> LONG_OR = new EventAggregator<Long,Long>() {
-        public Long mergeEvent(Long previous, Long event) {
-            if( previous == null ) {
-                return event;
-            }
-            return previous | event;
-        }
-
-        public Long mergeEvents(Long previous, Long events) {
-            return previous | events;
-        }
-    };
 }

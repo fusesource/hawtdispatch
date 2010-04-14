@@ -113,6 +113,20 @@ public class Dispatch {
 
     /**
      * <p>
+     * Creates a new serial dispatch queue to which runnable objects may be submitted.
+     * </p>
+     * <p>
+     * Same thing as <code>createQueue(null)</code>
+     * </p>
+     * @see #createQueue(String)
+     * @return the newly created dispatch queue
+     */
+    public static DispatchQueue createQueue() {
+        return DISPATCHER.createQueue(null);
+    }
+
+    /**
+     * <p>
      * Returns the queue on which the currently executing runnable is running.
      * </p><p>
      * When {@link #getCurrentQueue()} is called outside of the context of a
