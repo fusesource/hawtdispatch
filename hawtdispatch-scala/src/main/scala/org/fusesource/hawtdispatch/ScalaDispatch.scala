@@ -24,18 +24,24 @@ import java.nio.channels.SelectableChannel
  */
 object ScalaDispatch {
 
+  sealed case class Callback[-A](retained: Retained, func: (A)=>Unit) extends (A => Unit) {
+    override def apply(v1: A) = func(v1)
+  }
+
   /**
    * Enriches the DispatchQueue interfaces with additional Scala friendly methods.
    */
-  final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy with Function1[Runnable, Unit]  {
+  final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy {
     // Proxy
     def self: Any = queue
 
-    // Function1[Runnable, Unit]
-    def apply(task: Runnable) = queue.dispatchAsync(task)
-  
-    def <<(task: Runnable) = {apply(task); this}
-    def ->:(task: Runnable) = {apply(task); this}
+//    def apply(task: Runnable) = queue.dispatchAsync(task)
+    def wrap[T](func: (T)=>Unit) = Callback(queue, func)
+
+    def <<(task: Runnable) = {queue.dispatchAsync(task); this}
+    def ->:(task: Runnable) = {queue.dispatchAsync(task); this}
+
+
   }
 
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
@@ -97,6 +103,70 @@ object ScalaDispatch {
   def ^(proc: => Unit): Runnable = new Runnable() {
     def run() {
       proc;
+    }
+  }
+
+  abstract sealed class Result[+T]
+  case class Success[+T](value:T) extends Result[T]
+  case class Failure(exception:Exception) extends Result[Nothing]
+
+  def result[T](cb: (Result[T])=>Unit)(proc: => T): Runnable = {
+    var resource: Retained = null
+    if (cb != null ) {
+      cb match {
+        case Callback(retained, _)=>
+          resource = retained
+        case _=>
+      }
+    }
+    if( resource != null ) {
+      resource.retain
+    }
+    new Runnable() {
+      def run = {
+        try {
+          val rc = proc;
+          if( cb!=null ) {
+            cb(Success(rc))
+          }
+        } catch {
+          case e:Exception=>
+            if( cb!=null ) {
+              cb(Failure(e))
+            }
+        } finally {
+          if (resource != null) {
+            resource.release
+          }
+        }
+      }
+    }
+  }
+
+  def callback[T](cb: (T)=>Unit)(proc: => T): Runnable = {
+    var resource: Retained = null
+    if (cb != null ) {
+      cb match {
+        case Callback(retained, _)=>
+          resource = retained
+      }
+    }
+    if( resource != null ) {
+      resource.retain
+    }
+    new Runnable() {
+      def run = {
+        try {
+          val rc = proc;
+          if( cb!=null ) {
+            cb(rc)
+          }
+        } finally {
+          if (resource != null) {
+            resource.release
+          }
+        }
+      }
     }
   }
 

@@ -152,7 +152,7 @@ object EchoNetScala {
     } ->: queue
 
     def trace(str: String) {
-      println(String.format("%5d       - %s", new Integer(port), str));
+      println(String.format("%5d       - %s", new java.lang.Integer(port), str));
     }
 
   }
@@ -315,7 +315,7 @@ object EchoNetScala {
     }
 
     def trace(str: String) = {
-      println(String.format("%5d %5d - %s", new Integer(server.port), new Integer(uri.getPort()), str));
+      println(String.format("%5d %5d - %s", new java.lang.Integer(server.port), new java.lang.Integer(uri.getPort()), str));
     }
 
 
