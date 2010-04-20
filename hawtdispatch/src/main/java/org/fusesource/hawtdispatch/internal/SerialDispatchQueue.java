@@ -30,8 +30,9 @@ import org.fusesource.hawtdispatch.internal.util.QueueSupport;
  */
 public class SerialDispatchQueue extends AbstractDispatchObject implements HawtDispatchQueue, Runnable {
 
-    protected final String label;
+    private int MAX_DISPATCH_LOOPS = 1000*5;
 
+    protected final String label;
 //    protected final Set<DispatchOption> options;
 
     protected final AtomicInteger executeCounter = new AtomicInteger();
@@ -40,7 +41,6 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     protected final ConcurrentLinkedQueue<Runnable> externalQueue = new ConcurrentLinkedQueue<Runnable>();
     private final LinkedList<Runnable> localQueue = new LinkedList<Runnable>();
     private final ThreadLocal<Boolean> executing = new ThreadLocal<Boolean>();
-    
 
     public SerialDispatchQueue(String label) {
         this.label = label;
@@ -119,8 +119,8 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         int counter=0;
         try {
             Runnable runnable;
-            while( suspended.get() <= 0 ) {
-                
+            while( suspended.get() <= 0 && counter < MAX_DISPATCH_LOOPS) {
+
                 if( (runnable = localQueue.poll())!=null ) {
                     counter++;
                     dispatch(runnable);
@@ -141,7 +141,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
                 
                 break;
             }
-            
+
         } finally {
             if( counter>0 ) {
                 long lsize = size.addAndGet(-counter);
