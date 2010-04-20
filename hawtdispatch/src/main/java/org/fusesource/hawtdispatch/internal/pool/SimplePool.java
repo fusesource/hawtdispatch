@@ -40,7 +40,7 @@ public class SimplePool implements WorkerPool {
         }
         w.setDaemon(true);
         w.setPriority(priority);
-        w.setName(name + "-worker-" + index);
+        w.setName(name + "-" + index);
         return w;
     }
 
