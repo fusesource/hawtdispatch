@@ -15,6 +15,7 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
+import org.fusesource.hawtdispatch.Dispatch;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.DispatchSource;
 import org.fusesource.hawtdispatch.internal.Dispatcher;
@@ -25,6 +26,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
@@ -57,6 +59,28 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         int readyOps;
         SelectionKey key;
         NioAttachment attachment;
+
+        @Override
+        public String toString() {
+            return "{ready: "+opsToString(readyOps)+" }";
+        }
+    }
+
+    private static String opsToString(int ops) {
+        ArrayList sb = new ArrayList();
+        if( (ops & SelectionKey.OP_ACCEPT) != 0) {
+            sb.add("ACCEPT");
+        }
+        if( (ops & SelectionKey.OP_CONNECT) != 0) {
+            sb.add("CONNECT");
+        }
+        if( (ops & SelectionKey.OP_READ) != 0) {
+            sb.add("READ");
+        }
+        if( (ops & SelectionKey.OP_WRITE) != 0) {
+            sb.add("WRITE");
+        }
+        return sb.toString();
     }
 
     final private ThreadLocal<KeyState> keyState = new ThreadLocal<KeyState>();
@@ -154,7 +178,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             public void run() {
                 assert keyState.get()==null;
 
-                debug("Registering on selector "+ WorkerThread.currentWorkerThread().getDispatchQueue().getLabel() );
+                if(DEBUG) debug("Registering interest %s", opsToString(interestOps));
                 Selector selector = WorkerThread.currentWorkerThread().getNioManager().getSelector();
                 try {
                     KeyState state = new KeyState();
@@ -178,7 +202,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
     }
 
 
-    public void fire(int readyOps) {
+    public void fire(final int readyOps) {
         final KeyState state = keyState.get();
         if( state==null ) {
             return;
@@ -189,7 +213,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             targetQueue.dispatchAsync(new Runnable() {
                 public void run() {
                     if( !isSuspended() && !isCanceled()) {
-                        debug("fired %d %s", interestOps, state.toString());
+                        if(DEBUG) debug("fired %s", opsToString(readyOps));
                         eventHandler.run();
                         updateInterest();
                     }
@@ -202,7 +226,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
     private void updateInterest() {
         if( isCurrent(selectorQueue) ) {
             if( !isSuspended() && !isCanceled() ) {
-                debug("adding interest: %d", interestOps);
+                if(DEBUG) debug("adding interest: %s", opsToString(interestOps));
                 KeyState state = keyState.get();
                 if( state==null ) {
                     return;
@@ -216,7 +240,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             selectorQueue.dispatchAsync(new Runnable(){
                 public void run() {
                     if( !isSuspended() && !isCanceled() ) {
-                        debug("adding interest: %d", interestOps);
+                        if(DEBUG) debug("adding interest: %d", opsToString(interestOps));
                         KeyState state = keyState.get();
                         if( state==null ) {
                             return;
@@ -316,7 +340,12 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
 
     protected void debug(String str, Object... args) {
         if (DEBUG) {
-            System.out.println(format("[DEBUG] NioDispatchSource %0#10x: ", System.identityHashCode(this))+format(str, args));
+            String thread = Thread.currentThread().getName();
+            String target ="";
+            if( Dispatch.getCurrentQueue()!=null ) {
+                target = Dispatch.getCurrentQueue().getLabel() + " | ";
+            }
+            System.out.println(format("DEBUG | %s | #%0#10x | %s%s", thread, System.identityHashCode(this), target, format(str, args)));
         }
     }
 

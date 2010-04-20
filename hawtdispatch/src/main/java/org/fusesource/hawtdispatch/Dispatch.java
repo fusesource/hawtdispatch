@@ -130,7 +130,7 @@ public class Dispatch {
      * Returns the queue on which the currently executing runnable is running.
      * </p><p>
      * When {@link #getCurrentQueue()} is called outside of the context of a
-     * submitted runnable, it will return the default concurrent queue.
+     * submitted runnable, it will return null.
      * </p>
      *
      * @return the queue on which the currently executing runnable is running.
