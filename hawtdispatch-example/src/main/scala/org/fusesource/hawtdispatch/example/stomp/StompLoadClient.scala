@@ -264,7 +264,10 @@ object StompLoadClient {
           while (!done.get) {
             client.send(content)
             producerCounter.incrementAndGet();
-            Thread.sleep(producerSleep);
+            if( consumerSleep > 0 ) {
+              client.flush
+              Thread.sleep(producerSleep);
+            }
             i += 1
           }
         }
