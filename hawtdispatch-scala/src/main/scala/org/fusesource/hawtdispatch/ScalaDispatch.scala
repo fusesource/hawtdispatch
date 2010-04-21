@@ -106,6 +106,12 @@ object ScalaDispatch {
     }
   }
 
+  implicit def runnable(proc: ()=>Unit): Runnable = new Runnable() {
+    def run() {
+      proc()
+    }
+  }
+
   abstract sealed class Result[+T]
   case class Success[+T](value:T) extends Result[T]
   case class Failure(exception:Exception) extends Result[Nothing]
