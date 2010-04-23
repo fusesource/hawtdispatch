@@ -91,6 +91,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
         this.channel = channel;
         this.selectorQueue = pickThreadQueue(dispatcher, targetQueue);
+        this.selectorQueue.retain();
         this.interestOps = interestOps;
         this.suspended.incrementAndGet();
         this.setTargetQueue(targetQueue);
@@ -119,22 +120,39 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         register_on(selectorQueue);
     }
 
+    @Override
+    protected void dispose() {
+        // if not yet canceled..
+        if( canceled.compareAndSet(false, true) ) {
+            // Then we need to cancel.. and then dispose..
+            selectorQueue.dispatchAsync(new Runnable(){
+                public void run() {
+                    internal_cancel();
+                    NioDispatchSource.super.dispose();
+                }
+            });
+            selectorQueue.release();
+        } else {
+            // was already canceled.. so we can do the standard dispose. 
+            super.dispose();
+        }
+    }
 
     public void cancel() {
-        if( canceled.compareAndSet(false, true) && selectorQueue!=null ) {
+        if( canceled.compareAndSet(false, true) ) {
             selectorQueue.dispatchAsync(new Runnable(){
                 public void run() {
                     internal_cancel();
                 }
             });
+            selectorQueue.release();
         }
     }
 
     void internal_cancel() {
         key_cancel();
-        targetQueue.release();
         if( cancelHandler!=null ) {
-            cancelHandler.run();
+            targetQueue.dispatchAsync(cancelHandler);
         }
     }
 
@@ -163,14 +181,6 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
         debug("Canceled selector on "+WorkerThread.currentWorkerThread().getDispatchQueue().getLabel() );
         keyState.remove();
-    }
-
-    private void cancel_on(final DispatchQueue queue) {
-        queue.dispatchAsync(new Runnable(){
-            public void run() {
-                key_cancel();
-            }
-        });
     }
 
     private void register_on(final DispatchQueue queue) {
@@ -292,16 +302,6 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
     }
 
-    @Override
-    protected void dispose() {
-        cancel();
-        selectorQueue.dispatchAsync(new Runnable(){
-            public void run() {
-                NioDispatchSource.super.dispose();
-            }
-        });
-    }
-
     public boolean isCanceled() {
         return canceled.get();
     }
@@ -332,8 +332,14 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             debug("Switching to "+queue.getLabel());
             register_on(queue);
             selectorQueue = queue;
+            selectorQueue.retain();
             if( previous!=null ) {
-                cancel_on(previous);
+                previous.dispatchAsync(new Runnable(){
+                    public void run() {
+                        key_cancel();
+                    }
+                });
+                previous.release();
             }
         }
     }

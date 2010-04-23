@@ -16,6 +16,13 @@
  */
 package org.fusesource.hawtdispatch;
 
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.format;
@@ -27,10 +34,11 @@ import static java.lang.String.format;
  */
 public class BaseRetained implements Retained {
 
-    private static final boolean TRACE = false;
+    private static final int MAX_TRACES = Integer.getInteger("org.fusesource.hawtdispatch.BaseRetained.MAX_TRACES", 100);
+    private static final boolean TRACE = Boolean.getBoolean("org.fusesource.hawtdispatch.BaseRetained.TRACE");
 
-    final protected AtomicInteger retained = new AtomicInteger(1);
-    volatile protected Runnable disposer;
+    final private AtomicInteger retained = new AtomicInteger(1);
+    volatile private Runnable disposer;
 
     /**
      * <p>
@@ -57,9 +65,16 @@ public class BaseRetained implements Retained {
      * {@link #release()}.
      */
     final public void retain() {
-        assertRetained();
-        retained.getAndIncrement();
-        trace("retained at:");
+        if( TRACE ) {
+            synchronized(traces) {
+                assertRetained();
+                final int x = retained.incrementAndGet();
+                trace("retained", x);
+            }
+        } else {
+            assertRetained();
+            retained.getAndIncrement();
+        }
     }
 
     /**
@@ -73,11 +88,52 @@ public class BaseRetained implements Retained {
      * </p>
      */
     final public void release() {
-        assertRetained();
-        if (retained.decrementAndGet() == 0) {
-            dispose();
+        if( TRACE ) {
+            synchronized(traces) {
+                assertRetained();
+                final int x = retained.decrementAndGet();
+                trace("released", x);
+                if (x == 0) {
+                    dispose();
+                    trace("disposed", x);
+                }
+            }
+        } else {
+            assertRetained();
+            if (retained.decrementAndGet() == 0) {
+                dispose();
+            }
         }
-        trace("released at:");
+    }
+
+    /**
+     * <p>
+     * Decrements the reference count by n.
+     * </p><p>
+     * An object is asynchronously disposed once all references are
+     * released. Using a disposed object will cause undefined errors.
+     * The system does not guarantee that a given client is the last or
+     * only reference to a given object.
+     * </p>
+     * @param n
+     */
+    final protected void release(int n) {
+        if( TRACE ) {
+            synchronized(traces) {
+                assertRetained();
+                int x = retained.addAndGet(-n);
+                trace("released "+n, x);
+                if ( x == 0) {
+                    trace("disposed", x);
+                    dispose();
+                }
+            }
+        } else {
+            assertRetained();
+            if (retained.addAndGet(-n) == 0) {
+                dispose();
+            }
+        }
     }
 
     /**
@@ -88,8 +144,10 @@ public class BaseRetained implements Retained {
      */
     final protected void assertRetained() {
         if( TRACE ){
-            if( retained.get() <= 0 ) {
-                throw new IllegalStateException(format("%s: Use of object not allowed after it has been released.", this.toString()));
+            synchronized(traces) {
+                if( retained.get() <= 0 ) {
+                    throw new AssertionError(format("%s: Use of object not allowed after it has been released. %s", this.toString(), traces));
+                }
             }
         } else {
             assert retained.get() > 0 : format("%s: Use of object not allowed after it has been released.", this.toString());
@@ -119,17 +177,63 @@ public class BaseRetained implements Retained {
         }
     }
 
+    final private ArrayList<String> traces = TRACE ? new ArrayList<String>(MAX_TRACES+1) : null;
+    final private void trace(final String action, final     int counter) {
+        if( traces.size() < MAX_TRACES) {
+            Exception ex = new Exception() {
+                public String toString() {
+                    return "Trace "+(traces.size()+1)+": "+action+", counter: "+counter+", thread: "+Thread.currentThread().getName();
+                }
+            };
 
-//    final protected ArrayList<String> traces = TRACE ? new ArrayList<String>() : null;
-    final private void trace(final String message) {
-        if( TRACE ) {
-//            StringWriter sw = new StringWriter();
-//            new Exception() {
-//                public String toString() {
-//                    return "Trace "+(traces.size()+1)+": "+message+", retain counter: "+retained.get();
-//                }
-//            }.printStackTrace(new PrintWriter(sw));
-//            traces.add("\n"+sw);
+            String squashed =  squash(ex.getStackTrace());
+            if( squashed == null ) {
+                StringWriter sw = new StringWriter();
+                ex.printStackTrace(new PrintWriter(sw));
+                traces.add("\n"+sw);
+            }
+//            else {
+//                traces.add("\n"+ex.toString()+"\n  at "+squashed+"\n");
+//            }
+        }  else if (traces.size() == MAX_TRACES) {
+            traces.add("MAX_TRACES reached... no more traces will be recorded.");
         }
     }
+
+    //
+    // Hide system generated balanced calls to retain/release since the tracing facility is
+    // here to help end users figure out where THEY are failing to pair up the calls. 
+    //
+    static private String squash(StackTraceElement[] st) {
+        if( st.length > 2) {
+            final String traceData = st[2].getClassName()+"."+st[2].getMethodName();
+            if( CALLERS.contains(traceData) ) {
+                return traceData;
+            }
+        }
+        return null;
+    }
+
+
+    static HashSet<String> CALLERS = new HashSet<String>();
+    static {
+        if( TRACE ) {
+            Properties p = new Properties();
+            final InputStream is = BaseRetained.class.getResourceAsStream("BaseRetained.CALLERS");
+            try {
+                p.load(is);
+            } catch (Exception ignore) {
+                ignore.printStackTrace();
+            } finally {
+                try {
+                    is.close();
+                } catch (Exception ignore) {
+                }
+            }
+            for (Object key : Collections.list(p.keys())) {
+                CALLERS.add((String) key);
+            }
+        }
+    }
+
 }

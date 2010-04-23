@@ -51,13 +51,10 @@ abstract public class AbstractDispatchObject extends BaseSuspendable implements 
 
     @Override
     protected void dispose() {
-        // Runs the disposer on the target queue
+        // Run the dispose on the target queue
         targetQueue.dispatchAsync(new Runnable(){
             public void run() {
-                Runnable disposer = AbstractDispatchObject.this.disposer;
-                if( disposer!=null ) {
-                    disposer.run();
-                }
+                AbstractDispatchObject.super.dispose();
             }
         });
         targetQueue.release();

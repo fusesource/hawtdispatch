@@ -81,6 +81,7 @@ final public class TimerThread extends Thread {
     }
 
     private void add(TimerRequest request) {
+        request.target.retain();
         synchronized(mutex) {
             requests.add(request);
             mutex.notify();
@@ -93,6 +94,7 @@ final public class TimerThread extends Thread {
             @Override
             protected final void execute(TimerRequest request) {
                 request.target.dispatchAsync(request.runnable);
+                request.target.release();
             }
         };
         

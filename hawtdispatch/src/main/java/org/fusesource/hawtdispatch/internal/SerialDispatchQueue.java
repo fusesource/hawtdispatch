@@ -30,14 +30,13 @@ import org.fusesource.hawtdispatch.internal.util.QueueSupport;
  */
 public class SerialDispatchQueue extends AbstractDispatchObject implements HawtDispatchQueue, Runnable {
 
-    private int MAX_DISPATCH_LOOPS = 1000*5;
+    private int MAX_DISPATCH_LOOPS = 1000;
 
     protected final String label;
 //    protected final Set<DispatchOption> options;
 
+    protected final AtomicInteger size = new AtomicInteger();
     protected final AtomicInteger executeCounter = new AtomicInteger();
-    protected final AtomicLong size = new AtomicLong();
-    protected final AtomicLong externalQueueSize = new AtomicLong();
     protected final ConcurrentLinkedQueue<Runnable> externalQueue = new ConcurrentLinkedQueue<Runnable>();
     private final LinkedList<Runnable> localQueue = new LinkedList<Runnable>();
     private final ThreadLocal<Boolean> executing = new ThreadLocal<Boolean>();
@@ -54,35 +53,18 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     }
 
     private void enqueue(Runnable runnable) {
-        long sizeWas = size.getAndIncrement();
         // We can take a shortcut...
         if( executing.get()!=null ) {
             localQueue.add(runnable);
         } else {
-            if( sizeWas==0 ) {
-                retain();
-            }
-
-            long lastSize = externalQueueSize.getAndIncrement();
             externalQueue.add(runnable);
-            if( lastSize == 0 && suspended.get()<=0 ) {
+        }
+        if( size.incrementAndGet()==1 ) {
+            retain();
+            if( !isSuspended() ) {
                 dispatchSelfAsync();
             }
         }
-    }
-
-    @Override
-    protected void dispose() {
-        // Runs the disposer on this queue
-        enqueue(new Runnable(){
-            public void run() {
-                Runnable disposer = SerialDispatchQueue.this.disposer;
-                if( disposer!=null ) {
-                    disposer.run();
-                }
-            }
-        });
-        targetQueue.release();
     }
 
     public void run() {
@@ -115,41 +97,37 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         executing.remove();
     }
     
+    protected final AtomicLong drained = new AtomicLong();
+
     private void dispatchLoop() {
         int counter=0;
         try {
             Runnable runnable;
-            while( suspended.get() <= 0 && counter < MAX_DISPATCH_LOOPS) {
-
-                if( (runnable = localQueue.poll())!=null ) {
-                    counter++;
-                    dispatch(runnable);
-                    continue;
+            // Drain the external queue...
+            while( (runnable = externalQueue.poll())!=null ) {
+                localQueue.add(runnable);
+            }
+            // dispatch the local queue..
+            while( counter < MAX_DISPATCH_LOOPS) {
+                if( isSuspended() ) {
+                    break;
                 }
-    
-                long lsize = externalQueueSize.get();
-                if( lsize>0 ) {
-                    while( lsize > 0 ) {
-                        runnable = externalQueue.poll();
-                        if( runnable!=null ) {
-                            localQueue.add(runnable);
-                            lsize = externalQueueSize.decrementAndGet();
-                        }
-                    }
-                    continue;
+                runnable = localQueue.poll();
+                if( runnable==null ) {
+                    break;
                 }
-                
-                break;
+                counter++;
+                dispatch(runnable);
             }
 
         } finally {
             if( counter>0 ) {
-                long lsize = size.addAndGet(-counter);
-                assert lsize >= 0;
-                if( lsize==0 ) {
+                if( size.addAndGet(-counter)==0 ) {
                     release();
                 } else {
-                    dispatchSelfAsync();
+                    if( !isSuspended() ) {
+                        dispatchSelfAsync();
+                    }
                 }
             }
         }
@@ -231,4 +209,12 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         return null;
     }
 
+    @Override
+    public String toString() {
+        if( label == null ) {
+            return "serial queue";
+        } else {
+            return "serial queue { label: \""+label+"\" }";
+        }
+    }
 }
