@@ -50,6 +50,10 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return label;
     }
 
+    public boolean isExecuting() {
+        return dispatcher.getCurrentThreadQueue() == this;
+    }
+
     public HawtDispatcher getDispatcher() {
         return dispatcher;
     }

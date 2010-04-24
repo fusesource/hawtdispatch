@@ -137,6 +137,11 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         return label;
     }
 
+    public boolean isExecuting() {
+        Boolean b = executing.get();
+        return b!=null && b.booleanValue();
+    }
+
     @Override
     protected void onStartup() {
         dispatchSelfAsync();

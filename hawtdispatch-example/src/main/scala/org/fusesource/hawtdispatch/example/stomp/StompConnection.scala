@@ -197,7 +197,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
                 read_source.setTargetQueue(queue)
               }
 
-            } ->: queue
+            } >>: queue
           }
 
           // don't process frames until we are connected..
@@ -254,7 +254,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
     send(StompFrame(Responses.ERROR, new LinkedList(), ascii(msg)))
     ^ {
       close
-    } ->: queue
+    } >>: queue
   }
 
   class SimpleConsumer(val dest:AsciiBuffer) extends BaseRetained with Consumer {
@@ -295,7 +295,7 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
 //
 //      def deliver(delivery:Delivery) = using(delivery) {
 //        deliveryQueue.send(delivery)
-//      } ->: queue
+//      } >>: queue
 //
 //      def close = {
 //        release

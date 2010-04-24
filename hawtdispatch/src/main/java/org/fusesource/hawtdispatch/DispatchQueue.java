@@ -176,4 +176,12 @@ public interface DispatchQueue extends DispatchObject, Executor {
      */
     public String getLabel();
                           
+    /**
+     * <p>
+     * Returns true if this dispatch queue is executing the caller.
+     * </p>
+     *
+     * @return if this dispatch queue is executing the caller.
+     */
+    public boolean isExecuting();
 }

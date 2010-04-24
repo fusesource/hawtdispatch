@@ -149,7 +149,7 @@ object EchoNetScala {
       connect_source.resume
       seen = uri :: seen;
 
-    } ->: queue
+    } >>: queue
 
     def trace(str: String) {
       println(String.format("%5d       - %s", new java.lang.Integer(port), str));

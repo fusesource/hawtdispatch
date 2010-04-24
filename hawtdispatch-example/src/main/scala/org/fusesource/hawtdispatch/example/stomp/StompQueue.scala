@@ -51,7 +51,7 @@ class StompQueue(val destination:AsciiBuffer) extends BaseRetained with Route wi
     def deliver(value:Delivery):Unit = {
       val delivery = Delivery(value)
       delivery.setDisposer(^{
-        ^{ completed(value) } ->:queue
+        ^{ completed(value) } >>:queue
       })
       consumer.deliver(delivery);
       delivery.release
@@ -77,7 +77,7 @@ class StompQueue(val destination:AsciiBuffer) extends BaseRetained with Route wi
         readyConsumers.addLast(cs)
       }
       delivery_buffer.eventHandler.run
-    } ->: queue
+    } >>: queue
 
   def unbind(consumers:List[Consumer]) = releasing(consumers) {
       for ( consumer <- consumers ) {
@@ -90,7 +90,7 @@ class StompQueue(val destination:AsciiBuffer) extends BaseRetained with Route wi
           case None=>
         }
       }
-    } ->: queue
+    } >>: queue
 
   def disconnected() = throw new RuntimeException("unsupported")
 
@@ -131,7 +131,7 @@ class StompQueue(val destination:AsciiBuffer) extends BaseRetained with Route wi
 //
 //    def deliver(delivery:Delivery) = using(delivery) {
 //      deliveryQueue.send(delivery)
-//    } ->: queue
+//    } >>: queue
 //
 //    def close = {
 //      release

@@ -24,10 +24,6 @@ import java.nio.channels.SelectableChannel
  */
 object ScalaDispatch {
 
-  sealed case class Callback[-A](retained: Retained, func: (A)=>Unit) extends (A => Unit) {
-    override def apply(v1: A) = func(v1)
-  }
-
   /**
    * Enriches the DispatchQueue interfaces with additional Scala friendly methods.
    */
@@ -35,30 +31,87 @@ object ScalaDispatch {
     // Proxy
     def self: Any = queue
 
-//    def apply(task: Runnable) = queue.dispatchAsync(task)
+    // def apply(task: Runnable) = queue.dispatchAsync(task)
     def wrap[T](func: (T)=>Unit) = Callback(queue, func)
 
     def <<(task: Runnable) = {queue.dispatchAsync(task); this}
-    def ->:(task: Runnable) = {queue.dispatchAsync(task); this}
+    def >>:(task: Runnable) = {queue.dispatchAsync(task); this}
 
+    def <<|(task: Runnable) = {
+      if( queue.isExecuting ) {
+        try {
+          task.run
+        } catch {
+          case e:Exception =>
+            e.printStackTrace
+        }
+      } else {
+        queue.dispatchAsync(task);
+      }
+      this
+    }
 
+    def |>>:(task: Runnable) = {
+      if( queue.isExecuting ) {
+        try {
+          task.run
+        } catch {
+          case e:Exception =>
+            e.printStackTrace
+        }
+      } else {
+        queue.dispatchAsync(task);
+      }
+      this
+    }
   }
 
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
+  /////////////////////////////////////////////////////////////////////
+  //
+  // re-export all the Dispatch static methods.
+  //
+  /////////////////////////////////////////////////////////////////////
+
   def getRandomThreadQueue = Dispatch.getRandomThreadQueue
   def getCurrentThreadQueue = Dispatch.getCurrentQueue
-  def createSource[Event, MergedEvent](aggregator: EventAggregator[Event, MergedEvent], queue: DispatchQueue) =
+  def createSource[Event, MergedEvent](aggregator: EventAggregator[Event, MergedEvent], queue: DispatchQueue) = {
     Dispatch.createSource(aggregator, queue)
-  def createSource(channel: SelectableChannel, interestOps: Int, queue: DispatchQueue) =
+  }
+  def createSource(channel: SelectableChannel, interestOps: Int, queue: DispatchQueue) = {
     Dispatch.createSource(channel, interestOps, queue)
+  }
   def getCurrentQueue = Dispatch.getCurrentQueue
   def createQueue(label: String=null) = Dispatch.createQueue(label)
   def getGlobalQueue(priority: DispatchPriority) = Dispatch.getGlobalQueue(priority)
   def getGlobalQueue = Dispatch.getGlobalQueue
+  // def dispatchMain = Dispatch.dispatchMain
+  // def getMainQueue = Dispatch.getMainQueue
 
-//  def dispatchMain = Dispatch.dispatchMain
-//  def getMainQueue = Dispatch.getMainQueue
+  /////////////////////////////////////////////////////////////////////
+  //
+  // Make it easier to create Runnable objects.
+  //
+  /////////////////////////////////////////////////////////////////////
+
+  def ^(proc: => Unit): Runnable = new Runnable() {
+    def run() {
+      proc;
+    }
+  }
+
+  implicit def runnable(proc: ()=>Unit): Runnable = new Runnable() {
+    def run() {
+      proc()
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////
+  //
+  // Helpers for working with Retained objects.
+  //
+  /////////////////////////////////////////////////////////////////////
 
   def using(resource: Retained): (=> Unit) => Runnable = {
     using(resource, resource) _
@@ -84,6 +137,36 @@ object ScalaDispatch {
     using(null, resources) _
   }
 
+  private def using(retainedResource: Retained, releasedResource: Retained)(proc: => Unit): Runnable = {
+    if (retainedResource != null) {
+      retainedResource.retain
+    }
+    new Runnable() {
+      def run = {
+        try {
+          proc;
+        } finally {
+          if (releasedResource != null) {
+            releasedResource.release
+          }
+        }
+      }
+    }
+  }
+
+  private def using(retainedResources: Seq[Retained], releasedResources: Seq[Retained])(proc: => Unit): Runnable = {
+    retain(retainedResources)
+    new Runnable() {
+      def run = {
+        try {
+          proc;
+        } finally {
+          release(releasedResources)
+        }
+      }
+    }
+  }
+
   def retain(retainedResources: Seq[Retained]) = {
     if (retainedResources != null) {
       for (resource <- retainedResources) {
@@ -100,16 +183,28 @@ object ScalaDispatch {
     }
   }
 
-  def ^(proc: => Unit): Runnable = new Runnable() {
-    def run() {
-      proc;
+
+  class ListEventAggregator[T] extends EventAggregator[T, List[T]] {
+    def mergeEvent(previous:List[T], event:T) = {
+      if( previous == null ) {
+        event :: Nil
+      } else {
+        previous ::: List(event)
+      }
+    }
+    def mergeEvents(previous:List[T], events:List[T]):List[T] = {
+      previous ::: events
     }
   }
 
-  implicit def runnable(proc: ()=>Unit): Runnable = new Runnable() {
-    def run() {
-      proc()
-    }
+  /////////////////////////////////////////////////////////////////////
+  //
+  // Helpers for working with Callbacks.
+  //
+  /////////////////////////////////////////////////////////////////////
+
+  sealed case class Callback[-A](retained: Retained, func: (A)=>Unit) extends (A => Unit) {
+    override def apply(v1: A) = func(v1)
   }
 
   abstract sealed class Result[+T]
@@ -173,49 +268,6 @@ object ScalaDispatch {
           }
         }
       }
-    }
-  }
-
-  private def using(retainedResource: Retained, releasedResource: Retained)(proc: => Unit): Runnable = {
-    if (retainedResource != null) {
-      retainedResource.retain
-    }
-    new Runnable() {
-      def run = {
-        try {
-          proc;
-        } finally {
-          if (releasedResource != null) {
-            releasedResource.release
-          }
-        }
-      }
-    }
-  }
-
-  private def using(retainedResources: Seq[Retained], releasedResources: Seq[Retained])(proc: => Unit): Runnable = {
-    retain(retainedResources)
-    new Runnable() {
-      def run = {
-        try {
-          proc;
-        } finally {
-          release(releasedResources)
-        }
-      }
-    }
-  }
-
-  class ListEventAggregator[T] extends EventAggregator[T, List[T]] {
-    def mergeEvent(previous:List[T], event:T) = {
-      if( previous == null ) {
-        event :: Nil
-      } else {
-        previous ::: List(event)
-      }
-    }
-    def mergeEvents(previous:List[T], events:List[T]):List[T] = {
-      previous ::: events
     }
   }
 

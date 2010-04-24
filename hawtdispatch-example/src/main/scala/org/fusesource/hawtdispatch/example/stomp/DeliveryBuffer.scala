@@ -182,7 +182,7 @@ class DeliveryCreditBufferProtocol(val delivery_buffer:DeliveryBuffer, val queue
       ///////////////////////////////////////////////////
       // These methods get called from the server/consumer thread...
       ///////////////////////////////////////////////////
-      def credit(value:Int) = ^{ internal_credit(value) } ->: producer_queue
+      def credit(value:Int) = ^{ internal_credit(value) } >>: producer_queue
 
       def drain(callback:Runnable) = {
         credits = 0

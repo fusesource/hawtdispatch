@@ -64,6 +64,14 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         return label;
     }
 
+    public boolean isExecuting() {
+        ThreadDispatchQueue tq = (ThreadDispatchQueue) dispatcher.getCurrentThreadQueue();
+        if( tq!=null ){
+            return tq.globalQueue == this;
+        }
+        return false;
+    }
+
     public void execute(Runnable runnable) {
         dispatchAsync(runnable);
     }

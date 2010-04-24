@@ -119,7 +119,7 @@ queue << ^{
 // or
 ^{
   System.out.println("Hi!");
-} ->: queue
+} >>: queue
 {pygmentize_and_compare}
 
 ## Using NIO
@@ -203,11 +203,11 @@ object.  Example:
     
     def add(value:Int) = ^{
       counter += value
-    } ->: queue
+    } >>: queue
     
     def sub(value:Int) = ^{
       counter -= value
-    } ->: queue
+    } >>: queue
   }
 {pygmentize}
 

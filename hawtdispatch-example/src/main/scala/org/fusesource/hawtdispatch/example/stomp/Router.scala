@@ -114,13 +114,13 @@ class Router(var queue:DispatchQueue) {
 
   def bind(destination:AsciiBuffer, targets:List[Consumer]) = retaining(targets) {
       get(destination).on_bind(targets)
-    } ->: queue
+    } >>: queue
 
   def unbind(destination:AsciiBuffer, targets:List[Consumer]) = releasing(targets) {
       if( get(destination).on_unbind(targets) ) {
         destinations.remove(destination)
       }
-    } ->: queue
+    } >>: queue
 
   def connect(destination:AsciiBuffer, routeQueue:DispatchQueue, producer:Producer)(completed: (ProducerRoute)=>Unit) = {
     val route = new ProducerRoute(destination, routeQueue, producer) {
@@ -130,7 +130,7 @@ class Router(var queue:DispatchQueue) {
     }
     ^ {
       get(destination).on_connect(route)
-    } ->: queue
+    } >>: queue
   }
 
   def isTopic(destination:AsciiBuffer) = destination.startsWith(TOPIC_PREFIX)
@@ -138,7 +138,7 @@ class Router(var queue:DispatchQueue) {
 
   def disconnect(route:ProducerRoute) = releasing(route) {
       get(route.destination).on_disconnect(route)
-    } ->: queue
+    } >>: queue
 
 
    def each(proc:(AsciiBuffer, DestinationNode)=>Unit) = {
@@ -177,11 +177,11 @@ class ProducerRoute(val destination:AsciiBuffer, val queue:DispatchQueue, val pr
   def connected(targets:List[Consumer]) = retaining(targets) {
     internal_bind(targets)
     on_connected
-  } ->: queue
+  } >>: queue
 
   def bind(targets:List[Consumer]) = retaining(targets) {
     internal_bind(targets)
-  } ->: queue
+  } >>: queue
 
   private def internal_bind(values:List[Consumer]) = {
     values.foreach{ x=>
@@ -197,14 +197,14 @@ class ProducerRoute(val destination:AsciiBuffer, val queue:DispatchQueue, val pr
       }
       rc
     }
-  } ->: queue
+  } >>: queue
 
   def disconnected() = ^ {
     this.targets.foreach { x=>
       x.close
       x.consumer.release
     }    
-  } ->: queue
+  } >>: queue
 
   protected def on_connected = {}
   protected def on_disconnected = {}
