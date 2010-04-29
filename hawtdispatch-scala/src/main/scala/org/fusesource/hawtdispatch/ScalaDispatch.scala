@@ -18,11 +18,21 @@ package org.fusesource.hawtdispatch
 
 import _root_.java.lang.String
 import java.nio.channels.SelectableChannel
+import java.util.concurrent.{Executor, TimeUnit}
 
 /**
  * Provides Scala applications enhanced syntactic sugar to the HawtDispatch API.
  */
 object ScalaDispatch {
+
+  /**
+   * Enriches the Executor interfaces with additional Scala friendly methods.
+   */
+  final class RichExecutor(val executor: Executor) extends Proxy {
+    def self: Any = executor
+    def apply(task: =>Unit) = executor.execute(^(task _))
+  }
+  implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
 
   /**
    * Enriches the DispatchQueue interfaces with additional Scala friendly methods.
@@ -31,8 +41,9 @@ object ScalaDispatch {
     // Proxy
     def self: Any = queue
 
-    // def apply(task: Runnable) = queue.dispatchAsync(task)
+    def apply(task: =>Unit) = queue.dispatchAsync(^(task _))
     def wrap[T](func: (T)=>Unit) = Callback(queue, func)
+    def after(time:Long, unit:TimeUnit)(task: =>Unit) = queue.dispatchAfter(time, unit, ^(task _))
 
     def <<(task: Runnable) = {queue.dispatchAsync(task); this}
     def >>:(task: Runnable) = {queue.dispatchAsync(task); this}
