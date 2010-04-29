@@ -18,19 +18,26 @@ package org.fusesource.hawtdispatch
 
 import _root_.java.lang.String
 import java.nio.channels.SelectableChannel
-import java.util.concurrent.{Executor, TimeUnit}
+import java.util.concurrent.{CountDownLatch, Executor, TimeUnit}
+import java.util.concurrent.{CountDownLatch, TimeUnit}
+import java.util.HashSet
 
 /**
  * Provides Scala applications enhanced syntactic sugar to the HawtDispatch API.
+ *
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 object ScalaDispatch {
 
   /**
    * Enriches the Executor interfaces with additional Scala friendly methods.
    */
-  final class RichExecutor(val executor: Executor) extends Proxy {
-    def self: Any = executor
-    def apply(task: =>Unit) = executor.execute(^(task _))
+  final class RichExecutor(val queue: Executor) extends Proxy {
+    def self: Any = queue
+    def apply(task: =>Unit) = {queue.execute(runnable(task _)); this}
+    def <<(task: Runnable) = {queue.execute(task); this}
+    def >>:(task: Runnable) = {queue.execute(task); this}
+
   }
   implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
 
@@ -41,12 +48,13 @@ object ScalaDispatch {
     // Proxy
     def self: Any = queue
 
-    def apply(task: =>Unit) = queue.dispatchAsync(^(task _))
-    def wrap[T](func: (T)=>Unit) = Callback(queue, func)
-    def after(time:Long, unit:TimeUnit)(task: =>Unit) = queue.dispatchAfter(time, unit, ^(task _))
+    def apply(task: =>Unit) = {queue.execute(runnable(task _)); this}
+    def <<(task: Runnable) = {queue.execute(task); this}
+    def >>:(task: Runnable) = {queue.execute(task); this}
 
-    def <<(task: Runnable) = {queue.dispatchAsync(task); this}
-    def >>:(task: Runnable) = {queue.dispatchAsync(task); this}
+    def wrap[T](func: (T)=>Unit) = Callback(queue, func)
+    def after(time:Long, unit:TimeUnit)(task: =>Unit) = queue.dispatchAfter(time, unit, runnable(task _))
+
 
     def <<|(task: Runnable) = {
       if( queue.isExecuting ) {
@@ -76,7 +84,6 @@ object ScalaDispatch {
       this
     }
   }
-
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
   /////////////////////////////////////////////////////////////////////
@@ -106,11 +113,7 @@ object ScalaDispatch {
   //
   /////////////////////////////////////////////////////////////////////
 
-  def ^(proc: => Unit): Runnable = new Runnable() {
-    def run() {
-      proc;
-    }
-  }
+  def ^(proc: => Unit): Runnable = runnable(proc _)
 
   implicit def runnable(proc: ()=>Unit): Runnable = new Runnable() {
     def run() {
@@ -261,6 +264,7 @@ object ScalaDispatch {
       cb match {
         case Callback(retained, _)=>
           resource = retained
+        case _=>
       }
     }
     if( resource != null ) {
@@ -282,4 +286,138 @@ object ScalaDispatch {
     }
   }
 
+}
+
+import ScalaDispatch._
+
+/**
+ * Allows you to capture future results of an async computation.
+ *
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ */
+class Future[T] extends (T => Unit) with ( ()=>T ) {
+
+  @volatile
+  var result:Option[T] = None
+  var latch = new CountDownLatch(1)
+
+  def apply(value:T) = {
+    result = Some(value)
+    latch.countDown
+  }
+
+  def apply() = {
+    latch.await
+    result.get
+  }
+
+  def apply(time:Long, unit:TimeUnit) = {
+    if( latch.await(time, unit) ) {
+      Some(result.get)
+    } else {
+      None
+    }
+  }
+
+  def completed = result!=None
+}
+/**
+ *
+ *
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ */
+object Future {
+  def apply[T](func: (T =>Unit)=>Unit) = {
+    var future = new Future[T]()
+    func(future)
+    future()
+  }
+}
+
+/**
+ * <p>
+ * A TaskTracker is used to track multiple async processing tasks and
+ * call a callback once they all complete.
+ * </p>
+ *
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ */
+class TaskTracker(val name:String, val parent:DispatchQueue=getGlobalQueue) {
+
+  var timeout: Long = 0
+  private[this] val tasks = new HashSet[Runnable]()
+  private[this] var _callback:Runnable = null
+  val queue = parent.createSerialQueue("tracker: "+name);
+
+  def task(name:String="unknown"):Runnable = {
+    val rc = new Runnable() {
+      def run = {
+        remove(this)
+      }
+      override def toString = name
+    }
+    ^ {
+      assert(_callback==null)
+      tasks.add(rc)
+    }  >>: queue
+    return rc
+  }
+
+  def callback(handler: =>Unit ) {
+    var start = System.currentTimeMillis
+    ^ {
+      _callback = handler _
+      checkDone()
+    }  >>: queue
+
+    def schedualCheck(timeout:Long):Unit = {
+      if( timeout>0 ) {
+        queue.after(timeout, TimeUnit.MILLISECONDS) {
+          if( _callback!=null ) {
+            schedualCheck(onTimeout(System.currentTimeMillis-start, tasks.toArray.toList.map(_.toString)))
+          }
+        }
+      }
+    }
+    schedualCheck(timeout)
+  }
+
+  /**
+   * Subclasses can override if they want to log the timeout event.
+   * the method should return the next timeout value.  If 0, then
+   * it will not check for further timeouts.
+   */
+  protected def onTimeout(duration:Long, tasks: List[String]):Long = 0
+
+  private def remove(r:Runnable) = ^{
+    if( tasks.remove(r) ) {
+      checkDone()
+    }
+  } >>: queue
+
+  private def checkDone() = {
+    if( tasks.isEmpty && _callback!=null ) {
+      _callback >>: queue
+      _callback = null
+      queue.release
+    }
+  }
+
+  def await() = {
+    val latch =new CountDownLatch(1)
+    callback {
+      latch.countDown
+    }
+    latch.await
+  }
+
+  def await(timeout:Long, unit:TimeUnit) = {
+    val latch = new CountDownLatch(1)
+    callback {
+      latch.countDown
+    }
+    latch.await(timeout, unit)
+  }
+
+  override def toString = tasks.synchronized { name+" waiting on: "+tasks }
 }
