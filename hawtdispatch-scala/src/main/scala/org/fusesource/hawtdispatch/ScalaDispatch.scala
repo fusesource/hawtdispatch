@@ -258,15 +258,25 @@ object ScalaDispatch {
     }
   }
 
-  def callback[T](cb: (T)=>Unit)(proc: => T): Runnable = {
-    var resource: Retained = null
+  def using[T](cb: (T)=>Unit)(proc: =>Unit): Runnable = {
+    using(toRetained(cb))(proc _)
+  }
+
+  private def toRetained[T](cb: (T)=>Unit) = {
     if (cb != null ) {
       cb match {
         case Callback(retained, _)=>
-          resource = retained
+          retained
         case _=>
+          null
       }
+    } else {
+      null
     }
+  }
+
+  def reply[T](cb: (T)=>Unit)(proc: => T): Runnable = {
+    var resource = toRetained(cb)
     if( resource != null ) {
       resource.retain
     }
@@ -363,10 +373,10 @@ class TaskTracker(val name:String, val parent:DispatchQueue=getGlobalQueue) {
     return rc
   }
 
-  def callback(handler: =>Unit ) {
+  def callback(handler: Runnable) {
     var start = System.currentTimeMillis
     ^ {
-      _callback = handler _
+      _callback = handler
       checkDone()
     }  >>: queue
 
@@ -380,6 +390,10 @@ class TaskTracker(val name:String, val parent:DispatchQueue=getGlobalQueue) {
       }
     }
     schedualCheck(timeout)
+  }
+
+  def callback(handler: =>Unit ) {
+    callback(runnable(handler _))
   }
 
   /**
