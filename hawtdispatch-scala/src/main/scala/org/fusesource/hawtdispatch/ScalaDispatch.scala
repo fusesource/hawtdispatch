@@ -34,8 +34,8 @@ object ScalaDispatch {
    */
   final class RichExecutor(val queue: Executor) extends Proxy {
     def self: Any = queue
-    def apply(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
-    def apply(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
+    def apply(task:Runnable):RichExecutor = {queue.execute(task); this}
+    def apply(task: =>Unit):RichExecutor = apply(runnable(task _))
     def <<(task: Runnable) = apply(task)
     def >>:(task: Runnable) = apply(task)
   }
