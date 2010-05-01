@@ -34,11 +34,12 @@ object ScalaDispatch {
    */
   final class RichExecutor(val queue: Executor) extends Proxy {
     def self: Any = queue
-    def apply(task: =>Unit) = {queue.execute(runnable(task _)); this}
-    def <<(task: Runnable) = {queue.execute(task); this}
-    def >>:(task: Runnable) = {queue.execute(task); this}
-
+    def apply(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
+    def apply(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
+    def <<(task: Runnable) = apply(task)
+    def >>:(task: Runnable) = apply(task)
   }
+
   implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
 
   /**
@@ -48,9 +49,10 @@ object ScalaDispatch {
     // Proxy
     def self: Any = queue
 
-    def apply(task: =>Unit) = {queue.execute(runnable(task _)); this}
-    def <<(task: Runnable) = {queue.execute(task); this}
-    def >>:(task: Runnable) = {queue.execute(task); this}
+    def apply(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
+    def apply(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
+    def <<(task: Runnable) = apply(task)
+    def >>:(task: Runnable) = apply(task)
 
     def wrap[T](func: (T)=>Unit) = Callback(queue, func)
     def after(time:Long, unit:TimeUnit)(task: =>Unit) = queue.dispatchAfter(time, unit, runnable(task _))
@@ -69,20 +71,7 @@ object ScalaDispatch {
       }
       this
     }
-
-    def |>>:(task: Runnable) = {
-      if( queue.isExecuting ) {
-        try {
-          task.run
-        } catch {
-          case e:Exception =>
-            e.printStackTrace
-        }
-      } else {
-        queue.dispatchAsync(task);
-      }
-      this
-    }
+    def |>>:(task: Runnable) = this << task
   }
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
