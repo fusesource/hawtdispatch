@@ -151,8 +151,8 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         return IntrospectionSupport.toString(this);
     }
 
-    public boolean isReleased() {
-        return false;
+    public int retained() {
+        return 1;
     }
 
     public DispatchQueue createSerialQueue(String label) {

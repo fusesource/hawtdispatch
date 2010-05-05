@@ -54,9 +54,10 @@ public interface Retained {
     public void release();
 
     /**
-     * @return true if the retain counter is zero
+     * @return the retained counter
      */
-    public boolean isReleased();
+    public int retained();
+
 
     /**
      * <p>

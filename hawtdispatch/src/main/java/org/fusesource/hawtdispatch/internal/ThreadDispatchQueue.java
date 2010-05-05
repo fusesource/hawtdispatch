@@ -134,8 +134,9 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
 
     public void retain() {
     }
-    public boolean isReleased() {
-        return false;
+
+    public int retained() {
+        return 1;
     }
 
     public GlobalDispatchQueue isGlobalDispatchQueue() {

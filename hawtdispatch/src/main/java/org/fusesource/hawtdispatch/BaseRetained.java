@@ -155,10 +155,10 @@ public class BaseRetained implements Retained {
     }
 
     /**
-     * @return true if the retain counter is zero
+     * @return the retained counter
      */
-    final public boolean isReleased() {
-        return retained.get() <= 0;
+    final public int retained() {
+        return retained.get();
     }
 
     /**
