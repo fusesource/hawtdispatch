@@ -51,6 +51,8 @@ object ScalaDispatch {
 
     def apply(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
     def apply(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
+    def ^(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
+
     def <<(task: Runnable) = apply(task)
     def >>:(task: Runnable) = apply(task)
 
