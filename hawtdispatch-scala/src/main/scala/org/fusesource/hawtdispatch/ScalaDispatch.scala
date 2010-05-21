@@ -21,6 +21,7 @@ import java.nio.channels.SelectableChannel
 import java.util.concurrent.{CountDownLatch, Executor, TimeUnit}
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import java.util.HashSet
+import collection.mutable.ListBuffer
 
 /**
  * Provides Scala applications enhanced syntactic sugar to the HawtDispatch API.
@@ -189,16 +190,16 @@ object ScalaDispatch {
   }
 
 
-  class ListEventAggregator[T] extends EventAggregator[T, List[T]] {
-    def mergeEvent(previous:List[T], event:T) = {
+  class ListEventAggregator[T] extends EventAggregator[T, ListBuffer[T]] {
+    def mergeEvent(previous:ListBuffer[T], event:T) = {
       if( previous == null ) {
-        event :: Nil
+        ListBuffer(event)
       } else {
-        previous ::: List(event)
+        previous += event
       }
     }
-    def mergeEvents(previous:List[T], events:List[T]):List[T] = {
-      previous ::: events
+    def mergeEvents(previous:ListBuffer[T], events:ListBuffer[T]):ListBuffer[T] = {
+      previous ++= events
     }
   }
 
