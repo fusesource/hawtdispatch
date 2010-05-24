@@ -56,6 +56,10 @@ public class BaseRetained implements Retained {
         this.disposer = disposer;
     }
 
+    final public Runnable getDisposer() {
+        return disposer;
+    }
+
     /**
      * <p>
      * Increment the reference count of this object.
