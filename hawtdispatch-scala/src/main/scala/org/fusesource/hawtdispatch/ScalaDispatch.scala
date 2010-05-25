@@ -96,8 +96,8 @@ object ScalaDispatch {
   }
   def getCurrentQueue = Dispatch.getCurrentQueue
   def createQueue(label: String=null) = Dispatch.createQueue(label)
-  def getGlobalQueue(priority: DispatchPriority) = Dispatch.getGlobalQueue(priority)
-  def getGlobalQueue = Dispatch.getGlobalQueue
+  def getGlobalQueue(priority: DispatchPriority=DispatchPriority.DEFAULT) = Dispatch.getGlobalQueue(priority)
+  def globalQueue = Dispatch.getGlobalQueue
   // def dispatchMain = Dispatch.dispatchMain
   // def getMainQueue = Dispatch.getMainQueue
 
@@ -346,7 +346,7 @@ object Future {
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-class TaskTracker(val name:String, val parent:DispatchQueue=getGlobalQueue) {
+class TaskTracker(val name:String, val parent:DispatchQueue=globalQueue) {
 
   var timeout: Long = 0
   private[this] val tasks = new HashSet[Runnable]()
@@ -361,7 +361,7 @@ class TaskTracker(val name:String, val parent:DispatchQueue=getGlobalQueue) {
       override def toString = name
     }
     ^ {
-      assert(_callback==null)
+      assert(_callback==null || !tasks.isEmpty)
       tasks.add(rc)
     }  >>: queue
     return rc

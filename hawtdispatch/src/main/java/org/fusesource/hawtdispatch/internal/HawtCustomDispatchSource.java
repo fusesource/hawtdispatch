@@ -97,7 +97,11 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
                     if( isSuspended() ) {
                         debug("fired.. but suspended");
                         synchronized(HawtCustomDispatchSource.this) {
-                            pendingEvent = aggregator.mergeEvents(pendingEvent, event);
+                            if( pendingEvent==null ) {
+                                pendingEvent = event;
+                            } else {
+                                pendingEvent = aggregator.mergeEvents(pendingEvent, event);
+                            }
                         }
                     } else {
                         MergedEvent e=null;
