@@ -346,7 +346,7 @@ object Future {
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-class TaskTracker(val name:String, val parent:DispatchQueue=globalQueue) {
+class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueue) {
 
   var timeout: Long = 0
   private[this] val tasks = new HashSet[Runnable]()
