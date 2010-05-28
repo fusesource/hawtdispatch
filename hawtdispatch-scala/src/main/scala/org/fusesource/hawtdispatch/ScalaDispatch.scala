@@ -353,12 +353,12 @@ class TaskTracker(val name:String, val parent:DispatchQueue=globalQueue) {
   private[this] var _callback:Runnable = null
   val queue = parent.createSerialQueue("tracker: "+name);
 
-  def task(name:String="unknown"):Runnable = {
+  def task(name:Any="unknown"):Runnable = {
     val rc = new Runnable() {
       def run = {
         remove(this)
       }
-      override def toString = name
+      override def toString = name.toString
     }
     ^ {
       assert(_callback==null || !tasks.isEmpty)

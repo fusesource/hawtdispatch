@@ -33,9 +33,13 @@ import static java.lang.String.format;
 import static org.fusesource.hawtdispatch.DispatchQueue.QueueType.THREAD_QUEUE;
 
 /**
- * SelectableDispatchContext
  * <p>
- * Description:
+ * Implements the DispatchSource interface.
+ * </p>
+ * <p>
+ * Description: An NioDispatchSource is associated with one SelectableChannel
+ * but supports being registered on selectors associated with different thread.
+ * Usually just one at time tho.
  * </p>
  * 
  * @author cmacnaug
@@ -45,17 +49,17 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
 
     public static final boolean DEBUG = false;
 
-    private final SelectableChannel channel;
-    private volatile DispatchQueue selectorQueue;
+    final SelectableChannel channel;
+    volatile DispatchQueue selectorQueue;
 
     final AtomicBoolean canceled = new AtomicBoolean();
     final int interestOps;
 
-    private Runnable cancelHandler;
-    private Runnable eventHandler;
+    Runnable cancelHandler;
+    Runnable eventHandler;
 
     // These fields are only accessed by the ioManager's thread.
-    class KeyState {
+    public static class KeyState {
         int readyOps;
         SelectionKey key;
         NioAttachment attachment;
@@ -83,7 +87,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         return sb.toString();
     }
 
-    final private ThreadLocal<KeyState> keyState = new ThreadLocal<KeyState>();
+    final ThreadLocal<KeyState> keyState = new ThreadLocal<KeyState>();
 
     public NioDispatchSource(Dispatcher dispatcher, SelectableChannel channel, int interestOps, DispatchQueue targetQueue) {
         if( interestOps == 0 ) {
@@ -218,7 +222,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             return;
         }
         state.readyOps |= readyOps;
-        if( state.readyOps!=0 && !isSuspended() && !isCanceled() ) {
+        if( state.readyOps!=0  && !isSuspended()&& !isCanceled() ) {
             state.readyOps = 0;
             targetQueue.dispatchAsync(new Runnable() {
                 public void run() {

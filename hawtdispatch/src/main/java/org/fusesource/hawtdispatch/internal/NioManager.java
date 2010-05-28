@@ -17,12 +17,12 @@
 package org.fusesource.hawtdispatch.internal;
 
 import java.io.IOException;
-import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.*;
 
@@ -31,8 +31,121 @@ import static java.lang.String.*;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class NioManager {
-    
-    private final Selector selector;
+
+    /**
+     * Set the "hawtdispatch.workaround-select-spin" System property to "true" if your
+     * seeing the 100% CPU usage in the Selector.select() call.  This enables a
+     * workaround for a JVM/OS bug documented at http://bugs.sun.com/view_bug.do?bug_id=6693490
+     */
+    final SelectStrategy selectStrategy = Boolean.getBoolean("hawtdispatch.workaround-select-spin") ? new WorkAroundSelectSpin() :  new SelectStrategy();
+
+    /**
+     * Handles doing a select on a selector.  Allows us to change
+     * the implementation to work around bugs in some JVMs.
+     */
+    class SelectStrategy {
+        public int select(long timeout) throws IOException {
+            int rc=0;
+            if (timeout == -1) {
+                trace("entered blocking select");
+                rc = selector.select();
+                trace("exited blocking select");
+            } else {
+                trace("entered blocking select with timeout");
+                rc = selector.select(timeout);
+                trace("exited blocking select with timeout");
+            }
+            return rc;
+        }
+    }
+
+    /**
+     * Workaround for the selector spin bug.
+     */
+    class WorkAroundSelectSpin extends SelectStrategy {
+        int spins;
+
+        /**
+         * Was a wakeup() issued after we entered the select() ??
+         * @return
+         */
+        public boolean wakeupPending() {
+            return selectCounter != wakeupCounter;
+        }
+
+        /**
+         * Detects the buggy condition and works around by
+         * re-creating the selector when the bug is triggered.
+         */
+        @Override
+        public int select(long timeout) throws IOException {
+
+            if( selector.keys().isEmpty() || ( timeout > 0 || timeout < 100) ) {
+                // we can't detect spin in this case
+                return super.select(timeout);
+            } else {
+
+                long start = System.nanoTime();
+                int selected = super.select(timeout);
+
+                // Did the select return immediately with 0 selections? 
+                if (selected == 0 && !wakeupPending() ) {
+                    long end = System.nanoTime();
+                    long duration = TimeUnit.NANOSECONDS.toMillis(end-start);
+                    if( duration < 50 ) {
+                        spins++;
+                        if(spins > 10) {
+                            reset();
+                            spins=0;
+                        }
+                    } else {
+                        spins=0; // not spinning... reset the spin counter
+                    }
+                } else {
+                    spins=0; // not spinning... reset the spin counter
+                }
+                return selected;
+            }
+        }
+
+        /**
+         * Called when the buggy condition is detected.
+         */
+        private void reset() throws IOException {
+            trace("Selector spin detected... resetting the selector");
+            Selector nextSelector = Selector.open();
+            for (SelectionKey key : selector.keys()) {
+                NioAttachment attachment = (NioAttachment) key.attachment();
+                if( key.isValid() ) {
+                    try {
+                        SelectionKey nextKey = key.channel().register(nextSelector, key.interestOps());
+
+                        // Associate the new key with source objects.
+                        nextKey.attach(attachment);
+                        for( NioDispatchSource source: attachment.sources ) {
+                            NioDispatchSource.KeyState state = source.keyState.get();
+                            if( state!=null ) {
+                                state.key = nextKey;
+                            }
+                        }
+
+                    } catch (IOException e ) {
+                        // channel could have closed out
+                        attachment.cancel(key);
+                    }
+                } else {
+                    // perhaps key was canceled.
+                    attachment.cancel(key);
+                }
+            }
+            // Close out the old selector and set it to the new one.
+            selector.close();
+            selector = nextSelector;
+        }
+    }
+
+
+    private Selector selector;
     volatile protected int wakeupCounter;
     volatile protected int selectCounter;
 
@@ -76,15 +189,7 @@ public class NioManager {
             selecting=true;
             try {
                 if( selectCounter == wakeupCounter) {
-                    if (timeout == -1) {
-                        trace("entered blocking select");
-                        selector.select();
-                        trace("exited blocking select");
-                    } else if (timeout > 0) {
-                        trace("entered blocking select with timeout");
-                        selector.select(timeout);
-                        trace("exited blocking select with timeout");
-                    }
+                    selectStrategy.select(timeout);
                 }
             } finally {
                 selectCounter = wakeupCounter;
