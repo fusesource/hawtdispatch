@@ -82,7 +82,7 @@
       <plugin>
         <groupId>org.scala-tools</groupId>
         <artifactId>maven-scala-plugin</artifactId>
-        <version>2.13.1</version>
+        <version>${scala-plugin-version}</version>
         <executions>
           <execution>
             <goals>
@@ -97,7 +97,6 @@
           </jvmArgs>
           <args>
             <arg>-deprecation</arg>
-            <arg>-Xno-varargs-conversion</arg>
           </args>
           <scalaVersion>${scala-version}</scalaVersion>
         </configuration>

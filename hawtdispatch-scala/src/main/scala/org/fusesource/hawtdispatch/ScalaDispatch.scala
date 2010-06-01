@@ -35,12 +35,12 @@ object ScalaDispatch {
    */
   final class RichExecutor(val queue: Executor) extends Proxy {
     def self: Any = queue
-//    def apply(task:Runnable):RichExecutor = {queue.execute(task); this}
-    def apply(task: =>Unit):RichExecutor = apply(runnable(task _))
-    def ^(task: =>Unit):RichExecutor = apply(runnable(task _))
+    private def execute(task:Runnable):RichExecutor = {queue.execute(task); this}
+    def apply(task: =>Unit):RichExecutor = execute(runnable(task _))
+    def ^(task: =>Unit):RichExecutor = execute(runnable(task _))
 
-    def <<(task: Runnable) = apply(task)
-    def >>:(task: Runnable) = apply(task)
+    def <<(task: Runnable) = execute(task)
+    def >>:(task: Runnable) = execute(task)
   }
 
   implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
@@ -52,12 +52,12 @@ object ScalaDispatch {
     // Proxy
     def self: Any = queue
 
-//    def apply(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
-    def apply(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
-    def ^(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
+    private def execute(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
+    def apply(task: =>Unit):RichDispatchQueue = execute(runnable(task _))
+    def ^(task: =>Unit):RichDispatchQueue = execute(runnable(task _))
 
-    def <<(task: Runnable) = apply(task)
-    def >>:(task: Runnable) = apply(task)
+    def <<(task: Runnable) = execute(task)
+    def >>:(task: Runnable) = execute(task)
 
     def wrap[T](func: (T)=>Unit) = Callback(queue, func)
     def after(time:Long, unit:TimeUnit)(task: =>Unit) = queue.dispatchAfter(time, unit, runnable(task _))
@@ -371,10 +371,12 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
 
   def task(name:Any="unknown"):Task = {
     val rc = new Task(name)
-    ^ {
+    val x = ^ {
       assert(_callback==null || !tasks.isEmpty)
       tasks.add(rc)
-    }  >>: queue
+    }
+
+    x >>: queue
     return rc
   }
 
