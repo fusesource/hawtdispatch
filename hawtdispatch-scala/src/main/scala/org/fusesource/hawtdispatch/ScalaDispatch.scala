@@ -35,7 +35,7 @@ object ScalaDispatch {
    */
   final class RichExecutor(val queue: Executor) extends Proxy {
     def self: Any = queue
-    def apply(task:Runnable):RichExecutor = {queue.execute(task); this}
+//    def apply(task:Runnable):RichExecutor = {queue.execute(task); this}
     def apply(task: =>Unit):RichExecutor = apply(runnable(task _))
     def ^(task: =>Unit):RichExecutor = apply(runnable(task _))
 
@@ -52,7 +52,7 @@ object ScalaDispatch {
     // Proxy
     def self: Any = queue
 
-    def apply(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
+//    def apply(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
     def apply(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
     def ^(task: =>Unit):RichDispatchQueue = apply(runnable(task _))
 
@@ -349,7 +349,7 @@ object Future {
 class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueue) {
 
   var timeout: Long = 0
-  private[this] val tasks = new HashSet[Runnable]()
+  private[this] val tasks = new HashSet[Task]()
   private[this] var _callback:Runnable = null
   val queue = parent.createSerialQueue("tracker: "+name);
 
@@ -362,13 +362,15 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
     retained.release
   }
 
-  def task(name:Any="unknown"):Runnable = {
-    val rc = new Runnable() {
-      def run = {
-        remove(this)
-      }
-      override def toString = name.toString
+  class Task(var name:Any) extends Runnable {
+    def run = {
+      remove(this)
     }
+    override def toString = name.toString
+  }
+
+  def task(name:Any="unknown"):Task = {
+    val rc = new Task(name)
     ^ {
       assert(_callback==null || !tasks.isEmpty)
       tasks.add(rc)
