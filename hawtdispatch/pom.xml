@@ -29,7 +29,7 @@
   <version>1.0-SNAPSHOT</version>
   
   <name>HawtDispatch :: Java</name>
-  <description>HawtDispatch Core Java API</description>
+  <description>HawtDispatch: Java API</description>
 
   <properties>
     <junit-version>4.7</junit-version>

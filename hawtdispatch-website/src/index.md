@@ -344,5 +344,6 @@ queue.release
 
 
 ## References
-* [Echo Server Example](http://github.com/chirino/hawtdispatch/blob/master/hawtdispatch-example/src/main/scala/org/fusesource/hawtdispatch/example/EchoServer.scala#L34)
+* [Echo Server Example](http://github.com/chirino/hawtdispatch/blob/master/hawtdispatch-example/src/main/scala/org/fusesource/hawtdispatch/example/EchoServer.scala#L34) Source code for a simple TCP based echo server.
+* [STOMP Broker Example](stomp-example.html)  Overview of a more complex networking server example.
 * [Full API]({api_dir:}/package-summary.html)

@@ -28,7 +28,7 @@
   <version>1.0-SNAPSHOT</version>
 
   <name>HawtDispatch :: Example</name>
-  <description>Examples Uses of HawtDispatch</description>  
+  <description>HawtDispatch: Examples</description>
 
   <dependencies>
     

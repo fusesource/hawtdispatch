@@ -28,7 +28,7 @@
   <version>1.0-SNAPSHOT</version>
 
   <name>HawtDispatch :: Scala</name>
-  <description>The HawtDispatch Scala Interface</description>
+  <description>HawtDispatch: Scala API</description>
 
   <dependencies>
     

@@ -24,7 +24,7 @@
   <packaging>pom</packaging>
   
   <name>HawtDispatch :: Project</name>
-  <description>HawtDispatch is a library for asynchronous execution of concurrent tasks</description>
+  <description>HHawtDispatch: The libdispatch style API for Java and Scala</description>
 
   <properties>
     <forge-project-id>hawtdispatch</forge-project-id>
@@ -326,16 +326,15 @@
     
     <profile>
       <id>download</id>
+
       <repositories>
         <repository>
           <id>Fusesource Snapshots</id>
           <url>http://repo.fusesource.com/nexus/content/repositories/snapshots</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
-          <releases>
-            <enabled>false</enabled>
-          </releases>
+        </repository>
+        <repository>
+          <id>fluido-skin</id>
+          <url>http://fluido-skin.googlecode.com/svn/repo/</url>
         </repository>
       </repositories>
     </profile>
