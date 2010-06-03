@@ -23,8 +23,9 @@ import ScalaDispatch._
 import java.nio.channels.SelectionKey._
 
 import java.net.{InetAddress, InetSocketAddress}
+import org.fusesource.hawtbuf._
+import Buffer._
 
-import buffer._
 import java.nio.channels.{ServerSocketChannel}
 
 object Delivery {
@@ -58,8 +59,12 @@ trait ConsumerSession {
  */
 object StompBroker {
 
+  var bindAddress = "0.0.0.0"
+  var port = 61613
 
-  def main(args:Array[String]) = {
+  def main(args:Array[String]) = run
+
+  def run = {
     println("Starting stomp broker...")
     val broker = new StompBroker();
     println("Startup complete.")
@@ -68,6 +73,14 @@ object StompBroker {
     broker.close
     println("Shutdown complete.")
   }
+
+  override def toString() = {
+    "--------------------------------------\n"+
+    "StompBroker Properties\n"+
+    "--------------------------------------\n"+
+    "bindAddress      = "+bindAddress+"\n"+
+    "port             = "+port+"\n"
+  }  
 }
 
 /**
@@ -83,7 +96,7 @@ class StompBroker {
     // Create the nio server socket...
   val channel = ServerSocketChannel.open();
   channel.configureBlocking(false);
-  channel.socket().bind(address("0.0.0.0", 61613), 500);
+  channel.socket().bind(address(bindAddress, port), 500);
 
   // Create a source attached to the server socket to deal with new connections...
   val accept_source = createSource(channel, OP_ACCEPT, queue);

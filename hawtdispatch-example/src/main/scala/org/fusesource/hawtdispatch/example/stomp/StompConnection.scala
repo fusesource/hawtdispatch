@@ -20,13 +20,13 @@ import java.nio.channels.SelectionKey._
 import _root_.org.fusesource.hawtdispatch._
 import ScalaDispatch._
 
-import buffer._
-import AsciiBuffer._
 import java.util.concurrent.atomic.AtomicLong
 import java.nio.channels.{SocketChannel}
 import java.io.{IOException}
 import org.fusesource.hawtdispatch.example.stomp.Stomp.{Headers, Responses, Commands}
 import collection.mutable.{HashMap}
+import org.fusesource.hawtbuf._
+import Buffer._
 
 /**
  *

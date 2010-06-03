@@ -21,9 +21,9 @@ import java.nio.ByteBuffer
 import org.fusesource.hawtdispatch.example.stomp.Stomp._
 import org.fusesource.hawtdispatch.example.stomp.Stomp.Headers._
 import java.io.{EOFException, IOException}
-import buffer._
-import AsciiBuffer._
 import collection.mutable.{ListBuffer, HashMap}
+import org.fusesource.hawtbuf._
+import Buffer._
 
 object StompWireFormat {
     val READ_BUFFFER_SIZE = 1024*64;

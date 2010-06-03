@@ -17,9 +17,10 @@
 package org.fusesource.hawtdispatch.example.stomp
 
 import _root_.java.util.{LinkedList}
-import buffer.AsciiBuffer
 import _root_.org.fusesource.hawtdispatch._
 import ScalaDispatch._
+import org.fusesource.hawtbuf._
+import Buffer._
 
 import collection.mutable.{HashMap}
 import collection.immutable.Queue

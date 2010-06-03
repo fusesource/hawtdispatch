@@ -19,11 +19,11 @@ package org.fusesource.hawtdispatch.example.stomp
 import _root_.java.io._
 import _root_.java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import java.net.{ProtocolException, InetSocketAddress, URI, Socket}
-import buffer.AsciiBuffer
 
 import java.lang.String._
 import java.util.concurrent.TimeUnit._
 import collection.mutable.Map
+import org.fusesource.hawtbuf.AsciiBuffer
 
 /**
  *

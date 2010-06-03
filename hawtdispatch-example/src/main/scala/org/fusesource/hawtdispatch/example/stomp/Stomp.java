@@ -16,8 +16,9 @@
  */
 package org.fusesource.hawtdispatch.example.stomp;
 
-import org.fusesource.hawtdispatch.example.stomp.buffer.AsciiBuffer;
-import org.fusesource.hawtdispatch.example.stomp.buffer.Buffer;
+import org.fusesource.hawtbuf.AsciiBuffer;
+import org.fusesource.hawtbuf.Buffer;
+
 
 public interface Stomp {
     

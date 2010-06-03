@@ -324,6 +324,22 @@
       </build>
     </profile>
     
+    <profile>
+      <id>download</id>
+      <repositories>
+        <repository>
+          <id>Fusesource Snapshots</id>
+          <url>http://repo.fusesource.com/nexus/content/repositories/snapshots</url>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+          <releases>
+            <enabled>false</enabled>
+          </releases>
+        </repository>
+      </repositories>
+    </profile>
+    
   </profiles>
 
   <modules>

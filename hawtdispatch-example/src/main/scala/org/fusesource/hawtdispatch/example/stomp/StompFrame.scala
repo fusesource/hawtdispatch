@@ -1,9 +1,11 @@
 package org.fusesource.hawtdispatch.example.stomp
 
 import _root_.java.util.LinkedList
-import buffer.{Buffer, AsciiBuffer}
 import collection.mutable.Map
 import collection.mutable.HashMap
+import org.fusesource.hawtbuf._
+import Buffer._
+
 
 object StompFrame{
   var NO_DATA = new Buffer(0);

@@ -18,9 +18,12 @@ package org.fusesource.hawtdispatch.example.stomp
 import _root_.java.util.concurrent.atomic.AtomicLong
 import _root_.org.fusesource.hawtdispatch._
 import ScalaDispatch._
-import buffer.AsciiBuffer
 import java.util.HashMap
 import collection.JavaConversions
+
+import org.fusesource.hawtbuf._
+import Buffer._
+
 
 object Router {
   val TOPIC_PREFIX = new AsciiBuffer("/topic/")
