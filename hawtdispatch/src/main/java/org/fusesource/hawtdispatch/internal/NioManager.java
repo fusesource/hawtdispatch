@@ -17,6 +17,7 @@
 package org.fusesource.hawtdispatch.internal;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -183,18 +184,21 @@ public class NioManager {
      * @throws IOException
      */
     public int select(long timeout) throws IOException {
-        if (timeout == 0) {
-            selector.selectNow();
-        } else {
-            selecting=true;
-            try {
-                if( selectCounter == wakeupCounter) {
-                    selectStrategy.select(timeout);
+        try {
+            if (timeout == 0) {
+                selector.selectNow();
+            } else {
+                selecting=true;
+                try {
+                    if( selectCounter == wakeupCounter) {
+                        selectStrategy.select(timeout);
+                    }
+                } finally {
+                    selectCounter = wakeupCounter;
+                    selecting=false;
                 }
-            } finally {
-                selectCounter = wakeupCounter;
-                selecting=false;
             }
+        } catch (CancelledKeyException e) {
         }
         return processSelected();
     }

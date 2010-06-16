@@ -22,10 +22,7 @@ import org.fusesource.hawtdispatch.internal.Dispatcher;
 import org.fusesource.hawtdispatch.internal.BaseSuspendable;
 
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
+import java.nio.channels.*;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -179,6 +176,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             Selector selector =  WorkerThread.currentWorkerThread().getNioManager().getSelector();
             try {
                 selector.selectNow();
+            } catch (CancelledKeyException ignore) {
             } catch (IOException e) {
                 debug(e, "Error canceling");
             }
