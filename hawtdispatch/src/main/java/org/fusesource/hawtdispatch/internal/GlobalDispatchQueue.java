@@ -16,6 +16,7 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.fusesource.hawtdispatch.DispatchPriority;
@@ -30,30 +31,25 @@ import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
  */
 final public class GlobalDispatchQueue implements HawtDispatchQueue {
 
-    private final HawtDispatcher dispatcher;
+    public final HawtDispatcher dispatcher;
     final String label;
     private final DispatchPriority priority;
-
-    final WorkerPool workers;
+    private final WorkerPool workers;
+    final Random random = new Random(System.nanoTime());
 
     public GlobalDispatchQueue(HawtDispatcher dispatcher, DispatchPriority priority, int threads) {
         this.dispatcher = dispatcher;
         this.priority = priority;
         this.label=priority.toString();
-//        this.workers = new StealingPool(dispatcher.getLabel()+"-"+priority, threads, priority(priority));
-        this.workers = new SimplePool(dispatcher.getLabel()+"-"+priority, threads, priority(priority));
+        this.workers = new SimplePool(this, threads, priority);
     }
 
-    static private int priority(DispatchPriority priority) {
-        switch(priority) {
-            case HIGH:
-                return Thread.MAX_PRIORITY;
-            case DEFAULT:
-                return Thread.NORM_PRIORITY;
-            case LOW:
-                return Thread.MIN_PRIORITY;
-        }
-        return 0;
+    public void start() {
+        workers.start();
+    }
+
+    public void shutdown() {
+        workers.shutdown();
     }
 
     public HawtDispatcher getDispatcher() {
@@ -163,5 +159,11 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
 
     public QueueType getQueueType() {
         return QueueType.GLOBAL_QUEUE;
+    }
+
+    public DispatchQueue getRandomThreadQueue() {
+        WorkerThread[] threads = workers.getThreads();
+        int i = random.nextInt(threads.length);
+        return threads[i].getDispatchQueue();
     }
 }

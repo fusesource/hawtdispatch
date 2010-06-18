@@ -16,19 +16,12 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
+import org.fusesource.hawtdispatch.*;
+
 import java.nio.channels.SelectableChannel;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.fusesource.hawtdispatch.*;
-import org.fusesource.hawtdispatch.internal.Dispatcher;
-import org.fusesource.hawtdispatch.internal.DispatcherConfig;
-import org.fusesource.hawtdispatch.internal.SerialDispatchQueue;
-import org.fusesource.hawtdispatch.internal.NioDispatchSource;
-
-import static org.fusesource.hawtdispatch.DispatchPriority.*;
-
-
+import static org.fusesource.hawtdispatch.DispatchPriority.DEFAULT;
 
 
 /**
@@ -40,27 +33,23 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     public final static ThreadLocal<HawtDispatchQueue> CURRENT_QUEUE = new ThreadLocal<HawtDispatchQueue>();
 
-    final SerialDispatchQueue mainQueue = new SerialDispatchQueue("main");
-    final GlobalDispatchQueue globalQueues[];
-    final AtomicLong globalQueuedRunnables = new AtomicLong();
-    final Random random = new Random();
+    private final GlobalDispatchQueue DEFAULT_QUEUE;
+    private final Object HIGH_MUTEX = new Object();
+    private GlobalDispatchQueue HIGH_QUEUE;
+    private final Object LOW_MUTEX = new Object();
+    private GlobalDispatchQueue LOW_QUEUE;
 
+    private final SerialDispatchQueue mainQueue = new SerialDispatchQueue("main");
 
     private final String label;
-    TimerThread timerThread;
+    final TimerThread timerThread;
+    private DispatcherConfig config;
 
     public HawtDispatcher(DispatcherConfig config) {
+        this.config = config;
         this.label = config.getLabel();
-        globalQueues = new GlobalDispatchQueue[3];
-        for (int i = 0; i < 3; i++) {
-            globalQueues[i] = new GlobalDispatchQueue(this, DispatchPriority.values()[i], config.getThreads());
-            for ( WorkerThread thread: globalQueues[i].workers.getThreads()) {
-                thread.setDispatchQueue(new ThreadDispatchQueue(this, thread, globalQueues[i]));
-            }
-        }
-        for (int i = 0; i < 3; i++) {
-            globalQueues[i].workers.start();
-        }
+        DEFAULT_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.DEFAULT, config.getThreads());
+        DEFAULT_QUEUE.start();
         timerThread = new TimerThread(this);
         timerThread.start();
     }
@@ -73,8 +62,32 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         return getGlobalQueue(DEFAULT);
     }
 
-    public DispatchQueue getGlobalQueue(DispatchPriority priority) {
-        return globalQueues[priority.ordinal()];
+    public GlobalDispatchQueue getGlobalQueue(DispatchPriority priority) {
+        switch (priority) {
+            case DEFAULT:
+                return DEFAULT_QUEUE;
+            case HIGH:
+                // lazy load the high queue to avoid creating it's thread if the application is not using
+                // the queue at all.
+                synchronized(HIGH_MUTEX) {
+                    if( HIGH_QUEUE==null ) {
+                        HIGH_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.HIGH, config.getThreads());
+                        HIGH_QUEUE.start();
+                    }
+                    return HIGH_QUEUE;
+                }
+            case LOW:
+                // lazy load the low queue to avoid creating it's thread if the application is not using
+                // the queue at all.
+                synchronized(LOW_MUTEX) {
+                    if( LOW_QUEUE==null ) {
+                        LOW_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.HIGH, config.getThreads());
+                        LOW_QUEUE.start();
+                    }
+                    return LOW_QUEUE;
+                }
+        }
+        throw new AssertionError("switch missing case");
     }
 
     public SerialDispatchQueue createQueue(String label) {
@@ -97,9 +110,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     @Override
     public void dispose() {
-        for (int i = 0; i < 3; i++) {
-            globalQueues[i].workers.shutdown();
-        }
+        DEFAULT_QUEUE.shutdown();
         timerThread.shutdown(null);
     }
 
@@ -124,9 +135,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     }
 
     public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
-        WorkerThread[] threads = globalQueues[priority.ordinal()].workers.getThreads();
-        int i = random.nextInt(threads.length);
-        return threads[i].getDispatchQueue();
+        return getGlobalQueue(priority).getRandomThreadQueue();
     }
 
 }

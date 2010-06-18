@@ -34,13 +34,10 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
 
     final LinkedList<Runnable> localRunnables = new LinkedList<Runnable>();
     final ConcurrentLinkedQueue<Runnable> sharedRunnables = new ConcurrentLinkedQueue<Runnable>();
-
     final WorkerThread thread;
     final GlobalDispatchQueue globalQueue;
-    private final HawtDispatcher dispatcher;
-    
-    public ThreadDispatchQueue(HawtDispatcher dispatcher, WorkerThread thread, GlobalDispatchQueue globalQueue) {
-        this.dispatcher = dispatcher;
+
+    public ThreadDispatchQueue(GlobalDispatchQueue globalQueue, WorkerThread thread) {
         this.thread = thread;
         this.globalQueue = globalQueue;
         this.label=thread.getName()+" pritority: "+globalQueue.getLabel();
@@ -51,11 +48,11 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     }
 
     public boolean isExecuting() {
-        return dispatcher.getCurrentThreadQueue() == this;
+        return globalQueue.dispatcher.getCurrentThreadQueue() == this;
     }
 
     public HawtDispatcher getDispatcher() {
-        return dispatcher;
+        return globalQueue.dispatcher;
     }
 
 
@@ -152,7 +149,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     }
 
     public DispatchQueue createSerialQueue(String label) {
-        DispatchQueue rc = dispatcher.createQueue(label);
+        DispatchQueue rc = globalQueue.dispatcher.createQueue(label);
         rc.setTargetQueue(this);
         return rc;
     }

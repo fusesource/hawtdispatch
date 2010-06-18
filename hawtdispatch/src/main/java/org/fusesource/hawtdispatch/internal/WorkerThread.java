@@ -23,7 +23,6 @@ import java.util.LinkedList;
  */
 abstract public class WorkerThread extends Thread {
 
-    public abstract void setDispatchQueue(ThreadDispatchQueue queue);
     public abstract ThreadDispatchQueue getDispatchQueue();
 
     public abstract void unpark();

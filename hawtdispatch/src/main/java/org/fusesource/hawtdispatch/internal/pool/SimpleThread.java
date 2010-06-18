@@ -22,16 +22,12 @@ public class SimpleThread extends WorkerThread {
     public SimpleThread(SimplePool pool) throws IOException {
         this.pool = pool;
         this.nioManager = new NioManager();
+        this.threadQueue = new ThreadDispatchQueue(pool.globalQueue, this);
     }
 
     @Override
     public LinkedList<Runnable> getSourceQueue() {
         return sourceQueue;
-    }
-
-    @Override
-    public void setDispatchQueue(ThreadDispatchQueue queue) {
-        this.threadQueue = queue;
     }
 
     @Override

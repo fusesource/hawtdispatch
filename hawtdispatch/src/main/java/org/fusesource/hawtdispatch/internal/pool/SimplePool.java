@@ -1,12 +1,16 @@
 package org.fusesource.hawtdispatch.internal.pool;
 
 import jsr166y.TransferQueue;
+import org.fusesource.hawtdispatch.DispatchPriority;
+import org.fusesource.hawtdispatch.internal.GlobalDispatchQueue;
 import org.fusesource.hawtdispatch.internal.NioManager;
 import org.fusesource.hawtdispatch.internal.WorkerPool;
 import org.fusesource.hawtdispatch.internal.WorkerThread;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
 
@@ -16,19 +20,38 @@ public class SimplePool implements WorkerPool {
 
     final ConcurrentLinkedQueue<Runnable> runnables = new ConcurrentLinkedQueue<Runnable>();
 
+    final GlobalDispatchQueue globalQueue;
     final String name;
     final int priority;
     final SimpleThread[] threads;
     volatile boolean shutdown = false;
 
-    public SimplePool(String name, int parallelism, int priority) {
-        this.name = name;
-        this.priority = priority;
+    public SimplePool(GlobalDispatchQueue globalQueue, int parallelism, DispatchPriority priority) {
+        this.globalQueue = globalQueue;
+        this.name = globalQueue.dispatcher.getLabel()+"-"+priority;
+        this.priority = priority(priority);
         this.threads = new SimpleThread[parallelism];
         for (int i=0; i < parallelism; i++) {
             threads[i] = createWorker(i);
         }
+    }
 
+    static private int priority(DispatchPriority priority) {
+        switch(priority) {
+            case HIGH:
+                return Thread.MAX_PRIORITY;
+            case DEFAULT:
+                return Thread.NORM_PRIORITY;
+            case LOW:
+                return Thread.MIN_PRIORITY;
+        }
+        return 0;
+    }
+
+    public void start() {
+        for (int i=0; i < threads.length; i++) {
+            threads[i].start();
+        }
     }
 
     private SimpleThread createWorker(int index) {
@@ -40,7 +63,7 @@ public class SimplePool implements WorkerPool {
         }
         w.setDaemon(true);
         w.setPriority(priority);
-        w.setName(name + "-" + index);
+        w.setName(name + "-" + (index+1));
         return w;
     }
 
@@ -48,11 +71,6 @@ public class SimplePool implements WorkerPool {
         return threads;
     }
 
-    public void start() {
-        for (int i=0; i < threads.length; i++) {
-            threads[i].start();
-        }
-    }
 
     public void shutdown(){
         shutdown = true;
