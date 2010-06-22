@@ -218,8 +218,12 @@ public class NioManager {
                 SelectionKey key = i.next();
                 i.remove();
                 if (key.isValid()) {
-                    key.interestOps(key.interestOps() & ~key.readyOps());
-                    ((NioAttachment) key.attachment()).selected(key);
+                    try {
+                        key.interestOps(key.interestOps() & ~key.readyOps());
+                        ((NioAttachment) key.attachment()).selected(key);
+                    } catch (CancelledKeyException e) {
+                        ((NioAttachment) key.attachment()).cancel(key);
+                    }
                 } else {
                     ((NioAttachment) key.attachment()).cancel(key);
                 }
