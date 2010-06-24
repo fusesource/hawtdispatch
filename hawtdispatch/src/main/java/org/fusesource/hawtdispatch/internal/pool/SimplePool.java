@@ -109,9 +109,9 @@ public class SimplePool implements WorkerPool {
 
     public void park(SimpleThread thread) {
         try {
-           debug("parking thread: "+thread.getName());
+           debug("parking thread: %s", thread.getName());
            thread.getNioManager().select(-1);
-           debug("unparking thread: "+thread.getName());
+           debug("unparking thread: %s", thread.getName());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
