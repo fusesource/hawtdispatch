@@ -352,6 +352,7 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
   private[this] val tasks = new HashSet[Task]()
   private[this] var _callback:Runnable = null
   val queue = parent.createSerialQueue("tracker: "+name);
+  var done = false
 
   /**
    * Creates a new task and sets it as the disposer of the specified
@@ -390,7 +391,7 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
     def schedualCheck(timeout:Long):Unit = {
       if( timeout>0 ) {
         queue.after(timeout, TimeUnit.MILLISECONDS) {
-          if( _callback!=null ) {
+          if( !done ) {
             schedualCheck(onTimeout(System.currentTimeMillis-start, tasks.toArray.toList.map(_.toString)))
           }
         }
@@ -417,10 +418,10 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
   } >>: queue
 
   private def checkDone() = {
-    if( tasks.isEmpty && _callback!=null ) {
-      _callback >>: queue
-      _callback = null
-      queue.release
+    assert(!done)
+    if( tasks.isEmpty && _callback!=null && !done ) {
+      done = true
+      _callback.run
     }
   }
 
