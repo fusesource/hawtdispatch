@@ -62,7 +62,6 @@ object ScalaDispatch {
     def wrap[T](func: (T)=>Unit) = Callback(queue, func)
     def after(time:Long, unit:TimeUnit)(task: =>Unit) = queue.dispatchAfter(time, unit, runnable(task _))
 
-
     def <<|(task: Runnable) = {
       if( queue.isExecuting ) {
         try {
@@ -76,7 +75,8 @@ object ScalaDispatch {
       }
       this
     }
-    def |>>:(task: Runnable) = this << task
+    def |>>:(task: Runnable) = this <<| task
+
   }
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
