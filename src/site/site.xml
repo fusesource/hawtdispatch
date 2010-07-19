@@ -30,7 +30,7 @@ under the License.
 
   <bannerLeft>
     <name>${project.name}</name>
-    <src>images/project-logo.png</src>
+    <src>http://${forge-project-id}.fusesource.org/images/project-logo.png</src>
     <href>${project.url}</href>
   </bannerLeft> 
   

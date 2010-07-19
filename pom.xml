@@ -23,7 +23,7 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   
-  <name>HawtDispatch :: Project</name>
+  <name>${artifactId}</name>
   <description>HHawtDispatch: The libdispatch style API for Java and Scala</description>
 
   <properties>
@@ -61,14 +61,18 @@
   
   <mailingLists>
     <mailingList>
-      <name>${forge-project-id} dev</name>
-      <post>${forge-project-id}-dev@fusesource.org</post>
-      <subscribe>${forge-project-id}-dev-subscribe@fusesource.org</subscribe>
+      <name>Discussion Group</name>
+      <archive>http://groups.google.com/group/hawtdispatch</archive>
+      <post>hawtdispatch@googlegroups.com</post>
+      <subscribe>hawtdispatch+subscribe@googlegroups.com</subscribe>
+      <unsubscribe>hawtdispatch+unsubscribe@googlegroups.com</unsubscribe>
     </mailingList>
     <mailingList>
-      <name>${forge-project-id} commits</name>
-      <post>${forge-project-id}-commits@fusesource.org</post>
-      <subscribe>${forge-project-id}-commits-subscribe@fusesource.org</subscribe>
+      <name>Source Control and Issue Tracker Notifications</name>
+      <archive>http://groups.google.com/group/hawtdispatch-commits</archive>
+      <post>hawtdispatch-commits@googlegroups.com</post>
+      <subscribe>hawtdispatch-commits+subscribe@googlegroups.com</subscribe>
+      <unsubscribe>hawtdispatch-commits+unsubscribe@googlegroups.com</unsubscribe>
     </mailingList>
   </mailingLists>
 
@@ -84,7 +88,7 @@
     <connection>scm:git:git://forge.fusesource.com/${forge-project-id}.git</connection>
     <!-- Work around for issue: http://jira.codehaus.org/browse/SCM-444 -->
     <developerConnection>${release-altGitURL}</developerConnection>
-    <url>http://fusesource.com/forge/gitweb?p=${forge-project-id}.git</url>
+    <url>http://github.com/chirino/hawtdispatch/tree/master</url>
   </scm>
 
   <distributionManagement>

@@ -151,6 +151,7 @@
           </execution>
         </executions>
         <configuration>
+          <scaladocClassName>scala.tools.nsc.ScalaDoc</scaladocClassName>
           <jvmArgs>
             <jvmArg>-Xmx1024m</jvmArg>
           </jvmArgs>
@@ -177,36 +178,20 @@
     </plugins>
   </build>
   
-  <!--
   <reporting>
     <plugins>
-      
       <plugin>
-        <groupId>org.ScalaSupport-tools</groupId>
-        <artifactId>maven-ScalaSupport-plugin</artifactId>
-        <version>2.13.1</version>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <version>${scala-plugin-version}</version>
         <configuration>
-          <vscaladocVersion>1.1</vscaladocVersion>
-          <scalaVersion>${ScalaSupport-version}</scalaVersion>
-        </configuration>        
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-changes-plugin</artifactId>
-        <version>2.3</version>
-        <reportSets>
-          <reportSet>
-            <reports>
-              <report>jira-report</report>
-            </reports>
-          </reportSet>
-        </reportSets>
-        <configuration>
-          <filteringChanges>true</filteringChanges>
+          <scalaVersion>${scala-version}</scalaVersion>
+          <jvmArgs>
+            <jvmArg>-Xmx850M</jvmArg>
+          </jvmArgs>
         </configuration>
       </plugin>
     </plugins>
   </reporting>
-  -->
   
 </project>
