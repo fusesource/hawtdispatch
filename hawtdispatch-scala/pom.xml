@@ -157,7 +157,7 @@
           </jvmArgs>
           <args>
             <!-- arg>-unchecked</arg -->
-            <arg>-deprecation</arg>
+            <!-- <arg>-deprecation</arg> -->
           </args>
           <scalaVersion>${scala-version}</scalaVersion>
         </configuration>
@@ -194,4 +194,34 @@
     </plugins>
   </reporting>
   
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          
+          <!-- Generate the Scala Docs so that they can be included in the javadoc artifact -->
+          <plugin>
+            <groupId>org.scala-tools</groupId>
+            <artifactId>maven-scala-plugin</artifactId>
+            <version>${scala-plugin-version}</version>
+            <executions>
+              <execution>
+                <id>doc</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>doc</goal>
+                </goals>
+                <configuration>
+                  <reportOutputDirectory>${project.build.directory}</reportOutputDirectory>
+                  <outputDirectory>apidocs</outputDirectory>
+                </configuration>                
+              </execution>
+            </executions>
+          </plugin>
+
+        </plugins> 
+      </build>
+    </profile>
+  </profiles>
 </project>
