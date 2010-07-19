@@ -1,6 +1,5 @@
 package org.fusesource.hawtdispatch.internal.pool;
 
-import jsr166y.TransferQueue;
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.internal.GlobalDispatchQueue;
 import org.fusesource.hawtdispatch.internal.NioManager;

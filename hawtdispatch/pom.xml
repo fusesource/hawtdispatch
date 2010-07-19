@@ -27,7 +27,8 @@
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch</artifactId>
   <version>1.0-SNAPSHOT</version>
-  
+  <packaging>jar</packaging>
+
   <name>HawtDispatch :: Java</name>
   <description>HawtDispatch: Java API</description>
 
@@ -39,14 +40,14 @@
 
   <dependencies>
     
-    <dependency>
+    <!-- <dependency>
       <groupId>jsr166y</groupId>
       <artifactId>jsr166y</artifactId>
       <version>1.0-SNAPSHOT</version>
       <optional>true</optional>
       <scope>system</scope>
       <systemPath>${basedir}/lib/jsr166y.jar</systemPath>
-    </dependency>
+    </dependency> -->
     
     <dependency>
       <groupId>asm</groupId>
@@ -70,33 +71,5 @@
     </dependency>
     
   </dependencies>
-
-  <build>
-    <plugins>
-      
-      <!-- create an uber jar which includes the jsr166y dependency -->
-      <!-- <plugin>
-        <groupId>org.fusesource.mvnplugins</groupId>
-        <artifactId>maven-uberize-plugin</artifactId>
-        <version>1.6</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals><goal>uberize</goal></goals>
-            <configuration>
-              <additionalScopes>system</additionalScopes>
-              <artifactSet>
-                <excludes>
-                  <exclude>asm:asm</exclude>
-                  <exclude>asm:asm-tree</exclude>
-                </excludes>
-              </artifactSet>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin> -->
-      
-    </plugins>
-  </build>
 
 </project>

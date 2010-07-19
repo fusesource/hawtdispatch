@@ -21,7 +21,6 @@
  */
 package org.fusesource.hawtdispatch.internal.pool;
 
-import jsr166y.LinkedTransferQueue;
 import org.fusesource.hawtdispatch.internal.WorkerPool;
 import org.fusesource.hawtdispatch.internal.WorkerThread;
 

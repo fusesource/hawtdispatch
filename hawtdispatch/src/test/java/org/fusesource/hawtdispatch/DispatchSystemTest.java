@@ -19,7 +19,6 @@ package org.fusesource.hawtdispatch;
 
 import java.util.concurrent.CountDownLatch;
 
-import jsr166y.ForkJoinPool;
 import org.junit.Test;
 
 import static java.lang.String.format;
@@ -49,29 +48,29 @@ public class DispatchSystemTest {
     public void benchmark() throws InterruptedException {
 
 
-        benchmark(new Scenario(){
-            public String getName() {
-                return "fork join";
-            }
-
-            public void execute(int iterations) throws InterruptedException {
-                final ForkJoinPool pool = new ForkJoinPool();
-                final CountDownLatch counter = new CountDownLatch(iterations);
-                Runnable task = new Runnable(){
-                    public void run() {
-                        counter.countDown();
-                        if( counter.getCount()>0 ) {
-                            pool.execute(this);
-                        }
-                    }
-                };
-                for (int i = 0; i < 1000; i++) {
-                    pool.execute(task);
-                }
-                counter.await();
-                pool.shutdown();
-            }
-        });
+        // benchmark(new Scenario(){
+        //     public String getName() {
+        //         return "fork join";
+        //     }
+        // 
+        //     public void execute(int iterations) throws InterruptedException {
+        //         final ForkJoinPool pool = new ForkJoinPool();
+        //         final CountDownLatch counter = new CountDownLatch(iterations);
+        //         Runnable task = new Runnable(){
+        //             public void run() {
+        //                 counter.countDown();
+        //                 if( counter.getCount()>0 ) {
+        //                     pool.execute(this);
+        //                 }
+        //             }
+        //         };
+        //         for (int i = 0; i < 1000; i++) {
+        //             pool.execute(task);
+        //         }
+        //         counter.await();
+        //         pool.shutdown();
+        //     }
+        // });
 
         benchmark(new Scenario(){
             public String getName() {
