@@ -128,8 +128,18 @@
         <artifactId>wagon-webdav-jackrabbit</artifactId>
         <version>1.0-beta-6</version>
       </extension>
+      <extension>
+        <groupId>org.fusesource.mvnplugins</groupId>
+        <artifactId>fuse-jxr-skin</artifactId>
+        <version>1.9-SNAPSHOT</version>
+      </extension>
     </extensions>
 
+    <pluginManagement>
+      <plugins>
+      </plugins>
+    </pluginManagement>
+        
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -201,36 +211,22 @@
         </dependencies>
       </plugin>          
 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>2.1.1</version>
+      </plugin>
+
     </plugins>
   </build>
   
   <reporting>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>jxr-maven-plugin</artifactId>
-        <version>2.0-beta-1</version>
-        <configuration>
-          <aggregate>true</aggregate>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.6</version>
-        <configuration>
-          <excludePackageNames>*.internal</excludePackageNames>
-          <linksource>true</linksource>
-          <links>
-            <link>http://java.sun.com/j2se/1.5.0/docs/api</link>
-          </links>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.1.1</version>
-        <reportSets>
+        <version>2.2</version>
+        <!-- <reportSets>
           <reportSet>
             <reports>
               <report>index</report>
@@ -243,17 +239,63 @@
               <report>scm</report>
             </reports>
           </reportSet>
-        </reportSets>
+        </reportSets> -->
       </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>surefire-report-maven-plugin</artifactId>
-        <version>2.0-beta-1</version>
-      </plugin>
+      
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-plugin-plugin</artifactId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
         <version>2.5</version>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.7</version>
+        <configuration>
+        
+          <docfilessubdirs>true</docfilessubdirs>
+          <useStandardDocletOptions>true</useStandardDocletOptions>
+          <charset>UTF-8</charset>
+          <docencoding>UTF-8</docencoding>
+          <breakiterator>true</breakiterator>
+          <version>true</version>
+          <author>true</author>
+          <keywords>true</keywords>
+          
+          <stylesheetfile>${basedir}/target/site/testapidocs/stylesheet.css</stylesheetfile>
+          <resourcesArtifacts>
+            <resourcesArtifact>
+              <groupId>org.fusesource.mvnplugins</groupId>
+              <artifactId>fuse-javadoc-skin</artifactId>
+              <version>1.9-SNAPSHOT</version>
+            </resourcesArtifact>
+          </resourcesArtifacts>
+          
+          <doctitle>${project.name} API Reference (${project.version})</doctitle>
+          <windowtitle>${project.name} API Reference (${project.version})</windowtitle>
+          <links>
+            <link>http://java.sun.com/j2se/1.5.0/docs/api</link>
+          </links>
+          <encoding>UTF-8</encoding>
+          <locale>en_US</locale>
+          <linksource>true</linksource>
+          <excludePackageNames>*.internal</excludePackageNames>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <version>2.2</version>
+        <configuration>
+          <stylesheet>fuse-jxr-skin-stylesheet.css</stylesheet>
+          <inputEncoding>UTF-8</inputEncoding>
+          <outputEncoding>UTF-8</outputEncoding>
+          <linkJavadoc>true</linkJavadoc>
+          <docTitle>${project.name} Source Xref (${project.version})</docTitle>
+          <windowTitle>${project.name} Source Xref (${project.version})</windowTitle>
+        </configuration>
       </plugin>
     </plugins>
   </reporting>
@@ -341,10 +383,6 @@
         <repository>
           <id>Fusesource Snapshots</id>
           <url>http://repo.fusesource.com/nexus/content/repositories/snapshots</url>
-        </repository>
-        <repository>
-          <id>fluido-skin</id>
-          <url>http://fluido-skin.googlecode.com/svn/repo/</url>
         </repository>
       </repositories>
     </profile>
