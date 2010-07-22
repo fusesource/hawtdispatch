@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009, Progress Software Corporation and/or its
+ * Copyright (C) 2010, Progress Software Corporation and/or its
  * subsidiaries or affiliates.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,12 +16,9 @@
  */
 package org.fusesource.hawtdispatch
 
-import _root_.java.lang.String
 import java.nio.channels.SelectableChannel
-import java.util.concurrent.{CountDownLatch, Executor, TimeUnit}
-import java.util.concurrent.{CountDownLatch, TimeUnit}
-import java.util.HashSet
-import collection.mutable.ListBuffer
+import java.util.concurrent.{Executor, TimeUnit}
+import org.fusesource.hawtdispatch.ScalaDispatchHelpers.Callback
 
 /**
  * Provides Scala applications enhanced syntactic sugar to the HawtDispatch API.
@@ -36,32 +33,122 @@ object ScalaDispatch {
   final class RichExecutor(val queue: Executor) extends Proxy {
     def self: Any = queue
     private def execute(task:Runnable):RichExecutor = {queue.execute(task); this}
+
+    /**
+     * <p>
+     * Submits a partial function for asynchronous execution on a dispatch queue.
+     * </p><p>
+     * Calls to {@link #dispatchAsync(Runnable)} always return immediately after the runnable has
+     * been submitted, and never wait for the runnable to be executed.
+     * </p><p>
+     * The target queue determines whether the runnable will be invoked serially or
+     * concurrently with respect to other runnables submitted to that same queue.
+     * Serial queues are processed concurrently with with respect to each other.
+     * </p><p>
+     * The system will retain this queue until the runnable has finished.
+     * </p>
+     *
+     * @param task
+     * The function to submit to the dispatch queue.
+     */
     def apply(task: =>Unit):RichExecutor = execute(runnable(task _))
+
+    /**
+     * Same as {@link #apply(=>Unit)}
+     */
     def ^(task: =>Unit):RichExecutor = execute(runnable(task _))
 
+    /**
+     * <p>
+     * Submits a runnable for asynchronous execution on a dispatch queue.
+     * </p>
+     *
+     * @param task
+     * The runnable to submit to the dispatch queue.
+     */
     def <<(task: Runnable) = execute(task)
+
+    /**
+     * A right-associative version of the {@link #<<(Runnable)} method
+     */
     def >>:(task: Runnable) = execute(task)
   }
 
   implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
 
   /**
-   * Enriches the DispatchQueue interfaces with additional Scala friendly methods.
+   *  Enriches the DispatchQueue interfaces with additional Scala friendly methods.
    */
   final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy {
     // Proxy
     def self: Any = queue
 
     private def execute(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
+
+    /**
+     * <p>
+     * Submits a partial function for asynchronous execution on a dispatch queue.
+     * </p><p>
+     * Calls to {@link #dispatchAsync(Runnable)} always return immediately after the runnable has
+     * been submitted, and never wait for the runnable to be executed.
+     * </p><p>
+     * The target queue determines whether the runnable will be invoked serially or
+     * concurrently with respect to other runnables submitted to that same queue.
+     * Serial queues are processed concurrently with with respect to each other.
+     * </p><p>
+     * The system will retain this queue until the runnable has finished.
+     * </p>
+     *
+     * @param task
+     * The function to submit to the dispatch queue.
+     */
     def apply(task: =>Unit):RichDispatchQueue = execute(runnable(task _))
+
+    /**
+     * Same as {@link #apply(=>Unit)}
+     */
     def ^(task: =>Unit):RichDispatchQueue = execute(runnable(task _))
 
+    /**
+     * <p>
+     * Submits a runnable for asynchronous execution on a dispatch queue.
+     * </p>
+     *
+     * @param task
+     * The runnable to submit to the dispatch queue.
+     */
     def <<(task: Runnable) = execute(task)
+
+    /**
+     * A right-associative version of the {@link #<<(Runnable)} method
+     */
     def >>:(task: Runnable) = execute(task)
 
-    def wrap[T](func: (T)=>Unit) = Callback(queue, func)
+    /**
+     * <p>
+     * Submits a partial function for asynchronous execution on a dispatch queue after
+     * the specified time delay.
+     * </p>
+     *
+     * @param time
+     * The amount of time to delay
+     * @param unit
+     * The units of time the delay is specified in
+     * @param task
+     * The runnable to submit to the dispatch queue.
+     */
     def after(time:Long, unit:TimeUnit)(task: =>Unit) = queue.dispatchAfter(time, unit, runnable(task _))
 
+    /**
+     * <p>
+     * Submits a runnable for asynchronous execution on a dispatch queue if the
+     * queue is not currently executing, otherwise if the queue is currently executing,
+     * then the runnable is directly executed.
+     * </p>
+     *
+     * @param task
+     * The runnable to submit to execute
+     */
     def <<|(task: Runnable) = {
       if( queue.isExecuting ) {
         try {
@@ -75,9 +162,23 @@ object ScalaDispatch {
       }
       this
     }
+    
+    /**
+     * A right-associative version of the {@link #<<|(Runnable)} method
+     */
     def |>>:(task: Runnable) = this <<| task
 
+
+    /**
+     * Wraps the supplied function an callback object which is also a a partial function that when
+     * called will cause the wrapped function to be asynchronously executed on the
+     * dispatch queue. 
+     */
+    def wrap[T](func: (T)=>Unit) = Callback(queue, func)
+
+
   }
+  
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
   /////////////////////////////////////////////////////////////////////
@@ -86,20 +187,50 @@ object ScalaDispatch {
   //
   /////////////////////////////////////////////////////////////////////
 
+  /**
+   * Same as {@link Dispatch.getRandomThreadQueue}
+   */
   def getRandomThreadQueue = Dispatch.getRandomThreadQueue
+
+  /**
+   * Same as {@link Dispatch.getCurrentQueue}
+   */
   def getCurrentThreadQueue = Dispatch.getCurrentQueue
+
+  /**
+   * Same as {@link Dispatch.createSource(EventAggregator, DispatchQueue)}
+   */
   def createSource[Event, MergedEvent](aggregator: EventAggregator[Event, MergedEvent], queue: DispatchQueue) = {
     Dispatch.createSource(aggregator, queue)
   }
+
+  /**
+   * Same as {@link Dispatch.createSource(SelectableChannel, Int, DispatchQueue)}
+   */
   def createSource(channel: SelectableChannel, interestOps: Int, queue: DispatchQueue) = {
     Dispatch.createSource(channel, interestOps, queue)
   }
+
+  /**
+   * Same as {@link Dispatch.getCurrentQueue}
+   */
   def getCurrentQueue = Dispatch.getCurrentQueue
+
+  /**
+   * Same as {@link Dispatch.createQueue(String)}
+   */
   def createQueue(label: String=null) = Dispatch.createQueue(label)
+
+  /**
+   * Same as {@link Dispatch.getGlobalQueue(DispatchPriority)}
+   */
   def getGlobalQueue(priority: DispatchPriority=DispatchPriority.DEFAULT) = Dispatch.getGlobalQueue(priority)
+
+  /**
+   * Same as {@link Dispatch.getGlobalQueue }
+   */
   def globalQueue = Dispatch.getGlobalQueue
-  // def dispatchMain = Dispatch.dispatchMain
-  // def getMainQueue = Dispatch.getMainQueue
+  
 
   /////////////////////////////////////////////////////////////////////
   //
@@ -107,339 +238,19 @@ object ScalaDispatch {
   //
   /////////////////////////////////////////////////////////////////////
 
+  /**
+   * Creates a runnable object from a partial function
+   */
   def ^(proc: => Unit): Runnable = runnable(proc _)
 
+  /**
+   * Creates a runnable object from a partial function
+   */
   implicit def runnable(proc: ()=>Unit): Runnable = new Runnable() {
     def run() {
       proc()
     }
   }
 
-  /////////////////////////////////////////////////////////////////////
-  //
-  // Helpers for working with Retained objects.
-  //
-  /////////////////////////////////////////////////////////////////////
-
-  def using(resource: Retained): (=> Unit) => Runnable = {
-    using(resource, resource) _
-  }
-
-  def using(resources: Seq[Retained]): (=> Unit) => Runnable = {
-    using(resources, resources) _
-  }
-
-  def retaining(resource: Retained): (=> Unit) => Runnable = {
-    using(resource, null) _
-  }
-
-  def retaining(resources: Seq[Retained]): (=> Unit) => Runnable = {
-    using(resources, null) _
-  }
-
-  def releasing(resource: Retained): (=> Unit) => Runnable = {
-    using(null, resource) _
-  }
-
-  def releasing(resources: Seq[Retained]): (=> Unit) => Runnable = {
-    using(null, resources) _
-  }
-
-  private def using(retainedResource: Retained, releasedResource: Retained)(proc: => Unit): Runnable = {
-    if (retainedResource != null) {
-      retainedResource.retain
-    }
-    new Runnable() {
-      def run = {
-        try {
-          proc;
-        } finally {
-          if (releasedResource != null) {
-            releasedResource.release
-          }
-        }
-      }
-    }
-  }
-
-  private def using(retainedResources: Seq[Retained], releasedResources: Seq[Retained])(proc: => Unit): Runnable = {
-    retain(retainedResources)
-    new Runnable() {
-      def run = {
-        try {
-          proc;
-        } finally {
-          release(releasedResources)
-        }
-      }
-    }
-  }
-
-  def retain(retainedResources: Seq[Retained]) = {
-    if (retainedResources != null) {
-      for (resource <- retainedResources) {
-        resource.retain
-      }
-    }
-  }
-
-  def release(releasedResources: Seq[Retained]) = {
-    if (releasedResources != null) {
-      for (resource <- releasedResources) {
-        resource.release
-      }
-    }
-  }
-
-
-  class ListEventAggregator[T] extends EventAggregator[T, ListBuffer[T]] {
-    def mergeEvent(previous:ListBuffer[T], event:T) = {
-      if( previous == null ) {
-        ListBuffer(event)
-      } else {
-        previous += event
-      }
-    }
-    def mergeEvents(previous:ListBuffer[T], events:ListBuffer[T]):ListBuffer[T] = {
-      previous ++= events
-    }
-  }
-
-  /////////////////////////////////////////////////////////////////////
-  //
-  // Helpers for working with Callbacks.
-  //
-  /////////////////////////////////////////////////////////////////////
-
-  sealed case class Callback[-A](retained: Retained, func: (A)=>Unit) extends (A => Unit) {
-    override def apply(v1: A) = func(v1)
-  }
-
-  abstract sealed class Result[+T]
-  case class Success[+T](value:T) extends Result[T]
-  case class Failure(exception:Exception) extends Result[Nothing]
-
-  def result[T](cb: (Result[T])=>Unit)(proc: => T): Runnable = {
-    var resource: Retained = null
-    if (cb != null ) {
-      cb match {
-        case Callback(retained, _)=>
-          resource = retained
-        case _=>
-      }
-    }
-    if( resource != null ) {
-      resource.retain
-    }
-    new Runnable() {
-      def run = {
-        try {
-          val rc = proc;
-          if( cb!=null ) {
-            cb(Success(rc))
-          }
-        } catch {
-          case e:Exception=>
-            if( cb!=null ) {
-              cb(Failure(e))
-            }
-        } finally {
-          if (resource != null) {
-            resource.release
-          }
-        }
-      }
-    }
-  }
-
-  def using[T](cb: (T)=>Unit)(proc: =>Unit): Runnable = {
-    using(toRetained(cb))(proc _)
-  }
-
-  private def toRetained[T](cb: (T)=>Unit) = {
-    if (cb != null ) {
-      cb match {
-        case Callback(retained, _)=>
-          retained
-        case _=>
-          null
-      }
-    } else {
-      null
-    }
-  }
-
-  def reply[T](cb: (T)=>Unit)(proc: => T): Runnable = {
-    var resource = toRetained(cb)
-    if( resource != null ) {
-      resource.retain
-    }
-    new Runnable() {
-      def run = {
-        try {
-          val rc = proc;
-          if( cb!=null ) {
-            cb(rc)
-          }
-        } finally {
-          if (resource != null) {
-            resource.release
-          }
-        }
-      }
-    }
-  }
-
 }
 
-import ScalaDispatch._
-
-/**
- * Allows you to capture future results of an async computation.
- *
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
- */
-class Future[T] extends (T => Unit) with ( ()=>T ) {
-
-  @volatile
-  var result:Option[T] = None
-  var latch = new CountDownLatch(1)
-
-  def apply(value:T) = {
-    result = Some(value)
-    latch.countDown
-  }
-
-  def apply() = {
-    latch.await
-    result.get
-  }
-
-  def apply(time:Long, unit:TimeUnit) = {
-    if( latch.await(time, unit) ) {
-      Some(result.get)
-    } else {
-      None
-    }
-  }
-
-  def completed = result!=None
-}
-/**
- *
- *
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
- */
-object Future {
-  def apply[T](func: (T =>Unit)=>Unit) = {
-    var future = new Future[T]()
-    func(future)
-    future()
-  }
-}
-
-/**
- * <p>
- * A TaskTracker is used to track multiple async processing tasks and
- * call a callback once they all complete.
- * </p>
- *
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
- */
-class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueue) {
-
-  var timeout: Long = 0
-  private[this] val tasks = new HashSet[Task]()
-  private[this] var _callback:Runnable = null
-  val queue = parent.createSerialQueue("tracker: "+name);
-  var done = false
-
-  /**
-   * Creates a new task and sets it as the disposer of the specified
-   * retained object and the release it.
-   */
-  def release(retained:Retained) = {
-    retained.setDisposer(task(retained))
-    retained.release
-  }
-
-  class Task(var name:Any) extends Runnable {
-    def run = {
-      remove(this)
-    }
-    override def toString = name.toString
-  }
-
-  def task(name:Any="unknown"):Task = {
-    val rc = new Task(name)
-    val x = ^ {
-      assert(_callback==null || !tasks.isEmpty)
-      tasks.add(rc)
-    }
-
-    x >>: queue
-    return rc
-  }
-
-  def callback(handler: Runnable) {
-    var start = System.currentTimeMillis
-    ^ {
-      _callback = handler
-      checkDone()
-    }  >>: queue
-
-    def schedualCheck(timeout:Long):Unit = {
-      if( timeout>0 ) {
-        queue.after(timeout, TimeUnit.MILLISECONDS) {
-          if( !done ) {
-            schedualCheck(onTimeout(System.currentTimeMillis-start, tasks.toArray.toList.map(_.toString)))
-          }
-        }
-      }
-    }
-    schedualCheck(timeout)
-  }
-
-  def callback(handler: =>Unit ) {
-    callback(runnable(handler _))
-  }
-
-  /**
-   * Subclasses can override if they want to log the timeout event.
-   * the method should return the next timeout value.  If 0, then
-   * it will not check for further timeouts.
-   */
-  protected def onTimeout(duration:Long, tasks: List[String]):Long = 0
-
-  private def remove(r:Runnable) = ^{
-    if( tasks.remove(r) ) {
-      checkDone()
-    }
-  } >>: queue
-
-  private def checkDone() = {
-    assert(!done)
-    if( tasks.isEmpty && _callback!=null && !done ) {
-      done = true
-      _callback.run
-    }
-  }
-
-  def await() = {
-    val latch =new CountDownLatch(1)
-    callback {
-      latch.countDown
-    }
-    latch.await
-  }
-
-  def await(timeout:Long, unit:TimeUnit) = {
-    val latch = new CountDownLatch(1)
-    callback {
-      latch.countDown
-    }
-    latch.await(timeout, unit)
-  }
-
-  override def toString = tasks.synchronized { name+" waiting on: "+tasks }
-}

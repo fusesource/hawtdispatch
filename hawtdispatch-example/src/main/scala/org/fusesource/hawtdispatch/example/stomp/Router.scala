@@ -17,6 +17,7 @@ package org.fusesource.hawtdispatch.example.stomp
 
 import _root_.java.util.concurrent.atomic.AtomicLong
 import _root_.org.fusesource.hawtdispatch._
+import _root_.org.fusesource.hawtdispatch.ScalaDispatchHelpers._
 import ScalaDispatch._
 import java.util.HashMap
 import collection.JavaConversions
