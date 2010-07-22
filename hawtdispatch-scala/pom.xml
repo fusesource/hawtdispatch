@@ -27,7 +27,7 @@
   <artifactId>hawtdispatch-scala</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>HawtDispatch :: Scala</name>
+  <name>${artifactId}</name>
   <description>HawtDispatch: Scala API</description>
 
   <dependencies>

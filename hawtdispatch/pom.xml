@@ -29,7 +29,7 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>HawtDispatch :: Java</name>
+  <name>${artifactId}</name>
   <description>HawtDispatch: Java API</description>
 
   <properties>

@@ -9,7 +9,8 @@
   </parent>
 
   <artifactId>hawtdispatch-website</artifactId>
-  <name>HawtDispatch :: Website</name>
+  <name>${artifactId}</name>
+  <packaging>jar</packaging>
 
   <build>
     <resources>
@@ -55,7 +56,7 @@
               <tasks>
 
                 <!-- lets transform the ReadMe to HTML -->
-                <copy file="../ReadMe.md" tofile="target/ReadMe.html">
+                <copy file="../readme.md" tofile="target/readme.html">
                   <filterchain>
                     <filterreader classname="com.petebevin.markdown.MarkdownFilter">
                     </filterreader>

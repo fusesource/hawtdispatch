@@ -24,7 +24,7 @@
   <packaging>pom</packaging>
   
   <name>${artifactId}</name>
-  <description>HHawtDispatch: The libdispatch style API for Java and Scala</description>
+  <description>HawtDispatch: The libdispatch style API for Java and Scala</description>
 
   <properties>
     <forge-project-id>hawtdispatch</forge-project-id>

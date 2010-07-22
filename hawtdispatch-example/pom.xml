@@ -27,7 +27,7 @@
   <artifactId>hawtdispatch-example</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>HawtDispatch :: Example</name>
+  <name>${artifactId}</name>
   <description>HawtDispatch: Examples</description>
 
   <dependencies>
