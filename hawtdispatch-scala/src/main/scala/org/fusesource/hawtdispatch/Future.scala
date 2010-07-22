@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2009, Progress Software Corporation and/or its
+ * Copyright (C) 2010, Progress Software Corporation and/or its
  * subsidiaries or affiliates.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,48 @@
  */
 package org.fusesource.hawtdispatch
 
+import java.util.concurrent.{TimeUnit, CountDownLatch}
+
 /**
- * <p>
- * </p>
+ * Allows you to capture future results of an async computation.
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-class Future
+class Future[T] extends (T => Unit) with ( ()=>T ) {
+
+  @volatile
+  var result:Option[T] = None
+  var latch = new CountDownLatch(1)
+
+  def apply(value:T) = {
+    result = Some(value)
+    latch.countDown
+  }
+
+  def apply() = {
+    latch.await
+    result.get
+  }
+
+  def apply(time:Long, unit:TimeUnit) = {
+    if( latch.await(time, unit) ) {
+      Some(result.get)
+    } else {
+      None
+    }
+  }
+
+  def completed = result!=None
+}
+/**
+ *
+ *
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ */
+object Future {
+  def apply[T](func: (T =>Unit)=>Unit) = {
+    var future = new Future[T]()
+    func(future)
+    future()
+  }
+}

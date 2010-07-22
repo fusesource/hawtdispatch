@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2009, Progress Software Corporation and/or its
+ * Copyright (C) 2010, Progress Software Corporation and/or its
  * subsidiaries or affiliates.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,13 @@ package org.fusesource.hawtdispatch
 
 /**
  * <p>
- * Contains severla
+ * Contains several helper method for working with retained objects
+ * and callbacks.
  * </p>
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-trait ScalaDispatchHelpers {
+object ScalaDispatchHelpers {
 
   /////////////////////////////////////////////////////////////////////
   //
