@@ -25,7 +25,7 @@
   project_wiki_url: 'http://wiki.github.com/chirino/hawtdispatch/'
   project_logo: "/images/project-logo.png"
   release_version: '1.0'
-  snapshot_version: '1.0-SNAPSHOT'
+  snapshot_version: '1.1-SNAPSHOT'
 
   # -------------------------------------------------------------------
   # TODO it would be nice to define these in terms of the project_id variable!

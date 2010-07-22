@@ -7,19 +7,25 @@ sort_info: 5
 # {project_name:}
 Download it today!
 
---- name:content
+--- name:content pipeline:tags,markdown
 
 <div class="left" markdown="1">
 # Download
 </div>
 <div class="right" markdown="1">
-You can download **{project_name:}** from the [Snapshot Maven Repository](http://repo.fusesource.com/nexus/content/repositories/snapshots/) in the [{project_name:} area](http://repo.fusesource.com/nexus/content/repositories/snapshots/org/fusesource/hawtdispatch/).
+You can download **{project_name:}** from the [Maven Repository](http://repo.fusesource.com/nexus/content/repositories/public/) in the [{project_name:} area](http://repo.fusesource.com/nexus/content/repositories/public/org/fusesource/{project_id:}/).
 
-<!-- 
-Download a distribution:
+Download the jar:
 
-* [1.0-SNAPSHOT zip](http://repo.fusesource.com/nexus/service/local/artifact/maven/redirect?r=snapshots&g=org.fusesource.hawtdispatch&a=hawtdispatch-distro&v=1.0-SNAPSHOT&e=zip&c=windows-bin) or [tar.gz](http://repo.fusesource.com/nexus/service/local/artifact/maven/redirect?r=snapshots&g=org.fusesource.hawtdispatch&a=hawtdispatch-distro&v=1.0-SNAPSHOT&e=tar.gz&c=unix-bin) 
--->
+* [{project_id:} {release_version:} jar](http://repo.fusesource.com/nexus/content/repositories/public/org/fusesource/{project_id:}/{project_id:}/{release_version:}/{project_id:}-{release_version:}.jar)
+* [{project_id:}-scala {release_version:} jar](http://repo.fusesource.com/nexus/content/repositories/public/org/fusesource/{project_id:}/{project_id:}-scala/{release_version:}/{project_id:}-scala-{release_version:}.jar)
+
+## Snapshots
+
+You can download a recent snapshot from the [Snapshot Maven Repository](http://repo.fusesource.com/nexus/content/repositories/snapshots/) in the [{project_name:} area](http://repo.fusesource.com/nexus/content/repositories/snapshots/org/fusesource/{project_id:}/).
+
+* [{project_id:} {snapshot_version:} jar](http://repo.fusesource.com/nexus/service/local/artifact/maven/redirect?r=snapshots&g=org.fusesource.{project_id:}&a={project_id:}&v={snapshot_version:}&e=jar)
+* [{project_id:}-scala {snapshot_version:} jar](http://repo.fusesource.com/nexus/service/local/artifact/maven/redirect?r=snapshots&g=org.fusesource.{project_id:}&a={project_id:}-scala&v={snapshot_version:}&e=jar)
 
 </div>
 
@@ -27,7 +33,7 @@ Download a distribution:
 # Maven
 </div>
 <div class="right" markdown="1">
-If you build your project using [Maven](http://maven.apache.org/) then just add the following to your *pom.xml*
+If you build your project using [Maven](http://maven.apache.org/) then just add one of the following dependencies to your *pom.xml*
 </div> 
 <div class="right">
 {coderay:: xml}<dependency>
@@ -36,12 +42,46 @@ If you build your project using [Maven](http://maven.apache.org/) then just add 
   <version>${{project_id:}-version}</version>  
 </dependency>
 {coderay}
+
+</div>
+<div class="right">
+{coderay:: xml}<dependency>
+  <groupId>org.fusesource.{project_id:}</groupId>
+  <artifactId>{project_id:}-scala</artifactId>
+  <version>${{project_id:}-version}</version>  
+</dependency>
+{coderay}
 </div>
 
 <div class="right" markdown="1">
-You should ensure you have the {project_name:} Snapshot Maven repository defined in your *pom.xml*</div> 
+The releases should be synchronized to the [central maven repository](http://repo1.maven.org/maven2/org/fusesource/{project_id:}/) so you should not need to add a maven repository to your pom.xml. 
+
+However if a release has not yet made it to the central repository or you want to add a repository for completeness, add the following to your *pom.xml*
+</div>
 <div class="right">
-{coderay:: xml}  <repositories>
+{pygmentize:: xml}  <repositories>
+   <repository>
+     <id>fusesource.m2</id>
+     <name>FuseSource Public Repository</name>
+     <url>http://repo.fusesource.com/nexus/content/repositories/public</url>
+     <snapshots>
+       <enabled>false</enabled>
+     </snapshots>
+     <releases>
+       <enabled>true</enabled>
+     </releases>
+   </repository>
+ </repositories>
+{pygmentize}
+</div>
+
+<div class="right" markdown="1">
+## Snapshots
+
+If you want to use a **snapshot version** you should ensure you have the {project_name:} Snapshot Maven repository defined in your *pom.xml*
+</div> 
+<div class="right">
+{pygmentize:: xml}  <repositories>
    <repository>
      <id>fusesource.snapshots</id>
      <name>FuseSource Snapshot Repository</name>
@@ -54,14 +94,15 @@ You should ensure you have the {project_name:} Snapshot Maven repository defined
      </releases>
    </repository>
  </repositories>
-{coderay}
+{pygmentize}
 </div>
+
 
 <div class="left" markdown="1">
 # Building
 </div>
 
 <div class="right" markdown="1">
-If you prefer you can try checking out [the source code](source.html) and then [build it](building.html)
+If you prefer you can try building from [the source code](source.html) and [building it](building.html)
 </div>
 

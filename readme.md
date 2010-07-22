@@ -17,7 +17,7 @@ development.
 ## Resources
 
 * [Developer Guide](http://hawtdispatch.fusesource.org)
-* [API Reference](http://hawtdispatch.fusesource.org/maven/1.0-SNAPSHOT/hawtdispatch/apidocs/org/fusesource/hawtdispatch/package-summary.html)
+* [API Reference](http://hawtdispatch.fusesource.org/maven/1.0/hawtdispatch/apidocs/org/fusesource/hawtdispatch/package-summary.html)
 
 ## Building from Source
 

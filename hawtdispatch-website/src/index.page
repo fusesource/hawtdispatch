@@ -2,7 +2,8 @@
 title: HawtDispatch
 in_menu: true
 sort_info: 1
-api_dir: http://hawtdispatch.fusesource.org/maven/1.0-SNAPSHOT/hawtdispatch/apidocs/org/fusesource/hawtdispatch
+api_dir: http://hawtdispatch.fusesource.org/maven/1.0/hawtdispatch/apidocs/org/fusesource/hawtdispatch
+scala_api_dir: http://hawtdispatch.fusesource.org/maven/1.0/hawtdispatch-scala/scaladocs
 --- name:overview pipeline:haml,tags
 
 %h1 {project_name:}
