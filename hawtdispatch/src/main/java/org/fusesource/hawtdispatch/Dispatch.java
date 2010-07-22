@@ -185,7 +185,8 @@ public class Dispatch {
      * prevent the system from being able to more dynamically control the number of threads used
      * to service concurrent requests.
      * </p>
-     * @return
+     *
+     * @return the current thread queue
      */
     @Deprecated
     public static DispatchQueue getCurrentThreadQueue() {
@@ -200,7 +201,8 @@ public class Dispatch {
      * prevent the system from being able to more dynamically control the number of threads used
      * to service concurrent requests.
      * </p>
-     * @return
+     *
+     * @return a random thread queue
      */
     @Deprecated
     public static DispatchQueue getRandomThreadQueue() {

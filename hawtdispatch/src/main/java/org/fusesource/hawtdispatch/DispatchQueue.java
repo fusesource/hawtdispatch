@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Dispatch queues are lightweight objects to which runnable objects
  * may be submitted for asynchronous execution and therefore are
- * {@linke Executor} objects.
+ * {@link Executor} objects.
  * </p>
  *
  *
