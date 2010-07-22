@@ -72,65 +72,6 @@
     </dependency>
   </dependencies>
 
-  <repositories>
-
-    <repository>
-      <id>scala-tools.org</id>
-      <name>Scala Tools Maven2 Repository</name>
-      <url>http://scala-tools.org/repo-releases</url>
-    </repository>
-    <repository>
-      <id>scala-tools-snapshots.org</id>
-      <name>Scala Tools Maven2 Snapshot Repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-    </repository>
-
-    <repository>
-      <id>scala</id>
-      <name>Scala Tools</name>
-      <url>http://scala-tools.org/repo-releases/</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    
-    <repository>
-      <id>snapshots.scala-tools.org</id>
-      <name>Scala-Tools Maven2 Snapshot Repository</name>
-      <url>http://scala-tools.org/repo-snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-        <!--updatePolicy>never</updatePolicy-->
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-      <releases>
-        <enabled>true</enabled>
-        <!--updatePolicy>never</updatePolicy-->
-        <checksumPolicy>fail</checksumPolicy>
-      </releases>
-    </repository>
-    
-    <repository>
-      <id>nexus.snapshots.scala-tools.org</id>
-      <name>Scala-Tools Maven2 Snapshot Repository</name>
-      <url>http://nexus.scala-tools.org/content/repositories/snapshots/</url>
-      <snapshots>
-        <enabled>true</enabled>
-        <!--updatePolicy>never</updatePolicy-->
-        <checksumPolicy>fail</checksumPolicy>
-      </snapshots>
-      <releases>
-        <enabled>true</enabled>
-        <!--updatePolicy>never</updatePolicy-->
-        <checksumPolicy>fail</checksumPolicy>
-      </releases>
-    </repository>
-
-  </repositories>
-
   <build>
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src/main/scala</sourceDirectory>

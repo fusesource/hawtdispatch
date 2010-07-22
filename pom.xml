@@ -386,12 +386,23 @@
     
     <profile>
       <id>download</id>
-
       <repositories>
         <repository>
           <id>Fusesource Snapshots</id>
           <url>http://repo.fusesource.com/nexus/content/repositories/snapshots</url>
         </repository>
+        <repository>
+          <id>scala-tools.org</id>
+          <url>http://scala-tools.org/repo-releases</url>
+        </repository>
+        <repository>
+          <id>scala-tools-snapshots.org</id>
+          <url>http://scala-tools.org/repo-snapshots</url>
+        </repository>
+        <repository>
+          <id>nexus.snapshots.scala-tools.org</id>
+          <url>http://nexus.scala-tools.org/content/repositories/snapshots/</url>
+        </repository>        
       </repositories>
     </profile>
     
