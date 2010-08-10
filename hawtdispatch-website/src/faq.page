@@ -8,7 +8,8 @@ sort_info: 41
 
 <h1>Burning Questions?</h1>
 
-This page contains all the frequently asked questions about the {project_name:} project.
+This page contains all the frequently asked questions about the
+{project_name:} project.
 
 <div style="font-size: 10pt; clear: left; padding: 5px;">
 {menu: {used_nodes: fragments, min_levels: 4, max_levels: 6}}
@@ -22,15 +23,22 @@ General questions on the *{project_name:}* project.
 
 ### Why the name {project_name:}?
 
-Because it is an awesome dispatch library.
+Because this dispatch library is one <b>H</b>iram's <b>AW</b>esome <b>T</b>ools.
 
 ### What is the license?
 
-The license is [Apache 2 License](http://www.apache.org/licenses/LICENSE-2.0)
+The license is [Apache 2
+License](http://www.apache.org/licenses/LICENSE-2.0)
+
+### What are the benefits of using HawtDispatch?
+
+The main benefit is that it allows you create an event based server.  See this
+[comparison of event bases vs. threaded servers](http://mmcgrana.github.com/2010/07/threaded-vs-evented-servers.html).
 
 ### How do I build {project_name:}
 
-First [get the source](source.html) then see he [building guide](building.html)
+First [get the source](source.html) then see he [building
+guide](building.html)
 
 ### How do I get support?
 
@@ -38,18 +46,26 @@ See the [support guide](support.html) for more details.
 
 ### How do I contribute or become a committer?
 
-We love [contributions](contributing.html)! More details on how to contribute and how to become a committer are in the [contributing guide](contributing.html).
+We love [contributions](contributing.html)! More details on how to
+contribute and how to become a committer are in the [contributing
+guide](contributing.html).
 
 ### How do I register for the issue tracker?
 
-For more detail see the [support page](support.html). If you haven't done so already you can  <a href=" https://www.assembla.com/user/signup">register with the issue tracker here</a>
+For more detail see the [support page](support.html). If you haven't
+done so already you can <a href="
+https://www.assembla.com/user/signup">register with the issue tracker
+here</a>
 
 ### How does the website work?
 
-For details on how to edit the website and how it works see [How the Site works](site.html)
+For details on how to edit the website and how it works see [How the
+Site works](site.html)
 
 ## Using {project_name:}
 
 ### How do I get started?
 
-Your best bet is starting with the [User Guide](documentation/index.html) maybe starting by [running the samples](http://hawtdispatch.fusesource.org/documentation/index.html#running_the_samples)
+Your best bet is starting with the [User
+Guide](documentation/index.html) maybe starting by [running the
+samples](http://hawtdispatch.fusesource.org/documentation/index.html#running_the_samples)
