@@ -326,7 +326,7 @@ for( i <- 1 to 10 ) {
 queue.release
 {pygmentize}
 
-Its' also important to note that the enqueued runnable objects increment the retain counter.  The following
+It is also important to note that the enqueued runnable objects increment the retain counter.  The following
 version of the above example also only closes the stream after all the values are sent
 to the stream:
 

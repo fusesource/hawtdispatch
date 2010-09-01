@@ -13,7 +13,7 @@ The way most developers get started contributing to a project.
 
 Alternatively you can try using [sbt](sbt.html) which is particularly good for rapid edit-compile-test cycles
 
-### Prequisites
+### Prerequisites
 
 *Required:*
 * Download and [install Maven](http://maven.apache.org/download.html)

@@ -11,7 +11,7 @@ in_menu: false
 
 ## Overview 
 
-HawtDispatch makes it easy to create mutli-threaded NIO based applications.
+HawtDispatch makes it easy to create multi-threaded NIO based applications.
 To illustrate this, the source distribution includes an example messaging server 
 that implements the main parts of the 
 [STOMP](http://activemq.apache.org/stomp/stomp10/specification.html) protocol.  The 
@@ -55,7 +55,7 @@ Startup complete.
 
 ### Starting the Clients
 
-The seconds terminal will be used to run a performance sampling STOMP 
+The second terminal will be used to run a performance sampling STOMP 
 producer and consumer.  Execute the following statements in that terminal: 
 
 {pygmentize:: text}
