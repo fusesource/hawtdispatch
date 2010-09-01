@@ -40,7 +40,7 @@ import static junit.framework.Assert.*;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class DispatchSoruceTest {
+public class DispatchSourceTest {
 
     @Test
     public void connect() throws IOException, InterruptedException {
