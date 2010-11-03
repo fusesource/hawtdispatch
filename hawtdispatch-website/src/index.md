@@ -66,7 +66,6 @@ import static org.fusesource.hawtdispatch.Dispatch.*;
 scala: In Scala
 -----------------------------
 import _root_.org.fusesource.hawtdispatch._;
-import _root_.org.fusesource.hawtdispatch.ScalaDispatch._;
 {pygmentize_and_compare}
 </div>
 
@@ -282,13 +281,13 @@ object.  Example:
     val queue = createQueue()
     var counter = 0;
     
-    def add(value:Int) = ^{
+    def add(value:Int) = queue {
       counter += value
-    } >>: queue
+    } 
     
-    def sub(value:Int) = ^{
+    def sub(value:Int) = queue {
       counter -= value
-    } >>: queue
+    }
   }
 {pygmentize}
 
@@ -311,14 +310,13 @@ they finish executing that shared resource gets closed.
 val stream:PrintStream = ...
 val queue = createQueue()
 queue.setDisposer(^{ stream.close })
-
 for( i <- 1 to 10 ) {
   queue.retain
-  getGlobalQueue << ^ {
+  getGlobalQueue {
     // Concurrently compute some values and send then to 
     // the stream.
     val value = "Hello "+i
-    queue << ^{ stream.println(value) }
+    queue { stream.println(value) }
     // the stream is closed once the last release executes.
     queue.release
   }
