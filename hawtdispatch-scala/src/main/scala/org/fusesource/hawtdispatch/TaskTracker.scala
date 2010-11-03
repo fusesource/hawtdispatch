@@ -18,7 +18,7 @@ package org.fusesource.hawtdispatch
 
 import java.util.HashSet
 import java.util.concurrent.{CountDownLatch, TimeUnit}
-import ScalaDispatch._
+import org.fusesource.hawtdispatch._
 
 /**
  * <p>

@@ -16,10 +16,9 @@
  */
 package org.fusesource.hawtdispatch.example
 
-import _root_.java.io.{IOException}
-import _root_.java.net.{InetSocketAddress}
-import _root_.org.fusesource.hawtdispatch._
-import ScalaDispatch._
+import java.io.{IOException}
+import java.net.{InetSocketAddress}
+import org.fusesource.hawtdispatch._
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;

@@ -1,6 +1,5 @@
 /**
- * Copyright (C) 2010, Progress Software Corporation and/or its
- * subsidiaries or affiliates.  All rights reserved.
+ * Copyright (C) 2010, FuseSource Corp.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.fusesource.hawtdispatch
+package org.fusesource
 
+import org.fusesource.hawtdispatch._
 import java.nio.channels.SelectableChannel
-import java.util.concurrent.{Executor, TimeUnit}
-import org.fusesource.hawtdispatch.ScalaDispatchHelpers.Callback
+import java.util.concurrent.{CountDownLatch, Executor, TimeUnit}
+import scala.util.continuations._
 
 /**
- * Provides Scala applications enhanced syntactic sugar to the HawtDispatch API.
+ * <p>
+ * </p>
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-object ScalaDispatch {
+package object hawtdispatch {
+
 
   /**
    * Enriches the Executor interfaces with additional Scala friendly methods.
@@ -162,23 +164,57 @@ object ScalaDispatch {
       }
       this
     }
-    
+
     /**
      * A right-associative version of the {@link #<<|(Runnable)} method
      */
     def |>>:(task: Runnable) = this <<| task
 
+    /**
+     * Executes the supplied function on the dispatch queue
+     * while blocking the calling thread as it waits for the response.
+     */
+    def sync[T](func: =>T): T = async(func)()
 
     /**
-     * Wraps the supplied function an callback object which is also a a partial function that when
-     * called will cause the wrapped function to be asynchronously executed on the
-     * dispatch queue. 
+     * Executes the supplied function on the dispatch queue
+     * and returns a Future that can be used to wait on the future
+     * result of the function.
      */
-    def wrap[T](func: (T)=>Unit) = Callback(queue, func)
+    def async[T](func: =>T): Future[T] = {
+      val result = new Future[T]()
+      apply {
+        result(func)
+      }
+      result
+    }
 
+    /**
+     * Executes the supplied function on this dispatch queue and then
+     * resumes execution of the continuation on the calling dispatch queue
+     * or thread.
+     */
+    def ![T](func: =>T): T @suspendable = shift { k: (T=>Unit) =>
+      val original = getCurrentQueue
+      if( original==null ) {
+        k(sync(func))
+      } else {
+        original.retain
+        apply {
+          try {
+            val result = func
+            original.apply {
+              k(result)
+            }
+          } finally {
+            original.release
+          }
+        }
+      }
+    }
 
   }
-  
+
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
   /////////////////////////////////////////////////////////////////////
@@ -235,7 +271,7 @@ object ScalaDispatch {
    * Same as {@link Dispatch.getGlobalQueue }
    */
   def globalQueue = Dispatch.getGlobalQueue
-  
+
 
   /////////////////////////////////////////////////////////////////////
   //
@@ -258,4 +294,3 @@ object ScalaDispatch {
   }
 
 }
-

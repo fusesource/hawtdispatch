@@ -25,9 +25,8 @@ import java.util.concurrent.{TimeUnit, CountDownLatch}
  */
 class Future[T] extends (T => Unit) with ( ()=>T ) {
 
-  @volatile
-  var result:Option[T] = None
-  var latch = new CountDownLatch(1)
+  private var result:Option[T] = None
+  private val latch = new CountDownLatch(1)
 
   def apply(value:T) = {
     result = Some(value)
@@ -47,7 +46,7 @@ class Future[T] extends (T => Unit) with ( ()=>T ) {
     }
   }
 
-  def completed = result!=None
+  def completed = latch.await(0, TimeUnit.MILLISECONDS)
 }
 /**
  *

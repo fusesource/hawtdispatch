@@ -17,7 +17,6 @@ package org.fusesource.hawtdispatch.example.stomp
 
 import _root_.java.util.LinkedList
 import _root_.org.fusesource.hawtdispatch._
-import ScalaDispatch._
 
 /**
  *

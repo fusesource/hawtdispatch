@@ -17,7 +17,7 @@
 package org.fusesource.hawtdispatch.example
 
 import java.util.concurrent.Semaphore
-import org.fusesource.hawtdispatch.ScalaDispatch._
+import org.fusesource.hawtdispatch._
 import org.fusesource.hawtdispatch.EventAggregators
 
 /**

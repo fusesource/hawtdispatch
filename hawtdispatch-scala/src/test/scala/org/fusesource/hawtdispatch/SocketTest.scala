@@ -24,7 +24,7 @@ import java.nio._
 import java.nio.channels._
 import java.net._
 import java.io.IOException
-import ScalaDispatch._
+import org.fusesource.hawtdispatch._
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

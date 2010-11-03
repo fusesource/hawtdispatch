@@ -18,7 +18,6 @@ package org.fusesource.hawtdispatch.example.stomp
 import _root_.java.util.{LinkedList}
 import java.nio.channels.SelectionKey._
 import _root_.org.fusesource.hawtdispatch._
-import ScalaDispatch._
 
 import java.util.concurrent.atomic.AtomicLong
 import java.nio.channels.{SocketChannel}
