@@ -137,5 +137,9 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
         return getGlobalQueue(priority).getRandomThreadQueue();
     }
+    
+    public DispatchQueue getThreadQueue(int hash, DispatchPriority priority) {
+        return getGlobalQueue(priority).getThreadQueue(hash);
+    }
 
 }

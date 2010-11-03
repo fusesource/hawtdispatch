@@ -166,4 +166,9 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         int i = random.nextInt(threads.length);
         return threads[i].getDispatchQueue();
     }
+    
+    public DispatchQueue getThreadQueue(int hash) {
+        WorkerThread[] threads = workers.getThreads();
+        return threads[hash % threads.length].getDispatchQueue();
+    }
 }

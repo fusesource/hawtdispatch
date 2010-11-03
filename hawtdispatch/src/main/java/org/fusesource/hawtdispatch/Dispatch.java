@@ -209,6 +209,22 @@ public class Dispatch {
         return DISPATCHER.getRandomThreadQueue();
     }
 
+    /**
+     * <p>
+     * Gets a random dispatch queue which is associated with the an available thread.
+     * </p><p>
+     * The method is flagged as deprecated since exposing this kind control to the application might
+     * prevent the system from being able to more dynamically control the number of threads used
+     * to service concurrent requests.
+     * </p>
+     *
+     * @return a random thread queue
+     */
+    @Deprecated
+    public static DispatchQueue getThreadQueue(int hash, DispatchPriority priority) {
+        return DISPATCHER.getThreadQueue(hash, priority);
+    }
+
 // Being able to execute stuff on the main thread is critical for some GUI implementations.  For now
 // we will not expose these interfaces until are fully cooked / have good test cases for them.
 //

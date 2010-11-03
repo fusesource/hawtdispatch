@@ -25,7 +25,7 @@ import org.fusesource.hawtdispatch.internal.HawtDispatcher;
 public class DispatcherConfig {
     
     private String label="hawtdispatch";
-    private int threads=Runtime.getRuntime().availableProcessors();
+    private int threads=1; //Runtime.getRuntime().availableProcessors();
 
     public static Dispatcher create(String name, int threads) {
         DispatcherConfig config = new DispatcherConfig();

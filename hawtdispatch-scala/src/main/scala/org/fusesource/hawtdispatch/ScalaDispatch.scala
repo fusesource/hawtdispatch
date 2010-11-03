@@ -188,6 +188,11 @@ object ScalaDispatch {
   /////////////////////////////////////////////////////////////////////
 
   /**
+   * Same as {@link Dispatch.getThreadQueue}
+   */
+  def getThreadQueue(n:Int, priority:DispatchPriority=DispatchPriority.DEFAULT) = Dispatch.getThreadQueue(n, priority)
+
+  /**
    * Same as {@link Dispatch.getRandomThreadQueue}
    */
   def getRandomThreadQueue = Dispatch.getRandomThreadQueue

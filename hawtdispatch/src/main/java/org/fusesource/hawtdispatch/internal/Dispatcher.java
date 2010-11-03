@@ -27,6 +27,7 @@ import java.nio.channels.SelectableChannel;
  */
 public interface Dispatcher {
 
+    public DispatchQueue getThreadQueue(int hash, DispatchPriority priority);
     public DispatchQueue getRandomThreadQueue();
     public DispatchQueue getRandomThreadQueue(DispatchPriority priority);
 
