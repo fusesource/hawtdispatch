@@ -23,7 +23,7 @@ General questions on the *{project_name:}* project.
 
 ### Why the name {project_name:}?
 
-Because this dispatch library is one <b>H</b>iram's <b>AW</b>esome <b>T</b>ools.
+Because this dispatch library is one of <b>H</b>iram's <b>AW</b>esome <b>T</b>ools.
 
 ### What is the license?
 
@@ -33,11 +33,11 @@ License](http://www.apache.org/licenses/LICENSE-2.0)
 ### What are the benefits of using HawtDispatch?
 
 The main benefit is that it allows you create an event based server.  See this
-[comparison of event bases vs. threaded servers](http://mmcgrana.github.com/2010/07/threaded-vs-evented-servers.html).
+[comparison of event based vs. threaded servers](http://mmcgrana.github.com/2010/07/threaded-vs-evented-servers.html).
 
 ### How do I build {project_name:}
 
-First [get the source](source.html) then see he [building
+First [get the source](source.html) then see the [building
 guide](building.html)
 
 ### How do I get support?

@@ -54,11 +54,11 @@ public class EventAggregators {
             if( previous == null ) {
                 return event;
             }
-            return previous + event;
+            return previous | event;
         }
 
         public Integer mergeEvents(Integer previous, Integer events) {
-            return previous + events;
+            return previous | events;
         }
     };
 
