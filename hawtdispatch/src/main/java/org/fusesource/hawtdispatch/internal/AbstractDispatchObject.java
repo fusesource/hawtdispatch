@@ -17,6 +17,7 @@
 package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.DispatchObject;
+import org.fusesource.hawtdispatch.DispatchProfiler;
 import org.fusesource.hawtdispatch.DispatchQueue;
 
 /**
@@ -36,7 +37,7 @@ abstract public class AbstractDispatchObject extends BaseSuspendable implements 
 
             next.retain();
             DispatchQueue previous = this.targetQueue;
-            this.targetQueue = (HawtDispatchQueue)next;
+            this.targetQueue = (HawtDispatchQueue) DispatchProfiler.unwrap(next);
             if( previous !=null ) {
                 previous.release();
             }
