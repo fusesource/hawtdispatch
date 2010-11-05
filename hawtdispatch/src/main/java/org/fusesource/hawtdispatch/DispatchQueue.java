@@ -168,14 +168,22 @@ public interface DispatchQueue extends DispatchObject, Executor {
 
     /**
      * <p>
-     * Returns the label of the queue that was specified when the
-     * queue was created.
+     * Returns the label of the queue.
      * </p>
      *
      * @return the label of the queue. The result may be null.
      */
     public String getLabel();
-                          
+
+    /**
+     * <p>
+     * Sets the label of the queue.
+     * </p>
+     *
+     * @param label the label of the queue.
+     */
+    public void setLabel(String label);
+
     /**
      * <p>
      * Returns true if this dispatch queue is executing the caller.

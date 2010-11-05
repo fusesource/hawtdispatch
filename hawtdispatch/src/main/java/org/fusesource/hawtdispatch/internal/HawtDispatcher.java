@@ -43,7 +43,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     private final String label;
     final TimerThread timerThread;
-    private DispatcherConfig config;
+    DispatcherConfig config;
 
     public HawtDispatcher(DispatcherConfig config) {
         this.config = config;
@@ -62,7 +62,11 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         return getGlobalQueue(DEFAULT);
     }
 
-    public GlobalDispatchQueue getGlobalQueue(DispatchPriority priority) {
+    public DispatchQueue getGlobalQueue(DispatchPriority priority) {
+        return getGlobalDispatchQueue(priority).proxy;
+    }
+
+    public GlobalDispatchQueue getGlobalDispatchQueue(DispatchPriority priority) {
         switch (priority) {
             case DEFAULT:
                 return DEFAULT_QUEUE;
@@ -90,9 +94,12 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         throw new AssertionError("switch missing case");
     }
 
-    public SerialDispatchQueue createQueue(String label) {
-        SerialDispatchQueue rc = new SerialDispatchQueue(label);
+    public DispatchQueue createQueue(String label) {
+        DispatchQueue rc = new SerialDispatchQueue(label);
         rc.setTargetQueue(getGlobalQueue());
+        if( config.isProfile() ) {
+            rc = DispatchProfiler.profile(rc);
+        }
         return rc;
     }
 
@@ -135,11 +142,11 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     }
 
     public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
-        return getGlobalQueue(priority).getRandomThreadQueue();
+        return getGlobalDispatchQueue(priority).getRandomThreadQueue();
     }
     
     public DispatchQueue getThreadQueue(int hash, DispatchPriority priority) {
-        return getGlobalQueue(priority).getThreadQueue(hash);
+        return getGlobalDispatchQueue(priority).getThreadQueue(hash);
     }
 
 }

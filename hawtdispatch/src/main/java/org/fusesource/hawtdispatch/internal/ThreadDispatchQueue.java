@@ -30,7 +30,7 @@ import org.fusesource.hawtdispatch.internal.util.QueueSupport;
  */
 final public class ThreadDispatchQueue implements HawtDispatchQueue {
 
-    final String label;
+    volatile String label;
 
     final LinkedList<Runnable> localRunnables = new LinkedList<Runnable>();
     final ConcurrentLinkedQueue<Runnable> sharedRunnables = new ConcurrentLinkedQueue<Runnable>();
@@ -45,6 +45,10 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
 
     public String getLabel() {
         return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public boolean isExecuting() {

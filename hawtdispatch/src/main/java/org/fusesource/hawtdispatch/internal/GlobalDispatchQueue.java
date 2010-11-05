@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.fusesource.hawtdispatch.DispatchPriority;
+import org.fusesource.hawtdispatch.DispatchProfiler;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.internal.pool.SimplePool;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
@@ -32,17 +33,27 @@ import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
 final public class GlobalDispatchQueue implements HawtDispatchQueue {
 
     public final HawtDispatcher dispatcher;
-    final String label;
+    volatile String label;
     private final DispatchPriority priority;
     private final WorkerPool workers;
     final Random random = new Random(System.nanoTime());
+
+    final DispatchQueue proxy;
 
     public GlobalDispatchQueue(HawtDispatcher dispatcher, DispatchPriority priority, int threads) {
         this.dispatcher = dispatcher;
         this.priority = priority;
         this.label=priority.toString();
         this.workers = new SimplePool(this, threads, priority);
+
+        if( dispatcher.config.isProfile() ) {
+            proxy = DispatchProfiler.profile(this);
+        } else {
+            proxy = this;
+        }
     }
+
+
 
     public void start() {
         workers.start();
@@ -58,6 +69,10 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
 
     public String getLabel() {
         return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 
     public boolean isExecuting() {

@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
@@ -32,7 +33,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
 
     private int MAX_DISPATCH_LOOPS = 1000;
 
-    protected final String label;
+    protected volatile String label;
 //    protected final Set<DispatchOption> options;
 
     protected final AtomicInteger size = new AtomicInteger();
@@ -137,6 +138,10 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         return label;
     }
 
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
     public boolean isExecuting() {
         Boolean b = executing.get();
         return b!=null && b.booleanValue();
@@ -188,8 +193,8 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     }
 
 
-    public SerialDispatchQueue createSerialQueue(String label) {
-        SerialDispatchQueue rc = getDispatcher().createQueue(label);
+    public DispatchQueue createSerialQueue(String label) {
+        DispatchQueue rc = getDispatcher().createQueue(label);
         rc.setTargetQueue(this);
         return rc;
     }

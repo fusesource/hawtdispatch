@@ -31,24 +31,24 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DispatchProfiler {
 
     static public class DispatchMetrics {
-        public DispatchQueue queue;
+        public String label;
         public long enqueued;
         public long dequeued;
-        public long max_wait_time;
-        public long max_run_time;
-        public long total_run_time;
-        public long total_wait_time;
+        public long max_wait_time_ns;
+        public long max_run_time_ns;
+        public long total_run_time_ns;
+        public long total_wait_time_ns;
 
         @Override
         public String toString() {
             return String.format("{ queue:%s, enqueued:%d, dequeued:%d, max_wait_time:%.2f ms, max_run_time:%.2f ms, total_run_time:%.2f ms, total_wait_time:%.2f ms }",
-                    queue.getLabel(),
+                    label,
                     enqueued,
                     dequeued,
-                    max_wait_time/1000.0f,
-                    max_run_time/1000.0f,
-                    total_run_time/1000.0f,
-                    total_wait_time/1000.0f);
+                    max_wait_time_ns /1000000.0f,
+                    max_run_time_ns /1000000.0f,
+                    total_run_time_ns /1000000.0f,
+                    total_wait_time_ns /1000000.0f);
         }
     }
 
@@ -103,13 +103,13 @@ public class DispatchProfiler {
 
         DispatchMetrics metrics() {
             DispatchMetrics rc = new DispatchMetrics();
-            rc.queue = this;
+            rc.label = queue.getLabel();
             rc.enqueued = enqueued.getAndSet(0);;
             rc.dequeued = dequeued.getAndSet(0);;
-            rc.max_wait_time = max_wait_time.getAndSet(0);;
-            rc.max_run_time = max_run_time.getAndSet(0);;
-            rc.total_run_time = total_run_time.getAndSet(0);
-            rc.total_wait_time = total_wait_time.getAndSet(0);
+            rc.max_wait_time_ns = max_wait_time.getAndSet(0);;
+            rc.max_run_time_ns = max_run_time.getAndSet(0);;
+            rc.total_run_time_ns = total_run_time.getAndSet(0);
+            rc.total_wait_time_ns = total_wait_time.getAndSet(0);
             return rc;
         }
 
@@ -127,6 +127,10 @@ public class DispatchProfiler {
 
         public String getLabel() {
             return queue.getLabel();
+        }
+
+        public void setLabel(String label) {
+            queue.setLabel(label);
         }
 
         public DispatchQueue.QueueType getQueueType() {
@@ -178,6 +182,10 @@ public class DispatchProfiler {
     final static public WeakHashMap<ProfiledQueue, Object> queues = new WeakHashMap<ProfiledQueue, Object>();
 
     static public DispatchQueue profile(DispatchQueue queue) {
+        if( queue instanceof ProfiledQueue ) {
+            return queue;
+        }
+
         ProfiledQueue rc = new ProfiledQueue(queue);
         synchronized (queues) {
             queues.put(rc, "");
@@ -205,10 +213,13 @@ public class DispatchProfiler {
 
     public static ArrayList<DispatchMetrics> metrics() {
         synchronized (queues) {
-            ArrayList<DispatchMetrics> rc = new ArrayList<DispatchMetrics>(queues.size());
+            ArrayList<DispatchMetrics> rc = new ArrayList<DispatchMetrics>();
             for( ProfiledQueue queue : queues.keySet() ) {
                 if( queue!=null ) {
-                    rc.add(queue.metrics());
+                    DispatchMetrics metric = queue.metrics();
+                    if( metric.enqueued!=0 || metric.dequeued!=0 ) {
+                        rc.add(metric);
+                    }
                 }
             }
             return rc;
