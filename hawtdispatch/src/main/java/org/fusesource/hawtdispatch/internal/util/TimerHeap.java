@@ -104,5 +104,5 @@ public abstract class TimerHeap<V> {
      * @param ready
      *            The ready operation.
      */
-    protected abstract void execute(V ready);
+    public abstract void execute(V ready);
 }

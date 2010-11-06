@@ -16,15 +16,16 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.internal.util.TimerHeap;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import static org.fusesource.hawtdispatch.internal.TimerThread.Type.*;
-
-
 
 
 /**
@@ -89,16 +90,23 @@ final public class TimerThread extends Thread {
     }
 
     public void run() {
-        
+
+        final HashMap<DispatchQueue, LinkedList<Runnable>> readyRequests =
+                new HashMap<DispatchQueue, LinkedList<Runnable>>();
+
         final TimerHeap<TimerRequest> timerHeap = new TimerHeap<TimerRequest>() {
             @Override
-            protected final void execute(TimerRequest request) {
-                request.target.dispatchAsync(request.runnable);
-                request.target.release();
+            public final void execute(TimerRequest request) {
+                LinkedList<Runnable> runnables = readyRequests.get(request.target);
+                if( runnables==null ) {
+                    runnables = new LinkedList<Runnable>();
+                    readyRequests.put(request.target, runnables);
+                }
+                runnables.add(request.runnable);
             }
         };
         
-        ArrayList<TimerRequest> swaped = new ArrayList<TimerRequest>();
+        ArrayList<TimerRequest> swapped = new ArrayList<TimerRequest>();
         
         try {
             for(;;) {
@@ -106,12 +114,12 @@ final public class TimerThread extends Thread {
                 synchronized(mutex) {
                     // Swap the arrays.
                     ArrayList<TimerRequest> t = requests;
-                    requests = swaped;
-                    swaped = t;
+                    requests = swapped;
+                    swapped = t;
                 }
                 
-                if( !swaped.isEmpty() ) {
-                    for (TimerRequest request : swaped) {
+                if( !swapped.isEmpty() ) {
+                    for (TimerRequest request : swapped) {
                         switch( request.type ) {
                         case RELATIVE:
                             timerHeap.addRelative(request, request.time, request.unit);
@@ -121,15 +129,40 @@ final public class TimerThread extends Thread {
                             break;
                         case SHUTDOWN:
                             if( request.runnable!=null ) {
-                                request.runnable.run();
+                                timerHeap.execute(request);
                             }
                             return;
                         }
                     }
-                    swaped.clear();
+                    swapped.clear();
                 }
                 
                 timerHeap.executeReadyTimers();
+
+                if( !readyRequests.isEmpty() ) {
+                    for (Map.Entry<DispatchQueue,LinkedList<Runnable>> entry: readyRequests.entrySet()) {
+                        final DispatchQueue queue = entry.getKey();
+                        final LinkedList<Runnable> runnables = entry.getValue();
+                        if( runnables.size() > 1 ) {
+                            // execute the runnables as a batch.
+                            queue.dispatchAsync(new Runnable(){
+                                public void run() {
+                                    for ( Runnable runnable: runnables) {
+                                        runnable.run();
+                                    }
+                                }
+                            });
+                            for ( Runnable runnable: runnables) {
+                                queue.release();
+                            }
+                        } else {
+                            queue.dispatchAsync(runnables.getFirst());
+                            queue.release();
+                        }
+                    }
+                    readyRequests.clear();
+                }
+
 
                 long start = System.nanoTime();
                 long next = timerHeap.timeToNext(TimeUnit.NANOSECONDS);
