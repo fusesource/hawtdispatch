@@ -52,7 +52,6 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
     }
 
     protected final ConcurrentLinkedQueue<MergedEvent> externalQueue = new ConcurrentLinkedQueue<MergedEvent>();
-    private final LinkedList<MergedEvent> localQueue = new LinkedList<MergedEvent>();
     protected final AtomicLong size = new AtomicLong();
 
     public void merge(Event event) {
