@@ -16,21 +16,23 @@
 package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.Metrics;
-import org.fusesource.hawtdispatch.DispatchQueue;
 
 /**
- * 
+ *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  *
  */
-public interface HawtDispatchQueue extends DispatchQueue {
+final public class InactiveMetricsCollector implements MetricsCollector {
 
-    HawtDispatcher getDispatcher();
+    public static final InactiveMetricsCollector INSTANCE = new InactiveMetricsCollector();
 
-    SerialDispatchQueue isSerialDispatchQueue();
-    ThreadDispatchQueue isThreadDispatchQueue();
-    GlobalDispatchQueue isGlobalDispatchQueue();
-    
-    HawtDispatchQueue getTargetQueue();
+    public Runnable track(Runnable runnable) {
+        return runnable;
+    }
+
+    public Metrics metrics() {
+        return null;
+    }
+
 
 }

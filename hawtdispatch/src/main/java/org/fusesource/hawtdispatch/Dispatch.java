@@ -22,6 +22,7 @@ import org.fusesource.hawtdispatch.internal.DispatcherConfig;
 
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.util.List;
 
 /**
  * <p>
@@ -254,5 +255,27 @@ public class Dispatch {
 //        DISPATCHER.dispatchMain();
 //    }
 //
+
+    /**
+     * If enabled then it enables profiling on the global
+     * queues and any newly created queues.  If not enabled
+     * then it disables profiling support on all the currently
+     * profiled queues and any queues created in the future.
+     *
+     * @param enabled
+     */
+    public static void profile(boolean enabled) {
+        DISPATCHER.profile(enabled);
+    }
+
+    /**
+     * Used to get profiling metrics for all the queues
+     * currently being profiled.
+     *
+     * @return
+     */
+    public static List<Metrics> metrics() {
+        return DISPATCHER.metrics();
+    }
 
 }

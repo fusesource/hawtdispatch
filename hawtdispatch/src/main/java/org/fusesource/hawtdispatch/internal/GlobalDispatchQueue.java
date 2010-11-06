@@ -16,15 +16,15 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
+import org.fusesource.hawtdispatch.DispatchPriority;
+import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Metrics;
+import org.fusesource.hawtdispatch.internal.pool.SimplePool;
+import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
+import org.fusesource.hawtdispatch.internal.util.QueueSupport;
+
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-
-import org.fusesource.hawtdispatch.DispatchPriority;
-import org.fusesource.hawtdispatch.DispatchProfiler;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.internal.pool.SimplePool;
-import org.fusesource.hawtdispatch.internal.util.QueueSupport;
-import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
 
 /**
  * 
@@ -37,23 +37,15 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     private final DispatchPriority priority;
     private final WorkerPool workers;
     final Random random = new Random(System.nanoTime());
-
-    final DispatchQueue proxy;
+    private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
 
     public GlobalDispatchQueue(HawtDispatcher dispatcher, DispatchPriority priority, int threads) {
         this.dispatcher = dispatcher;
         this.priority = priority;
         this.label=priority.toString();
         this.workers = new SimplePool(this, threads, priority);
-
-        if( dispatcher.config.isProfile() ) {
-            proxy = DispatchProfiler.profile(this);
-        } else {
-            proxy = this;
-        }
+        dispatcher.track(this);
     }
-
-
 
     public void start() {
         workers.start();
@@ -88,7 +80,7 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     }
 
     public void dispatchAsync(Runnable runnable) {
-        workers.execute(runnable);
+        workers.execute(metricsCollector.track(runnable));
     }
 
     public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable) {
@@ -186,4 +178,17 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         WorkerThread[] threads = workers.getThreads();
         return threads[hash % threads.length].getDispatchQueue();
     }
+
+    public void profile(boolean on) {
+        if( on ) {
+            metricsCollector = new ActiveMetricsCollector(this);
+        } else {
+            metricsCollector = InactiveMetricsCollector.INSTANCE;
+        }
+    }
+
+    public Metrics metrics() {
+        return metricsCollector.metrics();
+    }
+
 }

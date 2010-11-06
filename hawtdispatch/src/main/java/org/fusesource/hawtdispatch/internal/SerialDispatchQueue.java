@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Metrics;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
@@ -41,16 +42,16 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     protected final ConcurrentLinkedQueue<Runnable> externalQueue = new ConcurrentLinkedQueue<Runnable>();
     private final LinkedList<Runnable> localQueue = new LinkedList<Runnable>();
     private final ThreadLocal<Boolean> executing = new ThreadLocal<Boolean>();
+    private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
 
     public SerialDispatchQueue(String label) {
         this.label = label;
     }
 
-
-    public void dispatchAsync(Runnable runnable) {
+    public void dispatchAsync(final Runnable runnable) {
         assert runnable != null;
         assertRetained();
-        enqueue(runnable);
+        enqueue(metricsCollector.track(runnable));
     }
 
     private void enqueue(Runnable runnable) {
@@ -217,6 +218,23 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
 
     public GlobalDispatchQueue isGlobalDispatchQueue() {
         return null;
+    }
+
+    public void profile(boolean on) {
+        if( !on && metricsCollector==InactiveMetricsCollector.INSTANCE )
+            return;
+
+        if( on ) {
+            metricsCollector = new ActiveMetricsCollector(this);
+            getDispatcher().track(this);
+        } else {
+//            getDispatcher().untrack(this);
+            metricsCollector = InactiveMetricsCollector.INSTANCE;
+        }
+    }
+
+    public Metrics metrics() {
+        return metricsCollector.metrics();
     }
 
     @Override

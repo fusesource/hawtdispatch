@@ -20,6 +20,7 @@ package org.fusesource.hawtdispatch.internal;
 import org.fusesource.hawtdispatch.*;
 
 import java.nio.channels.SelectableChannel;
+import java.util.List;
 
 /**
  * 
@@ -45,5 +46,6 @@ public interface Dispatcher {
     public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue);
     public <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue);
 
-    
+    public void profile(boolean on);
+    public List<Metrics> metrics();
 }

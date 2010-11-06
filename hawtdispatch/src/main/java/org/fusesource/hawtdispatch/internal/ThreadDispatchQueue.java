@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Metrics;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
@@ -36,11 +37,13 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     final ConcurrentLinkedQueue<Runnable> sharedRunnables = new ConcurrentLinkedQueue<Runnable>();
     final WorkerThread thread;
     final GlobalDispatchQueue globalQueue;
+    private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
 
     public ThreadDispatchQueue(GlobalDispatchQueue globalQueue, WorkerThread thread) {
         this.thread = thread;
         this.globalQueue = globalQueue;
         this.label=thread.getName()+" pritority: "+globalQueue.getLabel();
+        getDispatcher().track(this);
     }
 
     public String getLabel() {
@@ -65,6 +68,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     }
     
     public void dispatchAsync(java.lang.Runnable runnable) {
+        runnable = metricsCollector.track(runnable);
         // We don't have to take the synchronization hit 
         if( Thread.currentThread()!=thread ) {
             sharedRunnables.add(runnable);
@@ -160,5 +164,17 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
 
     public QueueType getQueueType() {
         return QueueType.THREAD_QUEUE;
+    }
+
+    public void profile(boolean on) {
+        if( on ) {
+            metricsCollector = new ActiveMetricsCollector(this);
+        } else {
+            metricsCollector = InactiveMetricsCollector.INSTANCE;
+        }
+    }
+
+    public Metrics metrics() {
+        return metricsCollector.metrics();
     }
 }

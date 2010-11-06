@@ -192,4 +192,19 @@ public interface DispatchQueue extends DispatchObject, Executor {
      * @return if this dispatch queue is executing the caller.
      */
     public boolean isExecuting();
+
+    /**
+     * Enables or disables profiler metric tracking on the queue.
+     * @param on
+     */
+    void profile(boolean on);
+
+    /**
+     * Returns the usage metrics of this queue.  Only returns a value
+     * if the queue has profiling enabled.
+     *
+     * @return new metric counters accumulated since last called or null if the queue has not been used.
+     */
+    Metrics metrics();
+
 }

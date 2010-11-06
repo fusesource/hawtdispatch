@@ -19,7 +19,9 @@ package org.fusesource.hawtdispatch.internal;
 import org.fusesource.hawtdispatch.*;
 
 import java.nio.channels.SelectableChannel;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.WeakHashMap;
 
 import static org.fusesource.hawtdispatch.DispatchPriority.DEFAULT;
 
@@ -39,17 +41,27 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     private final Object LOW_MUTEX = new Object();
     private GlobalDispatchQueue LOW_QUEUE;
 
-    private final SerialDispatchQueue mainQueue = new SerialDispatchQueue("main");
+    private final SerialDispatchQueue mainQueue = new SerialDispatchQueue("main") {
+        public HawtDispatcher getDispatcher() {
+            return HawtDispatcher.this;
+        }
+    };
 
     private final String label;
     final TimerThread timerThread;
-    DispatcherConfig config;
+
+    private final int threads;
+    private volatile boolean profile;
 
     public HawtDispatcher(DispatcherConfig config) {
-        this.config = config;
+        this.threads = config.getThreads();
         this.label = config.getLabel();
+        this.profile = config.isProfile();
+
         DEFAULT_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.DEFAULT, config.getThreads());
         DEFAULT_QUEUE.start();
+        DEFAULT_QUEUE.profile(profile);
+
         timerThread = new TimerThread(this);
         timerThread.start();
     }
@@ -62,11 +74,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         return getGlobalQueue(DEFAULT);
     }
 
-    public DispatchQueue getGlobalQueue(DispatchPriority priority) {
-        return getGlobalDispatchQueue(priority).proxy;
-    }
-
-    public GlobalDispatchQueue getGlobalDispatchQueue(DispatchPriority priority) {
+    public GlobalDispatchQueue getGlobalQueue(DispatchPriority priority) {
         switch (priority) {
             case DEFAULT:
                 return DEFAULT_QUEUE;
@@ -75,8 +83,9 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
                 // the queue at all.
                 synchronized(HIGH_MUTEX) {
                     if( HIGH_QUEUE==null ) {
-                        HIGH_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.HIGH, config.getThreads());
+                        HIGH_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.HIGH, threads);
                         HIGH_QUEUE.start();
+                        HIGH_QUEUE.profile(profile);
                     }
                     return HIGH_QUEUE;
                 }
@@ -85,8 +94,9 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
                 // the queue at all.
                 synchronized(LOW_MUTEX) {
                     if( LOW_QUEUE==null ) {
-                        LOW_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.HIGH, config.getThreads());
+                        LOW_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.HIGH, threads);
                         LOW_QUEUE.start();
+                        LOW_QUEUE.profile(profile);
                     }
                     return LOW_QUEUE;
                 }
@@ -94,12 +104,10 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         throw new AssertionError("switch missing case");
     }
 
-    public DispatchQueue createQueue(String label) {
-        DispatchQueue rc = new SerialDispatchQueue(label);
+    public SerialDispatchQueue createQueue(String label) {
+        SerialDispatchQueue rc = new SerialDispatchQueue(label);
         rc.setTargetQueue(getGlobalQueue());
-        if( config.isProfile() ) {
-            rc = DispatchProfiler.profile(rc);
-        }
+        rc.profile(profile);
         return rc;
     }
 
@@ -142,11 +150,52 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     }
 
     public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
-        return getGlobalDispatchQueue(priority).getRandomThreadQueue();
+        return getGlobalQueue(priority).getRandomThreadQueue();
     }
     
     public DispatchQueue getThreadQueue(int hash, DispatchPriority priority) {
-        return getGlobalDispatchQueue(priority).getThreadQueue(hash);
+        return getGlobalQueue(priority).getThreadQueue(hash);
+    }
+
+    final static public WeakHashMap<HawtDispatchQueue, Object> queues = new WeakHashMap<HawtDispatchQueue, Object>();
+
+    void track(HawtDispatchQueue queue) {
+        synchronized (queues) {
+            queues.put(queue, Boolean.TRUE);
+        }
+    }
+
+    void untrack(HawtDispatchQueue queue) {
+        synchronized (queues) {
+            queues.remove(queue);
+        }
+    }
+
+    public void profile(boolean on) {
+        profile = on;
+        synchronized (queues) {
+            for( HawtDispatchQueue queue : new ArrayList<HawtDispatchQueue>(queues.keySet()) ) {
+                if( queue!=null ) {
+                    queue.profile(on);
+                }
+            }
+        }
+    }
+
+    public List<Metrics> metrics() {
+        synchronized (queues) {
+            ArrayList<Metrics> rc = new ArrayList<Metrics>();
+            for( HawtDispatchQueue queue : queues.keySet() ) {
+                if( queue!=null ) {
+                    Metrics metrics = queue.metrics();
+                    if( metrics!=null ) {
+                        rc.add(metrics);
+                    }
+                }
+            }
+            return rc;
+        }
+
     }
 
 }

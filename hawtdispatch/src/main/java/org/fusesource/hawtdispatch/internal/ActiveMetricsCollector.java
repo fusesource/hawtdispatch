@@ -1,0 +1,107 @@
+/**
+ *  Copyright (C) 2009-2010, FuseSource Corp.  All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.fusesource.hawtdispatch.internal;
+
+import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Metrics;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ *
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ *
+ */
+final public class ActiveMetricsCollector implements MetricsCollector {
+
+    private final DispatchQueue queue;
+
+    private final AtomicLong max_run_time = new AtomicLong();
+    private final AtomicLong max_wait_time = new AtomicLong();
+    private final AtomicLong enqueued = new AtomicLong();
+    private final AtomicLong dequeued = new AtomicLong();
+    private final AtomicLong total_run_time = new AtomicLong();
+    private final AtomicLong total_wait_time = new AtomicLong();
+
+    public ActiveMetricsCollector(DispatchQueue queue) {
+        this.queue = queue;
+    }
+
+    private void setMax(AtomicLong holder, long value) {
+        while (true) {
+            long p = holder.get();
+            if( value > p ) {
+                if( holder.compareAndSet(p, value) ) {
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+    }
+
+    private long onEnqueue() {
+        enqueued.incrementAndGet();
+        return System.nanoTime();
+    }
+
+    private long onDequeue(long enqueued_at) {
+        long dequeued_at = System.nanoTime();
+        long wait_time = dequeued_at - enqueued_at;
+        total_wait_time.addAndGet(wait_time);
+        setMax(max_wait_time,wait_time );
+        dequeued.incrementAndGet();
+        return dequeued_at;
+    }
+
+    private void onProcessed(long dequeued_at) {
+        long run_time = System.nanoTime() - dequeued_at;
+        total_run_time.addAndGet(run_time);
+        setMax(max_run_time,run_time);
+    }
+
+    public Runnable track(final Runnable runnable) {
+        final long enqueuedAt = onEnqueue();
+        return new Runnable(){
+            public void run() {
+                long dequeuedAt = onDequeue(enqueuedAt);
+                try {
+                    runnable.run();
+                } finally {
+                    onProcessed(dequeuedAt);
+                }
+            }
+        };
+    }
+    
+    public Metrics metrics() {
+        long enq = enqueued.getAndSet(0);
+        long deq = dequeued.getAndSet(0);
+        if( enq==0 && deq==0 ) {
+            return null;
+        }
+        Metrics rc = new Metrics();
+        rc.queue = queue;
+        rc.enqueued = enq;
+        rc.dequeued = deq;
+        rc.maxWaitTimeNS = max_wait_time.getAndSet(0);
+        rc.maxRunTimeNS = max_run_time.getAndSet(0);
+        rc.totalRunTimeNS = total_run_time.getAndSet(0);
+        rc.totalWaitTimeNS = total_wait_time.getAndSet(0);
+        return rc;
+    }
+
+}
