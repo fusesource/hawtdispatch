@@ -53,35 +53,23 @@ final public class ActiveMetricsCollector implements MetricsCollector {
         }
     }
 
-    private long onEnqueue() {
-        enqueued.incrementAndGet();
-        return System.nanoTime();
-    }
-
-    private long onDequeue(long enqueued_at) {
-        long dequeued_at = System.nanoTime();
-        long wait_time = dequeued_at - enqueued_at;
-        total_wait_time.addAndGet(wait_time);
-        setMax(max_wait_time,wait_time );
-        dequeued.incrementAndGet();
-        return dequeued_at;
-    }
-
-    private void onProcessed(long dequeued_at) {
-        long run_time = System.nanoTime() - dequeued_at;
-        total_run_time.addAndGet(run_time);
-        setMax(max_run_time,run_time);
-    }
-
     public Runnable track(final Runnable runnable) {
-        final long enqueuedAt = onEnqueue();
+        enqueued.incrementAndGet();
+        final long enqueuedAt = System.nanoTime();
         return new Runnable(){
             public void run() {
-                long dequeuedAt = onDequeue(enqueuedAt);
+                long dequeued_at = System.nanoTime();
+                long wait_time = dequeued_at - enqueuedAt;
+                total_wait_time.addAndGet(wait_time);
+                setMax(max_wait_time,wait_time );
+                dequeued.incrementAndGet();
+                long dequeuedAt = dequeued_at;
                 try {
                     runnable.run();
                 } finally {
-                    onProcessed(dequeuedAt);
+                    long run_time = System.nanoTime() - dequeuedAt;
+                    total_run_time.addAndGet(run_time);
+                    setMax(max_run_time,run_time);
                 }
             }
         };
