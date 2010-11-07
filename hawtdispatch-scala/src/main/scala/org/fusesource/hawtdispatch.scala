@@ -272,6 +272,11 @@ package object hawtdispatch {
    */
   def globalQueue = Dispatch.getGlobalQueue
 
+  /**
+   * Same as {@link Dispatch.NOOP }
+   */
+  def NOOP = Dispatch.NOOP
+
 
   /////////////////////////////////////////////////////////////////////
   //

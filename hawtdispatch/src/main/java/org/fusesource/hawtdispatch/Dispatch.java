@@ -278,4 +278,10 @@ public class Dispatch {
         return DISPATCHER.metrics();
     }
 
+    /**
+     * A Runnable task that does nothing.
+     */
+    public static final Runnable NOOP = new Runnable() {
+        public void run() {}
+    };
 }
