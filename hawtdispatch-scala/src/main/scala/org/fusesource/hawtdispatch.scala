@@ -17,8 +17,8 @@ package org.fusesource
 
 import org.fusesource.hawtdispatch._
 import java.nio.channels.SelectableChannel
-import java.util.concurrent.{CountDownLatch, Executor, TimeUnit}
 import scala.util.continuations._
+import java.util.concurrent.{ExecutorService, CountDownLatch, Executor, TimeUnit}
 
 /**
  * <p>
@@ -28,103 +28,113 @@ import scala.util.continuations._
  */
 package object hawtdispatch {
 
+  implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
+  implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
+
+  trait RichExecutorTrait[T] {
+
+    protected def execute(task:Runnable):T
+
+    /**
+     * <p>
+     * Submits a partial function for asynchronous execution on a dispatch queue.
+     * </p><p>
+     * Calls to {@link #dispatchAsync(Runnable)} always return immediately after the runnable has
+     * been submitted, and never wait for the runnable to be executed.
+     * </p><p>
+     * The target queue determines whether the runnable will be invoked serially or
+     * concurrently with respect to other runnables submitted to that same queue.
+     * Serial queues are processed concurrently with with respect to each other.
+     * </p><p>
+     * The system will retain this queue until the runnable has finished.
+     * </p>
+     *
+     * @param task
+     * The function to submit to the dispatch queue.
+     */
+    def apply(task: =>Unit) = execute(runnable(task _))
+
+    /**
+     * Same as {@link #apply(=>Unit)}
+     */
+    def ^(task: =>Unit) = execute(runnable(task _))
+
+    /**
+     * <p>
+     * Submits a runnable for asynchronous execution on a dispatch queue.
+     * </p>
+     *
+     * @param task
+     * The runnable to submit to the dispatch queue.
+     */
+    def <<(task: Runnable) = execute(task)
+
+    /**
+     * A right-associative version of the {@link #<<(Runnable)} method
+     */
+    def >>:(task: Runnable) = execute(task)
+
+    /**
+     * Executes the supplied function on the dispatch queue
+     * while blocking the calling thread as it waits for the response.
+     */
+    def sync[T](func: =>T): T = async(func)()
+
+    /**
+     * Executes the supplied function on the dispatch queue
+     * and returns a Future that can be used to wait on the future
+     * result of the function.
+     */
+    def async[T](func: =>T): Future[T] = {
+      val result = new Future[T]()
+      apply {
+        result(func)
+      }
+      result
+    }
+
+    /**
+     * Executes the supplied function on this executor.  If not called from a
+     * runnable being exectued in a Dispatch Queue, then is call blocks
+     * until continuation is executed.  Otherwise, the continuation is
+     * resumed on the original calling dispatch queue once supplied function
+     * completes.
+     */
+    def ![T](func: =>T): T @suspendable = shift { k: (T=>Unit) =>
+      val original = getCurrentQueue
+      if( original==null ) {
+        k(sync(func))
+      } else {
+        original.retain
+        apply {
+          try {
+            val result = func
+            original.apply {
+              k(result)
+            }
+          } finally {
+            original.release
+          }
+        }
+      }
+    }
+  }
+
 
   /**
    * Enriches the Executor interfaces with additional Scala friendly methods.
    */
-  final class RichExecutor(val queue: Executor) extends Proxy {
-    def self: Any = queue
-    private def execute(task:Runnable):RichExecutor = {queue.execute(task); this}
-
-    /**
-     * <p>
-     * Submits a partial function for asynchronous execution on a dispatch queue.
-     * </p><p>
-     * Calls to {@link #dispatchAsync(Runnable)} always return immediately after the runnable has
-     * been submitted, and never wait for the runnable to be executed.
-     * </p><p>
-     * The target queue determines whether the runnable will be invoked serially or
-     * concurrently with respect to other runnables submitted to that same queue.
-     * Serial queues are processed concurrently with with respect to each other.
-     * </p><p>
-     * The system will retain this queue until the runnable has finished.
-     * </p>
-     *
-     * @param task
-     * The function to submit to the dispatch queue.
-     */
-    def apply(task: =>Unit):RichExecutor = execute(runnable(task _))
-
-    /**
-     * Same as {@link #apply(=>Unit)}
-     */
-    def ^(task: =>Unit):RichExecutor = execute(runnable(task _))
-
-    /**
-     * <p>
-     * Submits a runnable for asynchronous execution on a dispatch queue.
-     * </p>
-     *
-     * @param task
-     * The runnable to submit to the dispatch queue.
-     */
-    def <<(task: Runnable) = execute(task)
-
-    /**
-     * A right-associative version of the {@link #<<(Runnable)} method
-     */
-    def >>:(task: Runnable) = execute(task)
+  final class RichExecutor(val executor: Executor) extends Proxy with RichExecutorTrait[RichExecutor] {
+    def self: Any = executor
+    protected def execute(task:Runnable) = {executor.execute(task); this}
   }
-
-  implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
 
   /**
    *  Enriches the DispatchQueue interfaces with additional Scala friendly methods.
    */
-  final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy {
-    // Proxy
+  final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy with RichExecutorTrait[RichDispatchQueue] {
     def self: Any = queue
-
-    private def execute(task:Runnable):RichDispatchQueue = {queue.execute(task); this}
-
-    /**
-     * <p>
-     * Submits a partial function for asynchronous execution on a dispatch queue.
-     * </p><p>
-     * Calls to {@link #dispatchAsync(Runnable)} always return immediately after the runnable has
-     * been submitted, and never wait for the runnable to be executed.
-     * </p><p>
-     * The target queue determines whether the runnable will be invoked serially or
-     * concurrently with respect to other runnables submitted to that same queue.
-     * Serial queues are processed concurrently with with respect to each other.
-     * </p><p>
-     * The system will retain this queue until the runnable has finished.
-     * </p>
-     *
-     * @param task
-     * The function to submit to the dispatch queue.
-     */
-    def apply(task: =>Unit):RichDispatchQueue = execute(runnable(task _))
-
-    /**
-     * Same as {@link #apply(=>Unit)}
-     */
-    def ^(task: =>Unit):RichDispatchQueue = execute(runnable(task _))
-
-    /**
-     * <p>
-     * Submits a runnable for asynchronous execution on a dispatch queue.
-     * </p>
-     *
-     * @param task
-     * The runnable to submit to the dispatch queue.
-     */
-    def <<(task: Runnable) = execute(task)
-
-    /**
-     * A right-associative version of the {@link #<<(Runnable)} method
-     */
-    def >>:(task: Runnable) = execute(task)
+    protected def execute(task:Runnable) = {queue.execute(task); this}
 
     /**
      * <p>
@@ -169,53 +179,7 @@ package object hawtdispatch {
      * A right-associative version of the {@link #<<|(Runnable)} method
      */
     def |>>:(task: Runnable) = this <<| task
-
-    /**
-     * Executes the supplied function on the dispatch queue
-     * while blocking the calling thread as it waits for the response.
-     */
-    def sync[T](func: =>T): T = async(func)()
-
-    /**
-     * Executes the supplied function on the dispatch queue
-     * and returns a Future that can be used to wait on the future
-     * result of the function.
-     */
-    def async[T](func: =>T): Future[T] = {
-      val result = new Future[T]()
-      apply {
-        result(func)
-      }
-      result
-    }
-
-    /**
-     * Executes the supplied function on this dispatch queue and then
-     * resumes execution of the continuation on the calling dispatch queue
-     * or thread.
-     */
-    def ![T](func: =>T): T @suspendable = shift { k: (T=>Unit) =>
-      val original = getCurrentQueue
-      if( original==null ) {
-        k(sync(func))
-      } else {
-        original.retain
-        apply {
-          try {
-            val result = func
-            original.apply {
-              k(result)
-            }
-          } finally {
-            original.release
-          }
-        }
-      }
-    }
-
   }
-
-  implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
   /////////////////////////////////////////////////////////////////////
   //
