@@ -202,9 +202,14 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                     } else {
                         state.attachment = (NioAttachment)state.key.attachment();
                     }
-                    state.key.interestOps(state.key.interestOps()|interestOps);
                     state.attachment.sources.add(NioDispatchSource.this);
                     keyState.set(state);
+                    try {
+                        // the key could be canceled by now..
+                        state.key.interestOps(state.key.interestOps()|interestOps);
+                    } catch (CancelledKeyException e) {
+                        state.attachment.cancel(state.key);
+                    }
                 } catch (ClosedChannelException e) {
                     debug(e, "could not register with selector");
                 }
