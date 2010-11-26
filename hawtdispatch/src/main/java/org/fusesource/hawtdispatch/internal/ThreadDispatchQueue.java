@@ -156,7 +156,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return this;
     }
 
-    public DispatchQueue createSerialQueue(String label) {
+    public DispatchQueue createQueue(String label) {
         DispatchQueue rc = globalQueue.dispatcher.createQueue(label);
         rc.setTargetQueue(this);
         return rc;

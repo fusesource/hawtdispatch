@@ -33,7 +33,7 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
   var timeout: Long = 0
   private[this] val tasks = new HashSet[Task]()
   private[this] var _callback:Runnable = null
-  val queue = parent.createSerialQueue("tracker: "+name);
+  val queue = parent.createQueue("tracker: "+name);
   var done = false
 
   /**

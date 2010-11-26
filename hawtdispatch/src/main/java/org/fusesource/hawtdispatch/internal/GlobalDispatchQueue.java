@@ -158,7 +158,7 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         return 1;
     }
 
-    public DispatchQueue createSerialQueue(String label) {
+    public DispatchQueue createQueue(String label) {
         DispatchQueue rc = dispatcher.createQueue(label);
         rc.setTargetQueue(this);
         return rc;

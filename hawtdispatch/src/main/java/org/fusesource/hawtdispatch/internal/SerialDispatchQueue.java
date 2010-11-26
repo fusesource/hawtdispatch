@@ -194,7 +194,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     }
 
 
-    public DispatchQueue createSerialQueue(String label) {
+    public DispatchQueue createQueue(String label) {
         DispatchQueue rc = getDispatcher().createQueue(label);
         rc.setTargetQueue(this);
         return rc;

@@ -76,7 +76,7 @@ public interface DispatchQueue extends DispatchObject, Executor {
      * @param label the label to assign the dispatch queue, can be null
      * @return the newly created dispatch queue
      */
-    public DispatchQueue createSerialQueue(String label);
+    public DispatchQueue createQueue(String label);
 
     /**
      * Does the same thing as {@link #dispatchAsync(Runnable)}.
