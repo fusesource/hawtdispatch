@@ -52,11 +52,13 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     private final int threads;
     private volatile boolean profile;
+    final int drains;
 
     public HawtDispatcher(DispatcherConfig config) {
         this.threads = config.getThreads();
         this.label = config.getLabel();
         this.profile = config.isProfile();
+        this.drains = config.getDrains();
 
         DEFAULT_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.DEFAULT, config.getThreads());
         DEFAULT_QUEUE.start();
