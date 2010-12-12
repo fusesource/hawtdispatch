@@ -31,9 +31,9 @@ package object hawtdispatch {
   implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
 
-  trait RichExecutorTrait[T] {
+  trait RichExecutorTrait {
 
-    protected def execute(task:Runnable):T
+    protected def execute(task:Runnable):Unit
 
     /**
      * <p>
@@ -124,17 +124,17 @@ package object hawtdispatch {
   /**
    * Enriches the Executor interfaces with additional Scala friendly methods.
    */
-  final class RichExecutor(val executor: Executor) extends Proxy with RichExecutorTrait[RichExecutor] {
+  final class RichExecutor(val executor: Executor) extends Proxy with RichExecutorTrait {
     def self: Any = executor
-    protected def execute(task:Runnable) = {executor.execute(task); this}
+    protected def execute(task:Runnable) = executor.execute(task)
   }
 
   /**
    *  Enriches the DispatchQueue interfaces with additional Scala friendly methods.
    */
-  final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy with RichExecutorTrait[RichDispatchQueue] {
+  final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy with RichExecutorTrait {
     def self: Any = queue
-    protected def execute(task:Runnable) = {queue.execute(task); this}
+    protected def execute(task:Runnable) = queue.execute(task)
 
     /**
      * <p>

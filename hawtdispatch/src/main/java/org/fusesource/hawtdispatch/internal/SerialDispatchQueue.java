@@ -32,8 +32,6 @@ import org.fusesource.hawtdispatch.internal.util.QueueSupport;
  */
 public class SerialDispatchQueue extends AbstractDispatchObject implements HawtDispatchQueue, Runnable {
 
-    private int MAX_DISPATCH_LOOPS = 1000;
-
     protected volatile String label;
 //    protected final Set<DispatchOption> options;
 
@@ -103,6 +101,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
 
     private void dispatchLoop() {
         int counter=0;
+        int max = drains();
         try {
             Runnable runnable;
             // Drain the external queue...
@@ -110,7 +109,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
                 localQueue.add(runnable);
             }
             // dispatch the local queue..
-            while( counter < MAX_DISPATCH_LOOPS) {
+            while( counter < max) {
                 if( isSuspended() ) {
                     break;
                 }
@@ -236,6 +235,12 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     public Metrics metrics() {
         return metricsCollector.metrics();
     }
+
+    private int drains() {
+        return getDispatcher().drains;
+    }
+
+
 
     @Override
     public String toString() {

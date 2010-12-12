@@ -27,6 +27,7 @@ public class DispatcherConfig {
     private String label="hawtdispatch";
     private int threads = Runtime.getRuntime().availableProcessors();
     private boolean profile = Boolean.getBoolean("hawtdispatch.profile");
+    private int drains = Integer.getInteger("hawtdispatch.drains", 1000);
 
     public static Dispatcher create(String name, int threads) {
         DispatcherConfig config = new DispatcherConfig();
@@ -61,5 +62,13 @@ public class DispatcherConfig {
 
     public void setProfile(boolean profile) {
         this.profile = profile;
+    }
+
+    public int getDrains() {
+        return drains;
+    }
+
+    public void setDrains(int drains) {
+        this.drains = drains;
     }
 }
