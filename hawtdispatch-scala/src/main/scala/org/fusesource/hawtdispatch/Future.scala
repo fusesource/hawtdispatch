@@ -16,47 +16,171 @@
  */
 package org.fusesource.hawtdispatch
 
-import java.util.concurrent.{TimeUnit, CountDownLatch}
+import java.util.concurrent.{TimeUnit}
+import scala.collection.mutable.ListBuffer
 
-/**
- * Allows you to capture future results of an async computation.
- *
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
- */
-class Future[T] extends (T => Unit) with ( ()=>T ) {
+trait Future[R] extends ( ()=>R ) {
+  def apply(time:Long, unit:TimeUnit):Option[R]
+  def onComplete(func: (R)=>Unit):Unit
+  def completed:Boolean
+  def map[X](func:R=>X):Future[X]
+}
 
-  private var result:Option[T] = None
-  private val latch = new CountDownLatch(1)
+trait SettableFuture[T,R] extends (T => Unit) with Future[R] {
 
-  def apply(value:T) = {
-    result = Some(value)
-    latch.countDown
+  protected var _callback:Option[(R)=>Unit] = None
+  protected var _result:Option[R] = None
+  protected object mutex
+
+  protected def merge(value:T):Option[R]
+
+  def apply(value:T):Unit = {
+    val callback = mutex synchronized  {
+      if( !_result.isDefined ) {
+        _result = merge(value)
+        if( _result.isDefined ) {
+          mutex.notifyAll
+          _callback
+        } else {
+          None
+        }
+      } else {
+        None
+      }
+    }
+    callback.foreach(_(_result.get))
   }
 
-  def apply() = {
-    latch.await
-    result.get
+  def apply():R = mutex synchronized {
+    while(_result.isEmpty) {
+      mutex.wait
+    }
+    return _result.get
   }
 
-  def apply(time:Long, unit:TimeUnit) = {
-    if( latch.await(time, unit) ) {
-      Some(result.get)
-    } else {
-      None
+  def apply(time:Long, unit:TimeUnit):Option[R] = mutex synchronized {
+    var now = System.currentTimeMillis
+    var deadline = now + unit.toMillis(time)
+    while(_result.isEmpty && now < deadline ) {
+      mutex.wait(deadline-now)
+      if(_result != None) {
+        return _result
+      }
+      now = System.currentTimeMillis
+    }
+    return _result
+  }
+
+  def onComplete(func: (R)=>Unit) = {
+    val callback = mutex synchronized {
+      // Should only be used once per future.
+      assert ( ! _callback.isDefined )
+      if( _result.isDefined ) {
+        Some(func)
+      } else {
+        _callback = Some(func)
+        None
+      }
+    }
+    callback.foreach(_(_result.get))
+  }
+
+  def completed = mutex synchronized {
+    _result.isDefined
+  }
+
+  def map[X](func:R=>X) = {
+    val rc = Future.apply(func)
+    onComplete(rc(_))
+    rc
+  }
+
+}
+
+object Future {
+
+  /**
+   * creates a new future.
+   */
+  def apply[T]() = new SettableFuture[T,T] {
+    protected def merge(value: T): Option[T] = Some(value)
+  }
+
+  /**
+   * creates a new future which does an on the fly
+   * transformation of the value.
+   */
+  def apply[T,R](func: T=>R) = new SettableFuture[T,R] {
+    protected def merge(value: T): Option[R] = Some(func(value))
+  }
+
+  /**
+   * creates a future which only waits for the first
+   * of the supplied futures to get set.
+   */
+  def first[T](futures:Iterable[Future[T]]) = {
+    assert(!futures.isEmpty)
+    new SettableFuture[T,T] {
+      futures.foreach(_.onComplete(apply _))
+      protected def merge(value: T): Option[T] = {
+        Some(value)
+      }
     }
   }
 
-  def completed = latch.await(0, TimeUnit.MILLISECONDS)
-}
-/**
- *
- *
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
- */
-object Future {
-  def apply[T](func: (T =>Unit)=>Unit) = {
-    var future = new Future[T]()
-    func(future)
-    future()
+  /**
+   * creates a future which waits for all
+   * of the supplied futures to get set and collects all
+   * the results in an iterable.
+   */
+  def all[T](futures:Iterable[Future[T]]):Future[Iterable[T]] = {
+    if( futures.isEmpty ) {
+      val rc = apply[Iterable[T]]()
+      rc(List())
+      rc
+    } else {
+      val results = new ListBuffer[T]()
+      new SettableFuture[T,Iterable[T]] {
+        futures.foreach(_.onComplete(apply _))
+        protected def merge(value: T): Option[Iterable[T]] = {
+          results += value
+          if( results.size == futures.size ) {
+            Some(results)
+          } else {
+            None
+          }
+        }
+      }
+    }
   }
+
+  /**
+   * creates a future which waits for all
+   * of the supplied futures to get set and collects
+   * the results via folding function.
+   */
+  def fold[T,R](futures:Iterable[Future[T]], initial:R)(func: (R,T)=>R):Future[R] = {
+    if( futures.isEmpty ) {
+      val rc = apply[R]()
+      rc(initial)
+      rc
+    } else {
+      var cur:R = initial
+      var collected = 0
+
+      new SettableFuture[T,R] {
+        futures.foreach(_.onComplete(apply _))
+        protected def merge(value: T): Option[R] = {
+          cur = func(cur, value)
+          collected += 1
+          if( collected == futures.size ) {
+            Some(cur)
+          } else {
+            None
+          }
+        }
+      }
+    }
+  }
+
 }
