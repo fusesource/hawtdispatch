@@ -78,19 +78,27 @@ package object hawtdispatch {
      * Executes the supplied function on the dispatch queue
      * while blocking the calling thread as it waits for the response.
      */
-    def sync[T](func: =>T): T = async(func)()
+    def sync[T](func: =>T): T = future(func)()
 
     /**
      * Executes the supplied function on the dispatch queue
      * and returns a Future that can be used to wait on the future
      * result of the function.
      */
-    def async[T](func: =>T): Future[T] = {
-      val result = new Future[T]()
+    def future[T](func: =>T) = {
+      val rc = Future[T]()
       apply {
-        result(func)
+        rc(func)
       }
-      result
+      rc
+    }
+
+    def flatFuture[T](func: =>Future[T]) = {
+      val rc = Future[T]()
+      apply {
+        func.onComplete(rc(_))
+      }
+      rc
     }
 
     /**

@@ -96,7 +96,7 @@
             <jvmArg>-Xmx1024m</jvmArg>
           </jvmArgs>
           <args>
-            <arg>-optimise</arg>
+            <!-- <arg>-optimise</arg> -->
             <arg>-deprecation</arg>
             <arg>-P:continuations:enable</arg>
           </args>
