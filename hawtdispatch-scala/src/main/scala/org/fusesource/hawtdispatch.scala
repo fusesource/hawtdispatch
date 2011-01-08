@@ -208,7 +208,7 @@ package object hawtdispatch {
   /**
    * Same as {@link Dispatch.getCurrentQueue}
    */
-  def getCurrentThreadQueue = Dispatch.getCurrentQueue
+  def getCurrentThreadQueue = Dispatch.getCurrentThreadQueue
 
   /**
    * Same as {@link Dispatch.createSource(EventAggregator, DispatchQueue)}
