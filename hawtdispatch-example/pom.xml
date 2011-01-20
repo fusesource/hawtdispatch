@@ -19,12 +19,12 @@
   <parent>
     <groupId>org.fusesource.hawtdispatch</groupId>
     <artifactId>hawtdispatch-project</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
   </parent>
 
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch-example</artifactId>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1</version>
 
   <name>${artifactId}</name>
   <description>HawtDispatch: Examples</description>
@@ -40,7 +40,7 @@
     <dependency>
       <groupId>org.fusesource.hawtdispatch</groupId>
       <artifactId>hawtdispatch-scala</artifactId>
-      <version>1.1-SNAPSHOT</version>
+      <version>1.1</version>
     </dependency>
 
     <dependency>
