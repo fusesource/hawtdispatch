@@ -17,14 +17,15 @@
 title: Website Versions
 in_menu: false
 sort_info: 5
---- name:overview
-
-# Documentation Versions
-Website Versions
 
 --- name:content
 
 # Released Websites
+
+### Version 1.1, released on 2011-01-20
+
+* [1.1 Website](${website_base_url}/versions/1.1/website/index.html)
+* [1.1 Maven Report](${website_base_url}/versions/1.1/maven/index.html)
 
 ### Version 1.0, released on 2010-07-22
 

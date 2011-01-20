@@ -1,0 +1,151 @@
+---
+title: HawtDispatch Stomp Example
+--- name:overview pipeline:jade
+
+h1 #{project_name}
+
+| #{project_slogan}
+
+--- name:content pipeline:markdown 
+
+## Overview 
+
+HawtDispatch makes it easy to create multi-threaded NIO based applications.
+To illustrate this, the source distribution includes an example messaging server 
+that implements the main parts of the 
+[STOMP](http://activemq.apache.org/stomp/stomp10/specification.html) protocol.  The 
+server supports topics and 'simplistic' queues.
+
+You can browse it's source code online at: [github](http://github.com/fusesource/hawtdispatch/blob/master/hawtdispatch-example/src/main/scala/org/fusesource/hawtdispatch/example/stomp)
+
+## Trying it Out
+
+Once you [build the code](community/building.html), start 2 terminals in
+the [`hawtdispatch/hawtdispatch-example`](http://github.com/chirino/hawtdispatch/blob/master/hawtdispatch-example/) 
+directory.  In both terminals execute the `mvn scala:console` command to start a 
+Scala interactive interpreter.
+
+### Starting the Broker
+
+The first terminal will be used to run the STOMP based message broker. Execute the 
+following statements in that terminal:
+
+{pygmentize:: text}
+val broker = org.fusesource.hawtdispatch.example.stomp.StompBroker
+broker.run
+{pygmentize}
+
+You should see output similar to the following:
+
+{pygmentize:: text}
+scala> val broker = org.fusesource.hawtdispatch.example.stomp.StompBroker
+broker: org.fusesource.hawtdispatch.example.stomp.StompBroker.type = 
+--------------------------------------
+StompBroker Properties
+--------------------------------------
+bindAddress      = 0.0.0.0
+port             = 61613
+
+
+scala> broker.run
+Starting stomp broker...
+Startup complete.
+{pygmentize}
+
+### Starting the Clients
+
+The second terminal will be used to run a performance sampling STOMP 
+producer and consumer.  Execute the following statements in that terminal: 
+
+{pygmentize:: text}
+val client = org.fusesource.hawtdispatch.example.stomp.StompLoadClient
+{pygmentize}
+
+You should see output similar to the following:
+
+{pygmentize:: text}
+scala> val client = org.fusesource.hawtdispatch.example.stomp.StompLoadClient
+client: org.fusesource.hawtdispatch.example.stomp.StompLoadClient.type = 
+--------------------------------------
+StompLoadClient Properties
+--------------------------------------
+uri              = stomp://127.0.0.1:61613
+producers        = 1
+consumers        = 1
+destinationType  = queue
+destinationCount = 1
+messageSize      = 1024
+producerSleep    = 0
+consumerSleep    = 0
+bufferSize       = 77056
+useContentLength = true
+sampleInterval   = 5000
+
+{pygmentize}
+
+The client object allows you to configure several parameters of the load test.  For example, 
+you can control the number consumer and producer connections, the type of destination used.
+If we wanted to test out a pub/sub fan out scenario where 10 consumers are receiving message
+broadcasts from one producer, you would execute the following statements:
+
+{pygmentize:: text}
+client.destinationType = "topic"
+client.producers = 1
+client.consumers = 10
+{pygmentize}
+
+Once you are happy with the client configuration, you just need to execute `client.run` for
+it to start executing. Pressing enter will end the execution and allow you to tweak the
+configuration before running it again.
+
+When run, you should see output similar to the following:
+
+{pygmentize:: text}
+scala> client.destinationType = "topic"
+
+scala> client.producers = 1
+
+scala> client.consumers = 10
+
+scala> client.run
+=======================
+Press ENTER to shutdown
+=======================
+
+Producer rate: 22,708.520 per second
+Consumer rate: 226,332.781 per second
+Producer rate: 24,306.738 per second
+Consumer rate: 242,921.375 per second
+Producer rate: 24,907.004 per second
+Consumer rate: 249,344.063 per second
+=======================
+Shutdown
+=======================
+{pygmentize}
+
+The client was implemented using traditional blocking IO and java threads.  If time allows,
+we should also implement this using HawtDispatch.
+
+### Interesting Implementation Notes
+
+* Not a single synchronized keyword was used
+
+* Each connection is assigned 1 HawtDispatch serial queue and that serial
+  dispatch queue is pined to 1 thread queue by setting the serial
+  queue's target to be a random thread queue.
+
+* Producer connections send message to consumer connection using a credit
+  based transfer window. This allows producer connections to send many
+  messages to a consumer connection without much blocking or contention.
+
+* When there is credit in the transfer window, a custom dispatch source is
+  used so that the messages 'batch' up and transferred from the producer
+  thread to a consumer thread in as a batch.
+
+* Broker will periodically "colocate" producer connections with consumer
+  connections by re-pinning the producer's serial queue to match the thread
+  queue of the consumer connection.  This allows the producer to avoid
+  cross thread contention.
+  
+
+
