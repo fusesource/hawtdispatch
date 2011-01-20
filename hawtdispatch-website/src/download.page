@@ -1,108 +1,92 @@
 ---
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 title: Download
 in_menu: true
 sort_info: 5
 --- name:overview
 
-# {project_name:}
+# ${project_name}
 Download it today!
 
---- name:content pipeline:tags,markdown
+--- name:content pipeline:jade
 
-<div class="left" markdown="1">
-# Download
-</div>
-<div class="right" markdown="1">
-You can download **{project_name:}** from the [Maven Repository](http://repo.fusesource.com/nexus/content/repositories/public/) in the [{project_name:} area](http://repo.fusesource.com/nexus/content/repositories/public/org/fusesource/{project_id:}/).
+.left
+  :markdown
+    # Latest Releases
+.right
+  - val release_base= "http://repo.fusesource.com/nexus/content/groups/public/org/fusesource/%s".format(project_id)
+  :&markdown
+    
+    ### Version 1.0, released on 2010-07-22
+    
+    *  [#{project_id}-1.0.jar](#{release_base}/#{project_id}/1.0/#{project_id}-1.0.jar) 
+    *  [#{project_id}-scala-1.0.jar](#{release_base}/#{project_id}-scala/1.0/#{project_id}-scala-1.0.jar) 
 
-Download the jar:
+.left
+  :markdown
+    # Nightly Snapshot
+    
+.right
+  - val snapshot_base= "http://repo.fusesource.com/nexus/service/local/artifact/maven/redirect?r=snapshots&g=org.fusesource.%s&".format(project_id)
+  :&markdown
 
-* [{project_id:} {release_version:} jar](http://repo.fusesource.com/nexus/content/repositories/public/org/fusesource/{project_id:}/{project_id:}/{release_version:}/{project_id:}-{release_version:}.jar)
-* [{project_id:}-scala {release_version:} jar](http://repo.fusesource.com/nexus/content/repositories/public/org/fusesource/{project_id:}/{project_id:}-scala/{release_version:}/{project_id:}-scala-{release_version:}.jar)
+    Want to help stablize the latest and greatest nightly development
+    build?  **Warnning**: This build may be extremely bleeding edge!
 
-## Snapshots
+    *  [#{project_id}-#{project_snapshot_version}.jar](#{snapshot_base}a=#{project_id}&v=#{project_snapshot_version}&e=jar) 
+    *  [#{project_id}-scala-#{project_snapshot_version}.jar](#{snapshot_base}a=#{project_id}-scala&v=#{project_snapshot_version}&e=jar) 
+    
+.left
+  :markdown
+    # As a Maven Dependency
 
-You can download a recent snapshot from the [Snapshot Maven Repository](http://repo.fusesource.com/nexus/content/repositories/snapshots/) in the [{project_name:} area](http://repo.fusesource.com/nexus/content/repositories/snapshots/org/fusesource/{project_id:}/).
+.right
+  :&markdown
 
-* [{project_id:} {snapshot_version:} jar](http://repo.fusesource.com/nexus/service/local/artifact/maven/redirect?r=snapshots&g=org.fusesource.{project_id:}&a={project_id:}&v={snapshot_version:}&e=jar)
-* [{project_id:}-scala {snapshot_version:} jar](http://repo.fusesource.com/nexus/service/local/artifact/maven/redirect?r=snapshots&g=org.fusesource.{project_id:}&a={project_id:}-scala&v={snapshot_version:}&e=jar)
+    If your a maven user, then just add the following dependency to your `pom.xml`
 
-</div>
+    {pygmentize::xml}
+    <dependency>
+      <groupId>org.fusesource.#{project_id}</groupId>
+      <artifactId>#{project_id}</artifactId>
+      <version>#{project_version}</version>
+    </dependency>
+    {pygmentize}    
 
-<div class="left" markdown="1">
-# Maven
-</div>
-<div class="right" markdown="1">
-If you build your project using [Maven](http://maven.apache.org/) then just add one of the following dependencies to your *pom.xml*
-</div> 
-<div class="right">
-{coderay:: xml}<dependency>
-  <groupId>org.fusesource.{project_id:}</groupId>
-  <artifactId>{project_id:}</artifactId>
-  <version>${{project_id:}-version}</version>  
-</dependency>
-{coderay}
+    or if you a scala user then you would add:
 
-</div>
-<div class="right">
-{coderay:: xml}<dependency>
-  <groupId>org.fusesource.{project_id:}</groupId>
-  <artifactId>{project_id:}-scala</artifactId>
-  <version>${{project_id:}-version}</version>  
-</dependency>
-{coderay}
-</div>
+    {pygmentize::xml}
+    <dependency>
+      <groupId>org.fusesource.#{project_id}</groupId>
+      <artifactId>#{project_id}-scala</artifactId>
+      <version>#{project_version}</version>
+    </dependency>
+    {pygmentize}    
 
-<div class="right" markdown="1">
-The releases should be synchronized to the [central maven repository](http://repo1.maven.org/maven2/org/fusesource/{project_id:}/) so you should not need to add a maven repository to your pom.xml. 
-
-However if a release has not yet made it to the central repository or you want to add a repository for completeness, add the following to your *pom.xml*
-</div>
-<div class="right">
-{pygmentize:: xml}  <repositories>
-   <repository>
-     <id>fusesource.m2</id>
-     <name>FuseSource Public Repository</name>
-     <url>http://repo.fusesource.com/nexus/content/repositories/public</url>
-     <snapshots>
-       <enabled>false</enabled>
-     </snapshots>
-     <releases>
-       <enabled>true</enabled>
-     </releases>
-   </repository>
- </repositories>
-{pygmentize}
-</div>
-
-<div class="right" markdown="1">
-## Snapshots
-
-If you want to use a **snapshot version** you should ensure you have the {project_name:} Snapshot Maven repository defined in your *pom.xml*
-</div> 
-<div class="right">
-{pygmentize:: xml}  <repositories>
-   <repository>
-     <id>fusesource.snapshots</id>
-     <name>FuseSource Snapshot Repository</name>
-     <url>http://repo.fusesource.com/nexus/content/repositories/snapshots</url>
-     <snapshots>
-       <enabled>true</enabled>
-     </snapshots>
-     <releases>
-       <enabled>false</enabled>
-     </releases>
-   </repository>
- </repositories>
-{pygmentize}
-</div>
-
-
-<div class="left" markdown="1">
-# Building
-</div>
-
-<div class="right" markdown="1">
-If you prefer you can try building from [the source code](source.html) and [building it](building.html)
-</div>
-
+    If you are using a snapshot version, then you will also need to 
+    also add the following snapshot repository to your pom:
+  
+    {pygmentize::xml}
+    <repository>
+      <id>fusesource-snapshots</id>
+      <name>Fusesource Snapshots</name>
+      <url>http://repo.fusesource.com/nexus/content/repositories/snapshots</url>
+      <snapshots><enabled>true</enabled></snapshots>
+      <releases><enabled>false</enabled></releases>
+    </repository>
+    {pygmentize}
+    
