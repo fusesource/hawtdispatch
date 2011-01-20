@@ -18,7 +18,12 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  
+  <parent>
+    <groupId>org.fusesource</groupId>
+    <artifactId>fusesource-pom</artifactId>
+    <version>1.2</version>
+  </parent>
+
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch-project</artifactId>
   <version>1.1-SNAPSHOT</version>
@@ -50,14 +55,9 @@
   <url>http://${forge-project-id}.fusesource.org/</url>
   <inceptionYear>2010</inceptionYear>
 
-  <organization>
-    <name>Progress Software Inc.</name>
-    <url>http://fusesource.com/</url>
-  </organization> 
-
   <issueManagement>
-    <system>jira</system>
-    <url>http://fusesource.com/issues/browse/${forge-project-id-uc}</url>
+    <system>assembla</system>
+    <url>http://www.assembla.com/spaces/hawtdispatch/support/tickets</url>
   </issueManagement>
   
   <mailingLists>
@@ -89,20 +89,10 @@
     <connection>scm:git:git://forge.fusesource.com/${forge-project-id}.git</connection>
     <!-- Work around for issue: http://jira.codehaus.org/browse/SCM-444 -->
     <developerConnection>${release-altGitURL}</developerConnection>
-    <url>http://github.com/chirino/hawtdispatch/tree/master</url>
+    <url>http://github.com/fusesource/hawtdispatch/tree/master</url>
   </scm>
 
   <distributionManagement>
-    <repository>
-      <id>fusesource-nexus-staging</id>
-      <name>Fusesource Release Repository</name>
-      <url>http://repo.fusesource.com/nexus/service/local/staging/deploy/maven2</url>
-    </repository>
-    <snapshotRepository>
-      <id>fusesource-nexus-snapshots</id>
-      <name>Fusesource Nexus Snapshots</name>
-      <url>http://repo.fusesource.com/nexus/content/repositories/snapshots</url>
-    </snapshotRepository>
     <site>
       <id>website.fusesource.org</id>
       <name>website</name>
@@ -121,20 +111,6 @@
   </developers>
 
   <build>
-    <defaultGoal>install</defaultGoal>
-
-    <extensions>
-      <extension>
-        <groupId>org.apache.maven.wagon</groupId>
-        <artifactId>wagon-webdav-jackrabbit</artifactId>
-        <version>1.0-beta-6</version>
-      </extension>
-      <extension>
-        <groupId>org.fusesource.mvnplugins</groupId>
-        <artifactId>fuse-jxr-skin</artifactId>
-        <version>1.9</version>
-      </extension>
-    </extensions>
 
     <plugins>
       <plugin>
@@ -174,32 +150,6 @@
           <failIfNoTests>false</failIfNoTests>
         </configuration>
       </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>2.0</version>
-        <configuration>
-          <autoVersionSubmodules>true</autoVersionSubmodules>
-          <allowTimestampedSnapshots>false</allowTimestampedSnapshots>
-          <preparationGoals>clean install</preparationGoals>
-          <goals>deploy</goals>
-          <arguments>-Prelease</arguments>
-        </configuration>
-      </plugin>
-      
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-scm-plugin</artifactId>
-        <version>1.3</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.maven.scm</groupId>
-            <artifactId>maven-scm-provider-gitexe</artifactId>
-            <version>1.3</version>
-          </dependency>
-        </dependencies>
-      </plugin>          
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -293,98 +243,12 @@
         </configuration>
       </plugin>
       
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jxr-plugin</artifactId>
-        <version>2.2</version>
-        <configuration>
-          <stylesheet>fuse-jxr-skin-stylesheet.css</stylesheet>
-          <inputEncoding>UTF-8</inputEncoding>
-          <outputEncoding>UTF-8</outputEncoding>
-          <linkJavadoc>true</linkJavadoc>
-          <docTitle>${project.name} Source Xref (${project.version})</docTitle>
-          <windowTitle>${project.name} Source Xref (${project.version})</windowTitle>
-        </configuration>
-      </plugin>
     </plugins>
   </reporting>
   
 
   <profiles>
-    <!--
-      To generate a graph of the project dependencies, run: 
-      mvn -P graph graph:project
-    -->
-    <profile>
-      <id>graph</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.fusesource.mvnplugins</groupId>
-            <artifactId>maven-graph-plugin</artifactId>
-            <version>1.5</version>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
 
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <!-- We want to sign the artifact, the POM, and all attached artifacts -->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.0</version>
-            <configuration>
-              <passphrase>${gpg.passphrase}</passphrase>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>2.1.1</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.6</version>
-            
-            <configuration>
-              <encoding>${project.build.sourceEncoding}</encoding>
-            </configuration>
-            
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    
     <profile>
       <id>download</id>
       <repositories>
@@ -413,6 +277,7 @@
     <module>hawtdispatch</module>
     <module>hawtdispatch-scala</module>
     <module>hawtdispatch-example</module>
+    <module>hawtdispatch-website</module>
   </modules>
 
 </project>
