@@ -474,7 +474,7 @@ passing style API.  Example:
 
 {pygmentize:: scala}
 object Foo {
-  val a = createQueue
+  val a = createQueue()
   var held:Int = 0;
   
   def hold(v:Int)(result: (Int)=>Unit) = a {
@@ -491,7 +491,7 @@ access to the `held` variable. Next you will find and example of what a caller t
 
 {pygmentize:: scala}
 object Bar {
-  val b = createQueue
+  val b = createQueue()
   var sum:Int = 0;
   
   def apply = b {
@@ -517,7 +517,7 @@ import util.continuations._
 
 object Foo {
   var held:Int = 0;
-  val a = createQueue
+  val a = createQueue()
   
   def hold(v:Int) = a ! {
     val rc = held
@@ -540,7 +540,7 @@ method completes it calls back to the implicit continuation.
 {pygmentize:: scala}
 object Bar {
   var sum:Int = 0;
-  val b = createQueue
+  val b = createQueue()
   
   def apply = b {
     reset {
@@ -591,16 +591,15 @@ setup a periodic task to check for dispatch queues which who's tasks either wait
 time before executing or take a long time to execute.  Example:
 
 {pygmentize:: scala}
-  def monitor_hawtdispatch = {
+  def monitor_hawtdispatch:Unit = {
     
     import java.util.TimeUnit._
     import collection.JavaConversions._
     
     // do the actual check in 1 second..
     getGlobalQueue().after(1, SECONDS) {
+      
       Dispatch.metrics.foreach{ metric=>
-        
-        // Display tasks that take long than 
         if( metric.totalWaitTimeNS > MILLISECONDS.toNanos(10)) {
           println("Dispatch queue haveing slow wait time: "+metric)
         }
@@ -608,6 +607,9 @@ time before executing or take a long time to execute.  Example:
           println("Dispatch queue haveing long rune time: "+metric)
         }
       }
+      
+      // to check again...
+      monitor_hawtdispatch
     }
   }
 {pygmentize}
