@@ -25,9 +25,9 @@
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch-scala</artifactId>
   <version>1.2-SNAPSHOT</version>
+  <packaging>bundle</packaging>
 
-  <name>${artifactId}</name>
-  <description>HawtDispatch: Scala API</description>
+  <description>HawtDispatch: The libdispatch style API for Scala</description>
 
   <dependencies>
     
@@ -77,6 +77,16 @@
     <testSourceDirectory>src/test/scala</testSourceDirectory>
 
     <plugins>
+      
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <Fragment-Host>${project.groupId}.hawtdispatch</Fragment-Host>
+          </instructions>
+        </configuration>
+      </plugin>
       
       <plugin>
         <groupId>org.scala-tools</groupId>
