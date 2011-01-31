@@ -49,7 +49,7 @@ object Website {
 
   val website_base_url= "http://hawtdispatch.fusesource.org"
   
-  val api_dir = "http://hawtdispatch.fusesource.org/versions/1.0/hawtdispatch/apidocs/org/fusesource/hawtdispatch"
-  val scala_api_dir = "http://hawtdispatch.fusesource.org/versions/1.0/maven/hawtdispatch-scala/scaladocs"
+  val api_dir = "http://hawtdispatch.fusesource.org/versions/"+project_version+"/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch"
+  val scala_api_dir = "http://hawtdispatch.fusesource.org/versions/"+project_version+"/maven/hawtdispatch-scala/scaladocs"
 
 }
