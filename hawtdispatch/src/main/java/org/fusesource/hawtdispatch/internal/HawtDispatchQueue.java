@@ -15,7 +15,6 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
-import org.fusesource.hawtdispatch.Metrics;
 import org.fusesource.hawtdispatch.DispatchQueue;
 
 /**

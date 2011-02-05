@@ -45,9 +45,6 @@ class StompConnection(val socket:SocketChannel, var router:Router) {
   socket.socket.setReceiveBufferSize(bufferSize)
 
   val queue = createQueue("connection:"+connectionCounter.incrementAndGet)
-  queue.setTargetQueue(getRandomThreadQueue)
-
-//    println("connected from: "+socket.socket.getRemoteSocketAddress)
 
   val wireFormat = new StompWireFormat()
 

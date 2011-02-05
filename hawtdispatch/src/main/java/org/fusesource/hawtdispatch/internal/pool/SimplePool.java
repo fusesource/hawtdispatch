@@ -30,9 +30,6 @@ public class SimplePool implements WorkerPool {
         this.name = globalQueue.dispatcher.getLabel()+"-"+priority;
         this.priority = priority(priority);
         this.threads = new SimpleThread[parallelism];
-        for (int i=0; i < parallelism; i++) {
-            threads[i] = createWorker(i);
-        }
     }
 
     static private int priority(DispatchPriority priority) {
@@ -49,6 +46,7 @@ public class SimplePool implements WorkerPool {
 
     public void start() {
         for (int i=0; i < threads.length; i++) {
+            threads[i] = createWorker(i);
             threads[i].start();
         }
     }

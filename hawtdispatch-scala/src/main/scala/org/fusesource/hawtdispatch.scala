@@ -196,14 +196,9 @@ package object hawtdispatch {
   /////////////////////////////////////////////////////////////////////
 
   /**
-   * Same as {@link Dispatch.getThreadQueue}
+   * Same as {@link Dispatch.getThreadQueues}
    */
-  def getThreadQueue(n:Int, priority:DispatchPriority=DispatchPriority.DEFAULT) = Dispatch.getThreadQueue(n, priority)
-
-  /**
-   * Same as {@link Dispatch.getRandomThreadQueue}
-   */
-  def getRandomThreadQueue = Dispatch.getRandomThreadQueue
+  def getThreadQueues(priority:DispatchPriority=DispatchPriority.DEFAULT) = Dispatch.getThreadQueues(priority)
 
   /**
    * Same as {@link Dispatch.getCurrentQueue}

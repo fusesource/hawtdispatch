@@ -16,14 +16,23 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
-import org.fusesource.hawtdispatch.internal.HawtDispatcher;
+import org.fusesource.hawtdispatch.Dispatcher;
 
 /**
- * 
+ *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class DispatcherConfig {
-    
+
+    private static HawtDispatcher defaultDispatcher;
+
+    synchronized public static HawtDispatcher getDefaultDispatcher() {
+        if( defaultDispatcher == null ) {
+            defaultDispatcher = new DispatcherConfig().createDispatcher();
+        }
+        return defaultDispatcher;
+    }
+
     private String label="hawtdispatch";
     private int threads = Runtime.getRuntime().availableProcessors();
     private boolean profile = Boolean.getBoolean("hawtdispatch.profile");
@@ -36,7 +45,7 @@ public class DispatcherConfig {
         return config.createDispatcher();
     }
 
-    public Dispatcher createDispatcher() {
+    public HawtDispatcher createDispatcher() {
         return new HawtDispatcher(this);
     }
     

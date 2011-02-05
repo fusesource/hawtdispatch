@@ -22,6 +22,7 @@ import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.fusesource.hawtdispatch.DispatchPriority.DEFAULT;
 
@@ -35,7 +36,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     public final static ThreadLocal<HawtDispatchQueue> CURRENT_QUEUE = new ThreadLocal<HawtDispatchQueue>();
 
-    private final GlobalDispatchQueue DEFAULT_QUEUE;
+    final GlobalDispatchQueue DEFAULT_QUEUE;
     private final Object HIGH_MUTEX = new Object();
     private GlobalDispatchQueue HIGH_QUEUE;
     private final Object LOW_MUTEX = new Object();
@@ -48,11 +49,12 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     };
 
     private final String label;
-    final TimerThread timerThread;
+    volatile TimerThread timerThread;
 
     private final int threads;
     private volatile boolean profile;
     final int drains;
+    final AtomicBoolean shutdown = new AtomicBoolean(false);
 
     public HawtDispatcher(DispatcherConfig config) {
         this.threads = config.getThreads();
@@ -66,6 +68,33 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
         timerThread = new TimerThread(this);
         timerThread.start();
+    }
+
+    public void shutdown() {
+        if( shutdown.compareAndSet(false, true) ) {
+            timerThread.shutdown(null);
+            DEFAULT_QUEUE.shutdown();
+            if( LOW_QUEUE!=null ) {
+                LOW_QUEUE.shutdown();
+            }
+            if(HIGH_QUEUE!=null) {
+                HIGH_QUEUE.shutdown();
+            }
+        }
+    }
+
+    public void restart() {
+        if( shutdown.compareAndSet(true, false) ) {
+            timerThread = new TimerThread(this);
+            DEFAULT_QUEUE.start();
+            if( LOW_QUEUE!=null ) {
+                LOW_QUEUE.start();
+            }
+            if(HIGH_QUEUE!=null) {
+                HIGH_QUEUE.start();
+            }
+        }
+
     }
 
     public DispatchQueue getMainQueue() {
@@ -139,6 +168,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         return CURRENT_QUEUE.get();
     }
 
+
     public DispatchQueue getCurrentThreadQueue() {
         WorkerThread thread = WorkerThread.currentWorkerThread();
         if( thread ==null ) {
@@ -147,17 +177,10 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
         return thread.getDispatchQueue();
     }
 
-    public DispatchQueue getRandomThreadQueue() {
-        return getRandomThreadQueue(DEFAULT);
+    public DispatchQueue[] getThreadQueues(DispatchPriority priority) {
+        return getGlobalQueue(priority).getThreadQueues();
     }
 
-    public DispatchQueue getRandomThreadQueue(DispatchPriority priority) {
-        return getGlobalQueue(priority).getRandomThreadQueue();
-    }
-    
-    public DispatchQueue getThreadQueue(int hash, DispatchPriority priority) {
-        return getGlobalQueue(priority).getThreadQueue(hash);
-    }
 
     final static public WeakHashMap<HawtDispatchQueue, Object> queues = new WeakHashMap<HawtDispatchQueue, Object>();
 

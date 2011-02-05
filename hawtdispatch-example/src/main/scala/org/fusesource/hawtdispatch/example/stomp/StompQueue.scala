@@ -38,7 +38,6 @@ class StompQueue(val destination:AsciiBuffer) extends BaseRetained with Route wi
   import StompQueue._;
   
   override val queue:DispatchQueue = createQueue("queue:"+destination);
-  queue.setTargetQueue(getRandomThreadQueue)
   setDisposer(^{
     queue.release
   })

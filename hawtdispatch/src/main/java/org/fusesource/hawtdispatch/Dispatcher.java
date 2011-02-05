@@ -1,13 +1,12 @@
 /**
- * Copyright (c) 2008-2009 Apple Inc. All rights reserved.
- * Copyright (C) 2009-2010, Progress Software Corporation and/or its
- * subsidiaries or affiliates.  All rights reserved.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,24 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.fusesource.hawtdispatch;
 
-import org.fusesource.hawtdispatch.internal.DispatcherConfig;
+import org.fusesource.hawtdispatch.*;
 
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
 import java.util.List;
 
 /**
  * <p>
- * The Dispatch class is used to get or create dispatch objects such
+ * The Dispatcher interface is used to get or create dispatch objects such
  * as global queues, thread queues, serial queues, or dispatch sources.
- * </p><p>
- * It is encouraged that end users of this api do a static import of the
- * methods defined in this class.
- * <pre>
- * import static org.fusesource.hawtdispatch.Dispatch.*;
- * </pre>
  * </p><p>
  * The dispatch queues are {@link java.util.concurrent.Executor}
  * objects that execute tasks asynchronously on thread pools managed by the
@@ -65,25 +58,28 @@ import java.util.List;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class Dispatch {
+public interface Dispatcher {
 
-    final private static Dispatcher DISPATCHER = DispatcherConfig.getDefaultDispatcher();
+    /**
+     * @return the thread level dispatch queues for a given dispatch priority.
+     */
+    public DispatchQueue[] getThreadQueues(DispatchPriority priority);
 
-    public static final DispatchPriority HIGH    = DispatchPriority.HIGH;
-    public static final DispatchPriority DEFAULT = DispatchPriority.DEFAULT;
-    public static final DispatchPriority LOW     = DispatchPriority.LOW;
+    /**
+     *
+     * @return the current thread queue or null of not executing on a thread queue.
+     */
+    public DispatchQueue getCurrentThreadQueue();
 
     /**
      * <p>
      * Returns the global concurrent queue of default priority.
      * </p>
      *
-     * @see #getGlobalQueue(DispatchPriority)  
+     * @see #getGlobalQueue(DispatchPriority)
      * @return the default priority global queue.
      */
-    public static DispatchQueue getGlobalQueue() {
-        return DISPATCHER.getGlobalQueue();
-    }
+    public DispatchQueue getGlobalQueue();
 
     /**
      * <p>
@@ -98,10 +94,8 @@ public class Dispatch {
      * A priority defined in dispatch_queue_priority_t
      * @return the requested global queue.
      */
-    public static DispatchQueue getGlobalQueue(DispatchPriority priority) {
-        return DISPATCHER.getGlobalQueue(priority);
-    }
-
+    public DispatchQueue getGlobalQueue(DispatchPriority priority);
+    
     /**
      * <p>
      * Creates a new serial dispatch queue to which runnable objects may be submitted.
@@ -123,24 +117,11 @@ public class Dispatch {
      * @param label the label to assign the dispatch queue, can be null
      * @return the newly created dispatch queue
      */
-    public static DispatchQueue createQueue(String label) {
-        return DISPATCHER.createQueue(label);
-    }
-
-    /**
-     * <p>
-     * Creates a new serial dispatch queue to which runnable objects may be submitted.
-     * </p>
-     * <p>
-     * Same thing as <code>createQueue(null)</code>
-     * </p>
-     * @see #createQueue(String)
-     * @return the newly created dispatch queue
-     */
-    public static DispatchQueue createQueue() {
-        return DISPATCHER.createQueue(null);
-    }
-
+    public DispatchQueue createQueue(String label);
+    
+//    public DispatchQueue getMainQueue();
+//    public void dispatchMain();
+    
     /**
      * <p>
      * Returns the queue on which the currently executing runnable is running.
@@ -151,9 +132,7 @@ public class Dispatch {
      *
      * @return the queue on which the currently executing runnable is running.
      */
-    public static DispatchQueue getCurrentQueue() {
-        return DISPATCHER.getCurrentQueue();
-    }
+    public DispatchQueue getCurrentQueue();
 
     /**
      * <p>
@@ -165,16 +144,14 @@ public class Dispatch {
      * </p>
      *
      * @param channel the channel to monitor.
-     * @param interestOps A mask of interest ops ({@link SelectionKey#OP_ACCEPT},
-     *        {@link SelectionKey#OP_CONNECT}, {@link SelectionKey#OP_READ}, or
-     *        {@link SelectionKey#OP_WRITE}) specifying which events are desired.
+     * @param interestOps A mask of interest ops ({@link java.nio.channels.SelectionKey#OP_ACCEPT},
+     *        {@link java.nio.channels.SelectionKey#OP_CONNECT}, {@link java.nio.channels.SelectionKey#OP_READ}, or
+     *        {@link java.nio.channels.SelectionKey#OP_WRITE}) specifying which events are desired.
      * @param queue The dispatch queue to which the event handler tasks will be submited.
      *
      * @return the newly created DispatchSource
      */
-    public static DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {
-        return DISPATCHER.createSource(channel, interestOps, queue);
-    }
+    public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue);
 
     /**
      * <p>
@@ -182,60 +159,13 @@ public class Dispatch {
      * the dispatch source and automatically submit a handler runnable to a dispatch queue
      * in response to the events.
      * </p>
-     * 
+     *
      * @param aggregator the data aggregation strategy to use.
      * @param queue The dispatch queue to which the event handler tasks will be submited.
      *
      * @return the newly created CustomDispatchSource
      */
-    public static <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
-        return DISPATCHER.createSource(aggregator, queue);
-    }
-
-    /**
-     * @return the thread level dispatch queues for a given dispatch priority.
-     */
-    public static DispatchQueue[] getThreadQueues(DispatchPriority priority) {
-        return DISPATCHER.getThreadQueues(priority);
-    }
-
-    /**
-     *
-     * @return the current thread queue or null of not executing on a thread queue.
-     */
-    public static DispatchQueue getCurrentThreadQueue() {
-        return DISPATCHER.getCurrentThreadQueue();
-    }
-
-// Being able to execute stuff on the main thread is critical for some GUI implementations.  For now
-// we will not expose these interfaces until are fully cooked / have good test cases for them.
-//
-//    /**
-//     * <p>
-//     * Returns the default queue that is bound to the main thread.
-//     * </p><p>
-//     * In order to invoke runnables submitted to the main queue, the application must
-//     * call {@link #dispatchMain()}}.
-//     * </p>
-//     *
-//     * @return the main queue.
-//     */
-//    public static DispatchQueue getMainQueue() {
-//        return DISPATCHER.getMainQueue();
-//    }
-//
-//    /**
-//     * <p>
-//     * Execute runnables submitted to the main queue.
-//     * </p><p>
-//     * This function "parks" the main thread and waits for runnables to be submitted
-//     * to the main queue. This function never returns.
-//     * </p>
-//     */
-//    public static void dispatchMain() {
-//        DISPATCHER.dispatchMain();
-//    }
-//
+    public <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue);
 
     /**
      * If enabled then it enables profiling on the global
@@ -245,9 +175,7 @@ public class Dispatch {
      *
      * @param enabled
      */
-    public static void profile(boolean enabled) {
-        DISPATCHER.profile(enabled);
-    }
+    public void profile(boolean enabled);
 
     /**
      * Used to get profiling metrics for all the queues
@@ -255,14 +183,5 @@ public class Dispatch {
      *
      * @return
      */
-    public static List<Metrics> metrics() {
-        return DISPATCHER.metrics();
-    }
-
-    /**
-     * A Runnable task that does nothing.
-     */
-    public static final Runnable NOOP = new Runnable() {
-        public void run() {}
-    };
+    public List<Metrics> metrics();
 }

@@ -35,8 +35,7 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     public final HawtDispatcher dispatcher;
     volatile String label;
     private final DispatchPriority priority;
-    private final WorkerPool workers;
-    final Random random = new Random(System.nanoTime());
+    final WorkerPool workers;
     private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
 
     public GlobalDispatchQueue(HawtDispatcher dispatcher, DispatchPriority priority, int threads) {
@@ -80,11 +79,15 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     }
 
     public void dispatchAsync(Runnable runnable) {
-        workers.execute(metricsCollector.track(runnable));
+        if( !dispatcher.shutdown.get() ) {
+            workers.execute(metricsCollector.track(runnable));
+        }
     }
 
     public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable) {
-        dispatcher.timerThread.addRelative(runnable, this, delay, unit);
+        if( !dispatcher.shutdown.get() ) {
+            dispatcher.timerThread.addRelative(runnable, this, delay, unit);
+        }
     }
 
     public void dispatchSync(final Runnable runnable) throws InterruptedException {
@@ -168,15 +171,13 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         return QueueType.GLOBAL_QUEUE;
     }
 
-    public DispatchQueue getRandomThreadQueue() {
+    DispatchQueue[] getThreadQueues() {
         WorkerThread[] threads = workers.getThreads();
-        int i = random.nextInt(threads.length);
-        return threads[i].getDispatchQueue();
-    }
-    
-    public DispatchQueue getThreadQueue(int hash) {
-        WorkerThread[] threads = workers.getThreads();
-        return threads[hash % threads.length].getDispatchQueue();
+        DispatchQueue []rc = new DispatchQueue[threads.length];
+        for(int i=0;i < threads.length; i++){
+            rc[i] = threads[i].getDispatchQueue();
+        }
+        return rc;
     }
 
     public void profile(boolean on) {

@@ -15,15 +15,13 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
-import org.fusesource.hawtdispatch.Dispatch;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.DispatchSource;
-import org.fusesource.hawtdispatch.internal.Dispatcher;
-import org.fusesource.hawtdispatch.internal.BaseSuspendable;
+import org.fusesource.hawtdispatch.*;
 
 import java.io.IOException;
 import java.nio.channels.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
@@ -40,7 +38,7 @@ import static org.fusesource.hawtdispatch.DispatchQueue.QueueType.THREAD_QUEUE;
  * </p>
  * 
  * @author cmacnaug
- * @version 1.0
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 final public class NioDispatchSource extends AbstractDispatchObject implements DispatchSource {
 
@@ -86,7 +84,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
 
     final ThreadLocal<KeyState> keyState = new ThreadLocal<KeyState>();
 
-    public NioDispatchSource(Dispatcher dispatcher, SelectableChannel channel, int interestOps, DispatchQueue targetQueue) {
+    public NioDispatchSource(HawtDispatcher dispatcher, SelectableChannel channel, int interestOps, DispatchQueue targetQueue) {
         if( interestOps == 0 ) {
             throw new IllegalArgumentException("invalid interest ops");
         }
@@ -99,15 +97,28 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
     }
 
 
-    static private DispatchQueue pickThreadQueue(Dispatcher dispatcher, DispatchQueue targetQueue) {
+    static private DispatchQueue pickThreadQueue(HawtDispatcher dispatcher, DispatchQueue targetQueue) {
         // Try to select a thread queue associated /w the target if available..
         DispatchQueue selectorQueue = targetQueue;
         while( selectorQueue.getQueueType()!=THREAD_QUEUE  && selectorQueue.getTargetQueue() !=null ) {
             selectorQueue = selectorQueue.getTargetQueue();
         }
-        // otherwise.. just use a random thread queue..
+
+        // otherwise.. pick the thread queue with the fewest registered selection
+        // keys.
         if( selectorQueue.getQueueType()!=THREAD_QUEUE ) {
-            selectorQueue = dispatcher.getRandomThreadQueue();
+
+            WorkerThread[] threads = dispatcher.DEFAULT_QUEUE.workers.getThreads();
+            WorkerThread min = threads[0];
+            int minSize = min.getNioManager().getSelector().keys().size();
+            for( int i=1; i < threads.length; i++) {
+                int s = threads[i].getNioManager().getSelector().keys().size();
+                if( s < minSize ) {
+                    minSize = s;
+                    min = threads[i];
+                }
+            }
+            selectorQueue = min.getDispatchQueue();
         }
 
         return selectorQueue;
