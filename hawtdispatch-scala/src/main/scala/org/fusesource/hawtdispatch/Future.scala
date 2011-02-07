@@ -20,7 +20,11 @@ import java.util.concurrent.{TimeUnit}
 import scala.collection.mutable.ListBuffer
 
 trait Future[R] extends ( ()=>R ) {
+  def await() = apply()
+  def await(time:Long, unit:TimeUnit) = apply(time, unit)
+
   def apply(time:Long, unit:TimeUnit):Option[R]
+
   def onComplete(func: (R)=>Unit):Unit
   def completed:Boolean
   def map[X](func:R=>X):Future[X]
