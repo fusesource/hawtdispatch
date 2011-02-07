@@ -126,6 +126,17 @@ package object hawtdispatch {
         }
       }
     }
+
+    /**
+     * Same as {@link #apply(=>Unit)} except that the partial function is wrapped in a {@link reset} block.
+     */
+    def ^!(task: =>Unit @suspendable) = execute(new Runnable() {
+      def run() {
+        reset {
+          task
+        }
+      }
+    })
   }
 
 
