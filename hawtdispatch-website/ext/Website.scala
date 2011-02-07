@@ -34,8 +34,8 @@ object Website {
   val project_forums_url= "http://groups.google.com/group/hawtdispatch"
   val project_wiki_url= "http://wiki.github.com/fusesource/hawtdispatch"
   val project_logo= "/images/project-logo.png"
-  val project_version= "1.1"
-  val project_snapshot_version= "1.2-SNAPSHOT"
+  val project_version= "1.2"
+  val project_snapshot_version= "1.3-SNAPSHOT"
 
   val project_keywords= "dispatch,executor,java,scala,libdispatch,gcd,actor,thread,pool"
 

@@ -494,7 +494,7 @@ object Bar {
   val b = createQueue()
   var sum:Int = 0;
   
-  def apply = b {
+  def test = b {
     Foo.hold(sum+5) { result=>
       b {
         sum += result
@@ -542,7 +542,7 @@ object Bar {
   var sum:Int = 0;
   val b = createQueue()
   
-  def apply = b {
+  def test = b {
     reset {
       val result = Foo.hold(sum+5)
       sum += result
@@ -555,6 +555,23 @@ object Bar {
 Note that in this version, we did not need the 2nd `b { }` block to guard access when we
 assign the sum variable. This is because the '!' method stores the original dispatch queue
 it was called from and executes the continuation as a task on the original dispatch queue.
+
+To make resetting even easier and to pass back a future result of the async call, the previous 
+test method simplified using the `!!` method as the following example shows:
+
+{pygmentize:: scala}
+object Bar {
+  def test:Future[Int] = b !! {
+    val result = Foo.hold(sum+5)
+    sum += result
+    println("sum is at: "+sum)
+    sum
+  }  
+}
+{pygmentize}
+
+The `!!` method executes the given block within a reset and captures it's result in a Future which 
+can be used by the caller to examine the future result of the computation.
 
 ### Rich Executors
 
