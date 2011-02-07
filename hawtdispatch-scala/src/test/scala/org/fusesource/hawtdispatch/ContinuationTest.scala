@@ -48,23 +48,17 @@ class ContinuationTest extends FunSuite with ShouldMatchers {
       var sum:Int = 0;
       val b = createQueue()
 
-      def apply() = {
-        val doneSignal = new CountDownLatch(1)
-        b ^! {
-          val result = Foo.hold(sum+5)
-          sum += result
-          doneSignal.countDown()
-        }
-        doneSignal.await()
+      def apply() = b !! {
+        val result = Foo.hold(sum+5)
+        sum += result
+        sum
       }
-
 
     }
 
-    Bar()
+    Bar().await should equal(0)
     Foo.held should equal(5)
     Bar.sum should equal(0)
   }
 
-  
 }

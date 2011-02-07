@@ -128,15 +128,19 @@ package object hawtdispatch {
     }
 
     /**
-     * Same as {@link #apply(=>Unit)} except that the partial function is wrapped in a {@link reset} block.
+     * Same as {@link #future(=>T)} except that the partial function is wrapped in a {@link reset} block.
      */
-    def ^!(task: =>Unit @suspendable) = execute(new Runnable() {
-      def run() {
+    def !![T](func: =>T @suspendable) = {
+      val rc = Future[T]()
+      apply {
         reset {
-          task
+          val r = func
+          rc(r)
         }
       }
-    })
+      rc
+
+    }
   }
 
 
