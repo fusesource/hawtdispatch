@@ -30,6 +30,14 @@ package object hawtdispatch {
 
   implicit def ExecutorWrapper(x: Executor) = new RichExecutor(x)
   implicit def DispatchQueueWrapper(x: DispatchQueue) = new RichDispatchQueue(x)
+  implicit def RichDispatchSourceWrapper(x: DispatchSource) = new RichDispatchSource(x)
+
+  trait RichDispatchObject {
+    def actual:DispatchObject
+
+    def target_=(queue: DispatchQueue) { actual.setTargetQueue( queue ) }
+    def target:DispatchQueue = actual.getTargetQueue
+  }
 
   trait RichExecutorTrait {
 
@@ -143,6 +151,14 @@ package object hawtdispatch {
     }
   }
 
+  class RichDispatchSource(val actual:DispatchSource) extends Proxy with RichDispatchObject {
+    def self = actual
+
+    def onEvent(task: =>Unit) { actual.setEventHandler( runnable(task _) ) }
+    def onCancel(task: =>Unit) { actual.setCancelHandler( runnable(task _) ) }
+    def onDispose(task: =>Unit) { actual.setDisposer( runnable(task _) ) }
+
+  }
 
   /**
    * Enriches the Executor interfaces with additional Scala friendly methods.
@@ -155,9 +171,9 @@ package object hawtdispatch {
   /**
    *  Enriches the DispatchQueue interfaces with additional Scala friendly methods.
    */
-  final class RichDispatchQueue(val queue: DispatchQueue) extends Proxy with RichExecutorTrait {
-    def self: Any = queue
-    protected def execute(task:Runnable) = queue.execute(task)
+  final class RichDispatchQueue(val actual: DispatchQueue) extends Proxy with RichExecutorTrait with RichDispatchObject {
+    def self = actual
+    protected def execute(task:Runnable) = actual.execute(task)
 
     /**
      * <p>
@@ -172,7 +188,7 @@ package object hawtdispatch {
      * @param task
      * The runnable to submit to the dispatch queue.
      */
-    def after(time:Long, unit:TimeUnit)(task: =>Unit) = queue.dispatchAfter(time, unit, runnable(task _))
+    def after(time:Long, unit:TimeUnit)(task: =>Unit) = actual.dispatchAfter(time, unit, runnable(task _))
 
     /**
      * <p>
@@ -185,7 +201,7 @@ package object hawtdispatch {
      * The runnable to submit to execute
      */
     def <<|(task: Runnable) = {
-      if( queue.isExecuting ) {
+      if( actual.isExecuting ) {
         try {
           task.run
         } catch {
@@ -193,7 +209,7 @@ package object hawtdispatch {
             e.printStackTrace
         }
       } else {
-        queue.dispatchAsync(task);
+        actual.dispatchAsync(task);
       }
       this
     }

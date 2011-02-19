@@ -47,14 +47,14 @@ class SocketTest extends FunSuite with ShouldMatchers {
 
       val queue = createQueue("server")
       val accept_source = createSource(channel, SelectionKey.OP_ACCEPT, queue);
-      accept_source.setEventHandler(^ {
+      accept_source.onEvent {
         val socket = channel.accept();
         try {
           new Session(socket).start()
         } catch {
           case e: Exception => socket.close
         }
-      });
+      }
 
       def start() = {
         accept_source.resume
@@ -66,10 +66,10 @@ class SocketTest extends FunSuite with ShouldMatchers {
         queue.release
       }
 
-      accept_source.setDisposer(^{
+      accept_source.onDispose {
         channel.close();
         channel.isOpen
-      });
+      }
 
       
       def port = channel.socket.getLocalPort
