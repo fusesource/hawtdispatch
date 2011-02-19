@@ -19,10 +19,7 @@ package org.fusesource.hawtdispatch.internal;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.internal.util.TimerHeap;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static org.fusesource.hawtdispatch.internal.TimerThread.Type.*;
@@ -128,6 +125,11 @@ final public class TimerThread extends Thread {
                             timerHeap.addAbsolute(request, request.time, request.unit);
                             break;
                         case SHUTDOWN:
+                            List<TimerRequest> requests = timerHeap.clear();
+                            for (TimerRequest r : requests) {
+                                // execute them all..
+                                r.target.dispatchAsync(r.runnable);
+                            }
                             if( request.runnable!=null ) {
                                 timerHeap.execute(request);
                             }

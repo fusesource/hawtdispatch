@@ -19,11 +19,11 @@ package org.fusesource.hawtdispatch.internal;
 import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.Metrics;
+import org.fusesource.hawtdispatch.ShutdownException;
 import org.fusesource.hawtdispatch.internal.pool.SimplePool;
 import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -79,15 +79,17 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     }
 
     public void dispatchAsync(Runnable runnable) {
-        if( !dispatcher.shutdown.get() ) {
-            workers.execute(metricsCollector.track(runnable));
+        if( dispatcher.shutdownState.get() > 1 ) {
+            throw new ShutdownException();
         }
+        workers.execute(metricsCollector.track(runnable));
     }
 
     public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable) {
-        if( !dispatcher.shutdown.get() ) {
-            dispatcher.timerThread.addRelative(runnable, this, delay, unit);
+        if( dispatcher.shutdownState.get() > 0 ) {
+            throw new ShutdownException();
         }
+        dispatcher.timerThread.addRelative(runnable, this, delay, unit);
     }
 
     public void dispatchSync(final Runnable runnable) throws InterruptedException {

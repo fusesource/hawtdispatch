@@ -16,8 +16,7 @@
  */
 package org.fusesource.hawtdispatch.internal.util;
 
-import java.util.LinkedList;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public abstract class TimerHeap<V> {
@@ -96,6 +95,15 @@ public abstract class TimerHeap<V> {
                 thrown.printStackTrace();
             }
         }
+    }
+
+    public List<V> clear() {
+        ArrayList<V> rc = new ArrayList<V>(size());
+        for (LinkedList<V> t : timers.values()) {
+            rc.addAll(t);
+        }
+        timers.clear();
+        return rc;
     }
 
     /**

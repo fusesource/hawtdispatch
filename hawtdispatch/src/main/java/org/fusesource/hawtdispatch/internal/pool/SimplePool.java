@@ -69,9 +69,15 @@ public class SimplePool implements WorkerPool {
     }
 
 
-    public void shutdown(){
-        shutdown = true;
+    public void shutdown() {
         try {
+            // wait for the queue to get drained..
+            while( !runnables.isEmpty() ) {
+                Thread.sleep(50);
+            }
+
+            // now shutdown the threads.
+            shutdown = true;
             for (int i=0; i < threads.length; i++) {
                 threads[i].unpark();
             }

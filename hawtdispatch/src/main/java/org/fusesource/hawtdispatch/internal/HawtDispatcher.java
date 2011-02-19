@@ -22,7 +22,7 @@ import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.fusesource.hawtdispatch.DispatchPriority.DEFAULT;
 
@@ -54,7 +54,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     private final int threads;
     private volatile boolean profile;
     final int drains;
-    final AtomicBoolean shutdown = new AtomicBoolean(false);
+    final AtomicInteger shutdownState = new AtomicInteger(0);
 
     public HawtDispatcher(DispatcherConfig config) {
         this.threads = config.getThreads();
@@ -71,20 +71,50 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
     }
 
     public void shutdown() {
-        if( shutdown.compareAndSet(false, true) ) {
-            timerThread.shutdown(null);
-            DEFAULT_QUEUE.shutdown();
-            if( LOW_QUEUE!=null ) {
-                LOW_QUEUE.shutdown();
-            }
-            if(HIGH_QUEUE!=null) {
-                HIGH_QUEUE.shutdown();
-            }
+
+        // shutdown == 1 stop new dispatch after requests..
+        if( shutdownState.compareAndSet(0, 1) ) {
+            // give every one a chance to notice
+            // the state change.
+            sleep(100);
+            timerThread.shutdown(new Runnable() {
+                public void run() {
+                    // all outstanding timers will have been
+                    // queued for execution
+
+
+                    // shutdown == 2 stop queues from accepting
+                    // new executions
+                    shutdownState.set(2);
+                    // new state change..
+                    sleep(100);
+
+                    // Wait for the execution queues to drain..
+                    DEFAULT_QUEUE.shutdown();
+                    if( LOW_QUEUE!=null ) {
+                        LOW_QUEUE.shutdown();
+                    }
+                    if(HIGH_QUEUE!=null) {
+                        HIGH_QUEUE.shutdown();
+                    }
+
+                    // shutdown == 3 means we are fully drained.
+                    shutdownState.set(3);
+                }
+            });
+
+        }
+    }
+
+    private void sleep(long time) {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
         }
     }
 
     public void restart() {
-        if( shutdown.compareAndSet(true, false) ) {
+        if( shutdownState.compareAndSet(3, 0) ) {
             timerThread = new TimerThread(this);
             DEFAULT_QUEUE.start();
             if( LOW_QUEUE!=null ) {
@@ -93,8 +123,9 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
             if(HIGH_QUEUE!=null) {
                 HIGH_QUEUE.start();
             }
+        } else {
+            throw new IllegalStateException("Not shutdown yet.");
         }
-
     }
 
     public DispatchQueue getMainQueue() {
