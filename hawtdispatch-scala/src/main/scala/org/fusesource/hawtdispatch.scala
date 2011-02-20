@@ -175,6 +175,10 @@ package object hawtdispatch {
     def self = actual
     protected def execute(task:Runnable) = actual.execute(task)
 
+    def label_=(value: String) { actual.setLabel( value ) }
+    def label:String = actual.getLabel
+
+
     /**
      * <p>
      * Submits a partial function for asynchronous execution on a dispatch queue after
