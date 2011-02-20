@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
@@ -209,14 +210,18 @@ public class NioManager {
             return 0;
         }
 
-        // Walk the set of ready keys servicing each ready context:
         Set<SelectionKey> selectedKeys = selector.selectedKeys();
         int size = selectedKeys.size();
         if (size!=0) {
             trace("selected: %d",size);
-            for (Iterator<SelectionKey> i = selectedKeys.iterator(); i.hasNext();) {
-                SelectionKey key = i.next();
-                i.remove();
+
+            // Copy the key set.. to avoid getting ConcurrentModificationException
+            // as it may get changed once we start processing the IO events.
+            ArrayList<SelectionKey> copy = new ArrayList<SelectionKey>(selector.selectedKeys());
+            selector.selectedKeys().clear();
+
+            // Walk the set of ready keys servicing each ready context:
+            for (SelectionKey key : copy) {
                 if (key.isValid()) {
                     try {
                         key.interestOps(key.interestOps() & ~key.readyOps());
