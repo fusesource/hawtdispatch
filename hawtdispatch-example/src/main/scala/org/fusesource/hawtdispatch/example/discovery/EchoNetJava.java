@@ -124,8 +124,7 @@ public class EchoNetJava {
         }
 
         public void close() {
-            accept_source.release();
-            queue.release();
+            accept_source.cancel();
         }
 
         public void connect(Server s) {
@@ -158,7 +157,7 @@ public class EchoNetJava {
                         final DispatchSource connect_source = createSource(socketChannel, SelectionKey.OP_CONNECT, queue);
                         connect_source.setEventHandler(new Runnable() {
                             public void run() {
-                                connect_source.release();
+                                connect_source.cancel();
                                 try {
                                     socketChannel.finishConnect();
                                     trace("connected " + uri);

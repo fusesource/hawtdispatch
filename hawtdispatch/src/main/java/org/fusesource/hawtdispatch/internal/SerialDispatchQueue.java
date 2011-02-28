@@ -33,7 +33,6 @@ import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 public class SerialDispatchQueue extends AbstractDispatchObject implements HawtDispatchQueue, Runnable {
 
     protected volatile String label;
-//    protected final Set<DispatchOption> options;
 
     protected final AtomicInteger size = new AtomicInteger();
     protected final AtomicInteger executeCounter = new AtomicInteger();
@@ -48,7 +47,6 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
 
     public void dispatchAsync(final Runnable runnable) {
         assert runnable != null;
-        assertRetained();
         enqueue(metricsCollector.track(runnable));
     }
 
@@ -60,7 +58,6 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
             externalQueue.add(runnable);
         }
         if( size.incrementAndGet()==1 ) {
-            retain();
             if( !isSuspended() ) {
                 dispatchSelfAsync();
             }
@@ -123,9 +120,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
 
         } finally {
             if( counter>0 ) {
-                if( size.addAndGet(-counter)==0 ) {
-                    release();
-                } else {
+                if( size.addAndGet(-counter)!=0 ) {
                     if( !isSuspended() ) {
                         dispatchSelfAsync();
                     }
@@ -158,7 +153,6 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     }
 
     public void execute(Runnable command) {
-       assertRetained();
         dispatchAsync(command);
     }
 
@@ -179,12 +173,10 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     }
 
     public void dispatchSync(Runnable runnable) throws InterruptedException {
-       assertRetained();
        dispatchApply(1, runnable);
     }
 
     public void dispatchApply(int iterations, Runnable runnable) throws InterruptedException {
-       assertRetained();
         QueueSupport.dispatchApply(this, iterations, runnable);
     }
 

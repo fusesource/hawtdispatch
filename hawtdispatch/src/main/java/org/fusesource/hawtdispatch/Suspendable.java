@@ -23,7 +23,7 @@ package org.fusesource.hawtdispatch;
  * execution of dispatch tasks.
  * </p>
  */
-public interface Suspendable extends Retained {
+public interface Suspendable {
 
     /**
      * <p>

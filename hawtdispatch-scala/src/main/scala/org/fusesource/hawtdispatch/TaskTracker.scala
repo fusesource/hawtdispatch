@@ -36,15 +36,6 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
   val queue = parent.createQueue("tracker: "+name);
   var done = false
 
-  /**
-   * Creates a new task and sets it as the disposer of the specified
-   * retained object and the release it.
-   */
-  def release(retained:Retained) = {
-    retained.setDisposer(task(retained))
-    retained.release
-  }
-
   class Task(var name:Any) extends Runnable {
     def run = {
       remove(this)

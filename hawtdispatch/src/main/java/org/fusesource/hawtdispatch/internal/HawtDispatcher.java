@@ -32,7 +32,7 @@ import static org.fusesource.hawtdispatch.DispatchPriority.DEFAULT;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-final public class HawtDispatcher extends BaseRetained implements Dispatcher {
+final public class HawtDispatcher implements Dispatcher {
 
     public final static ThreadLocal<HawtDispatchQueue> CURRENT_QUEUE = new ThreadLocal<HawtDispatchQueue>();
 

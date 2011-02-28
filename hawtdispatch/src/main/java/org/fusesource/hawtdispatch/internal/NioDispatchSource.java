@@ -90,7 +90,6 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
         this.channel = channel;
         this.selectorQueue = pickThreadQueue(dispatcher, targetQueue);
-        this.selectorQueue.retain();
         this.interestOps = interestOps;
         this.suspended.incrementAndGet();
         this.setTargetQueue(targetQueue);
@@ -132,24 +131,6 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         register_on(selectorQueue);
     }
 
-    @Override
-    protected void dispose() {
-        // if not yet canceled..
-        if( canceled.compareAndSet(false, true) ) {
-            // Then we need to cancel.. and then dispose..
-            selectorQueue.dispatchAsync(new Runnable(){
-                public void run() {
-                    internal_cancel();
-                    NioDispatchSource.super.dispose();
-                }
-            });
-            selectorQueue.release();
-        } else {
-            // was already canceled.. so we can do the standard dispose. 
-            super.dispose();
-        }
-    }
-
     public void cancel() {
         if( canceled.compareAndSet(false, true) ) {
             selectorQueue.dispatchAsync(new Runnable(){
@@ -157,7 +138,6 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                     internal_cancel();
                 }
             });
-            selectorQueue.release();
         }
     }
 
@@ -350,14 +330,12 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             debug("Switching to "+queue.getLabel());
             register_on(queue);
             selectorQueue = queue;
-            selectorQueue.retain();
             if( previous!=null ) {
                 previous.dispatchAsync(new Runnable(){
                     public void run() {
                         key_cancel();
                     }
                 });
-                previous.release();
             }
         }
     }

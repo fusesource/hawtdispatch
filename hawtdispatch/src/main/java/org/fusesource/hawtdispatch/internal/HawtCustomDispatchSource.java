@@ -55,7 +55,6 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
 
     public void merge(Event event) {
         debug("merge called");
-        assertRetained();
         WorkerThread thread = WorkerThread.currentWorkerThread();
         if( thread!=null ) {
             MergedEvent previous = outboundEvent.get();
@@ -166,12 +165,6 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
                 }
             }
         });
-    }
-
-    @Override
-    protected void dispose() {
-        cancel();
-
     }
 
     public boolean isCanceled() {

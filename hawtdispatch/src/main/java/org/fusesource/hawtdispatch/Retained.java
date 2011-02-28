@@ -70,6 +70,6 @@ public interface Retained {
      *
      * @param disposer
      */
-    public void setDisposer(Runnable disposer);
+//    public void setDisposer(Runnable disposer);
 
 }

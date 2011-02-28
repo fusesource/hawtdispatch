@@ -113,12 +113,6 @@ public class Dispatch {
      * Conceptually a dispatch queue may have its own thread of execution, and
      * interaction between queues is highly asynchronous.
      * </p><p>
-     * When the dispatch queue is no longer needed, it should be released.
-     * Dispatch queues are reference counted via calls to {@link Retained#retain()} and
-     * {@link Retained#release()}. Pending runnables submitted to a queue also hold a
-     * reference to the queue until they have finished. Once all references to a
-     * queue have been released, the queue will be disposed.
-     * </p>
      *
      * @param label the label to assign the dispatch queue, can be null
      * @return the newly created dispatch queue

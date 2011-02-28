@@ -335,54 +335,6 @@ object.  Example:
   }
 {pygmentize}
 
-### Asynchronous Cleanup
-
-On many occasions there is a resource associated with concurrent processing, and it needs to be released/cleaned 
-up once the concurrent processing has completed.
-
-This can be easily done by configuring a disposer callback on the dispatch queue or dispatch source.  These object support
-being reference counted using the [`retain`][Retained_retain] and [`release`][Retained_release] method calls.  They are initially created with a retain count of 1.  
-Once the retain count reaches zero, the disposer runnable is executed on the associated queue.
-
-[Retained_retain]: ${api_dir}/Retained.html#retain()
-[Retained_release]: ${api_dir}/Retained.html#release()
-
-The following example tries to simulate a case were multiple concurrent tasks are using a shared resource and once
-they finish executing that shared resource gets closed.
-
-{pygmentize:: scala}
-val stream:PrintStream = ...
-val queue = createQueue()
-queue.setDisposer(^{ stream.close })
-for( i <- 1 to 10 ) {
-  queue.retain
-  getGlobalQueue {
-    // Concurrently compute some values and send then to 
-    // the stream.
-    val value = "Hello "+i
-    queue { stream.println(value) }
-    // the stream is closed once the last release executes.
-    queue.release
-  }
-}
-queue.release
-{pygmentize}
-
-It is also important to note that the enqueued runnable objects increment the retain counter.  The following
-version of the above example also only closes the stream after all the values are sent
-to the stream:
-
-{pygmentize:: scala}
-val stream:PrintStream = ...
-val queue = createQueue()
-queue.setDisposer(^{ stream.close })
-for( i <- 1 to 10 ) {
-  val value = "Hello "+i
-  queue << ^{ stream.println(value) }
-}
-queue.release
-{pygmentize}
-
 ## Scala Only Features
 
 When you use the HawtDispatch Scala interface you gain several additional features such

@@ -121,15 +121,10 @@ package object hawtdispatch {
       if( original==null ) {
         k(sync(func))
       } else {
-        original.retain
         apply {
-          try {
-            val result = func
-            original.apply {
-              k(result)
-            }
-          } finally {
-            original.release
+          val result = func
+          original.apply {
+            k(result)
           }
         }
       }
@@ -156,7 +151,6 @@ package object hawtdispatch {
 
     def onEvent(task: =>Unit) { actual.setEventHandler( runnable(task _) ) }
     def onCancel(task: =>Unit) { actual.setCancelHandler( runnable(task _) ) }
-    def onDispose(task: =>Unit) { actual.setDisposer( runnable(task _) ) }
 
   }
 

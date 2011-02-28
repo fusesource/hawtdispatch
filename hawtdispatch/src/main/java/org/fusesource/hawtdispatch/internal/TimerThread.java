@@ -80,7 +80,6 @@ final public class TimerThread extends Thread {
     }
 
     private void add(TimerRequest request) {
-        request.target.retain();
         synchronized(mutex) {
             requests.add(request);
             mutex.notify();
@@ -155,12 +154,8 @@ final public class TimerThread extends Thread {
                                     }
                                 }
                             });
-                            for ( Runnable runnable: runnables) {
-                                queue.release();
-                            }
                         } else {
                             queue.dispatchAsync(runnables.getFirst());
-                            queue.release();
                         }
                     }
                     readyRequests.clear();

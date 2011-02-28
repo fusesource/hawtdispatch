@@ -89,9 +89,7 @@ object EchoNetScala {
       }
 
     });
-    accept_source.setCancelHandler(^ {
-      serverChannel.close();
-    });
+
     trace("Listening");
 
     def start() = {
@@ -104,9 +102,13 @@ object EchoNetScala {
     }
 
     def close() = {
-      accept_source.release
-      queue.release
+      accept_source.cancel
     }
+
+    accept_source.onCancel {
+      serverChannel.close();
+    }
+
 
     def connect(s: Server):Unit = {
       connect(s.port);
@@ -133,8 +135,8 @@ object EchoNetScala {
       socketChannel.connect(address);
 
       val connect_source = createSource(socketChannel, SelectionKey.OP_CONNECT, queue);
-      connect_source.setEventHandler(^ {
-        connect_source.release
+      connect_source.onEvent {
+        connect_source.cancel
         try {
           socketChannel.finishConnect
           trace("connected " + uri);
@@ -145,7 +147,7 @@ object EchoNetScala {
           case e:ConnectException =>
             trace("connect to "+uri+" FAILED.");
         }
-      })
+      }
       connect_source.resume
       seen = uri :: seen;
 

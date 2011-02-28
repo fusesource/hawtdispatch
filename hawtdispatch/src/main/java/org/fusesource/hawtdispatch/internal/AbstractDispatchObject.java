@@ -29,34 +29,17 @@ abstract public class AbstractDispatchObject extends BaseSuspendable implements 
 
     public void setTargetQueue(DispatchQueue next) {
 
-        assertRetained();
         if( next!=targetQueue ) {
             // Don't see why someone would concurrently try to set the target..
             // IF we wanted to protect against that we would need to use cas operations here..
-
-            next.retain();
             DispatchQueue previous = this.targetQueue;
             this.targetQueue = (HawtDispatchQueue) next;
-            if( previous !=null ) {
-                previous.release();
-            }
         }
 
     }
 
     public HawtDispatchQueue getTargetQueue() {
-        assertRetained();
         return this.targetQueue;
     }
 
-    @Override
-    protected void dispose() {
-        // Run the dispose on the target queue
-        targetQueue.dispatchAsync(new Runnable(){
-            public void run() {
-                AbstractDispatchObject.super.dispose();
-            }
-        });
-        targetQueue.release();
-    }
 }

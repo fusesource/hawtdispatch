@@ -62,13 +62,11 @@ class SocketTest extends FunSuite with ShouldMatchers {
       }
 
       def stop() = {
-        accept_source.release
-        queue.release
+        accept_source.cancel
       }
 
-      accept_source.onDispose {
+      accept_source.onCancel {
         channel.close();
-        channel.isOpen
       }
 
       
@@ -106,21 +104,17 @@ class SocketTest extends FunSuite with ShouldMatchers {
       connections.incrementAndGet
       def start() = read_source.resume
 
-      read_source.setCancelHandler(^{ if( !closed ) {
-        close()
-      } })
-
       def close() = {
         if( !closed ) {
-          read_source.release
           closed = true;
+          read_source.cancel
         }
       }
 
-      read_source.setDisposer(^{
+      read_source.onCancel {
         connections.decrementAndGet
         channel.close
-      })
+      }
 
     }
 

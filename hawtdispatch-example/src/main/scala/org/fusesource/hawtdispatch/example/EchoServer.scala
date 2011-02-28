@@ -71,14 +71,13 @@ object EchoServer {
     }
 
     def stop() = {
-      accept_source.release
-      queue.release
+      accept_source.cancel
     }
 
-    accept_source.setDisposer(^{
+    accept_source.onCancel {
       channel.close();
       println("Closed port: "+port);
-    });
+    }
     
   }
 
@@ -96,15 +95,15 @@ object EchoServer {
     }
 
     def close() = {
-      read_source.release
-      write_source.release
-      queue.release
+      read_source.cancel
     }
-
-    queue.setDisposer(^{
+    read_source.onCancel {
+      write_source.cancel
+    }
+    write_source.onCancel {
       channel.close
       println("Closed connection from: "+remote_address);
-    })
+    }
 
     read_source.setEventHandler(^{
       try {

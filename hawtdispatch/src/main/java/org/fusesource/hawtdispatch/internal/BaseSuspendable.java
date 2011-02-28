@@ -26,7 +26,7 @@ import org.fusesource.hawtdispatch.Suspendable;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class BaseSuspendable extends BaseRetained implements Suspendable {
+public class BaseSuspendable implements Suspendable {
 
     protected final AtomicBoolean startup = new AtomicBoolean(true);
     protected final AtomicInteger suspended = new AtomicInteger();
@@ -36,7 +36,6 @@ public class BaseSuspendable extends BaseRetained implements Suspendable {
     }
 
     public void resume() {
-        assertRetained();
         if (suspended.decrementAndGet() == 0) {
             if (startup.compareAndSet(true, false)) {
                 onStartup();
@@ -47,7 +46,6 @@ public class BaseSuspendable extends BaseRetained implements Suspendable {
     }
 
     public void suspend() {
-        assertRetained();
         if (suspended.getAndIncrement() == 0) {
             onSuspend();
         }
