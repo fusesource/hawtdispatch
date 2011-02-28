@@ -101,7 +101,7 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
                     // shutdown == 3 means we are fully drained.
                     shutdownState.set(3);
                 }
-            });
+            }, DEFAULT_QUEUE);
 
         }
     }
@@ -183,12 +183,6 @@ final public class HawtDispatcher extends BaseRetained implements Dispatcher {
 
     public <Event, MergedEvent> CustomDispatchSource<Event, MergedEvent> createSource(EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
         return new HawtCustomDispatchSource(this, aggregator, queue);
-    }
-
-    @Override
-    public void dispose() {
-        DEFAULT_QUEUE.shutdown();
-        timerThread.shutdown(null);
     }
 
     public String getLabel() {

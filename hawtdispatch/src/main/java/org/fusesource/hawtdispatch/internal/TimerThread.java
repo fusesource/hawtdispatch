@@ -71,9 +71,10 @@ final public class TimerThread extends Thread {
         add(request);
     }
 
-    public final void shutdown(Runnable onShutdown) {
+    public final void shutdown(Runnable onShutdown, DispatchQueue target) {
         TimerRequest request = new TimerRequest();
         request.type = SHUTDOWN;
+        request.target = target;
         request.runnable = onShutdown;
         add(request);
     }

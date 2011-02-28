@@ -29,7 +29,12 @@ import java.util.Hashtable;
 public class Activator implements BundleActivator {
 
     public void start(BundleContext context) throws Exception {
-        DispatcherConfig.getDefaultDispatcher().restart();
+        try {
+            DispatcherConfig.getDefaultDispatcher().restart();
+        } catch (IllegalStateException ignore) {
+            // dispatchers initial state is running.. so a restart
+            // only works after it's been shutdown.
+        }
         context.registerService(Dispatcher.class.getName(), DispatcherConfig.getDefaultDispatcher(), new Hashtable());
     }
 
