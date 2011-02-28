@@ -75,17 +75,13 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     }
 
     public void execute(Runnable runnable) {
-        dispatchAsync(runnable);
-    }
-
-    public void dispatchAsync(Runnable runnable) {
         if( dispatcher.shutdownState.get() > 1 ) {
             throw new ShutdownException();
         }
         workers.execute(metricsCollector.track(runnable));
     }
 
-    public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable) {
+    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
         if( dispatcher.shutdownState.get() > 0 ) {
             throw new ShutdownException();
         }

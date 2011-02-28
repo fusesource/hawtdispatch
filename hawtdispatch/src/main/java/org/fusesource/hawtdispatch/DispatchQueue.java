@@ -79,35 +79,24 @@ public interface DispatchQueue extends DispatchObject, Executor {
     public DispatchQueue createQueue(String label);
 
     /**
-     * Does the same thing as {@link #dispatchAsync(Runnable)}.
-     *
-     * @see #dispatchAsync(Runnable)
-     * @param runnable
-     * The runnable to submit to the dispatch queue.
-     */
-    void execute(Runnable runnable);
-
-    /**
      * <p>
      * Submits a runnable for asynchronous execution on a dispatch queue.
      * </p><p>
-     * {@link #dispatchAsync(Runnable)} is the fundamental mechanism for submitting
+     * {@link #execute(Runnable)} is the fundamental mechanism for submitting
      * runnable objects to a dispatch queue.
      * </p><p>
-     * Calls to {@link #dispatchAsync(Runnable)} always return immediately after the runnable has
+     * Calls to {@link #execute(Runnable)} always return immediately after the runnable has
      * been submitted, and never wait for the runnable to be executed.
      * </p><p>
      * The target queue determines whether the runnable will be invoked serially or
      * concurrently with respect to other runnables submitted to that same queue.
      * Serial queues are processed concurrently with with respect to each other.
-     * </p><p>
-     * The system will retain this queue until the runnable has finished.
      * </p>
      *
      * @param runnable
      * The runnable to submit to the dispatch queue.
      */
-    public void dispatchAsync(Runnable runnable);
+    void execute(Runnable runnable);
 
     /**
      * <p>
@@ -119,7 +108,7 @@ public interface DispatchQueue extends DispatchObject, Executor {
      * @param unit the unit of time that the delay value is specified in
      * @param runnable
      */
-    public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable);
+    public void executeAfter(long delay, TimeUnit unit, Runnable runnable);
 
 //
 //  This is an API method that libdispatch supports, but even they don't recommend it's
@@ -138,7 +127,7 @@ public interface DispatchQueue extends DispatchObject, Executor {
 //     * Calls to {@link #dispatchSync(Runnable)} targeting the current queue will result
 //     * in dead-lock. Use of {@link #dispatchSync(Runnable)} is also subject to the same
 //     * multi-party dead-lock problems that may result from the use of a mutex.
-//     * Use of {@link #dispatchAsync(Runnable)} is preferred.
+//     * Use of {@link #execute(Runnable)} is preferred.
 //     * </p>
 //     *
 //     * @param runnable

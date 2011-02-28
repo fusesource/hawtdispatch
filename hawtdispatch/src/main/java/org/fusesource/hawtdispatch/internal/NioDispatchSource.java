@@ -133,7 +133,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
 
     public void cancel() {
         if( canceled.compareAndSet(false, true) ) {
-            selectorQueue.dispatchAsync(new Runnable(){
+            selectorQueue.execute(new Runnable(){
                 public void run() {
                     internal_cancel();
                 }
@@ -144,7 +144,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
     void internal_cancel() {
         key_cancel();
         if( cancelHandler!=null ) {
-            targetQueue.dispatchAsync(cancelHandler);
+            targetQueue.execute(cancelHandler);
         }
     }
 
@@ -177,7 +177,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
     }
 
     private void register_on(final DispatchQueue queue) {
-        queue.dispatchAsync(new Runnable(){
+        queue.execute(new Runnable(){
             public void run() {
                 assert keyState.get()==null;
 
@@ -218,7 +218,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         state.readyOps |= readyOps;
         if( state.readyOps!=0  && !isSuspended()&& !isCanceled() ) {
             state.readyOps = 0;
-            targetQueue.dispatchAsync(new Runnable() {
+            targetQueue.execute(new Runnable() {
                 public void run() {
                     if( !isSuspended() && !isCanceled()) {
                         if(DEBUG) debug("fired %s", opsToString(readyOps));
@@ -245,7 +245,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                 }
             }
         } else {
-            selectorQueue.dispatchAsync(new Runnable(){
+            selectorQueue.execute(new Runnable(){
                 public void run() {
                     if( !isSuspended() && !isCanceled() ) {
                         if(DEBUG) debug("adding interest: %d", opsToString(interestOps));
@@ -287,7 +287,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                 fire(state.readyOps);
             }
         } else {
-            selectorQueue.dispatchAsync(new Runnable(){
+            selectorQueue.execute(new Runnable(){
                 public void run() {
                     KeyState state = keyState.get();
                     if( state==null || state.readyOps==0 ) {
@@ -331,7 +331,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             register_on(queue);
             selectorQueue = queue;
             if( previous!=null ) {
-                previous.dispatchAsync(new Runnable(){
+                previous.execute(new Runnable(){
                     public void run() {
                         key_cancel();
                     }

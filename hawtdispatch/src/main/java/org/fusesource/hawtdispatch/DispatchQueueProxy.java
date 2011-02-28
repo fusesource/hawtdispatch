@@ -55,7 +55,7 @@ import static org.objectweb.asm.ClassWriter.*;
  *    <<for each method in interface-class>>
  *
  *      <<method-signature>> {
- *          queue.dispatchAsync( new Runnable() {
+ *          queue.execute( new Runnable() {
  *             public void run() {
  *                 this.target.<<method-call>>;
  *             }
@@ -240,7 +240,7 @@ public class DispatchQueueProxy {
                     {
                         mv.visitCode();
                         
-                        // example: queue.dispatchAsync(new OrderRunnable(target, count));
+                        // example: queue.execute(new OrderRunnable(target, count));
                         start = new Label();
                         mv.visitLabel(start);
                         mv.visitVarInsn(ALOAD, 0);
@@ -255,7 +255,7 @@ public class DispatchQueueProxy {
                         }
                         
                         mv.visitMethodInsn(INVOKESPECIAL, runnable(index, methods[index]), "<init>", "(" + sig(interfaceName) + sig(params) +")V");
-                        mv.visitMethodInsn(INVOKEINTERFACE, DISPATCH_QUEUE, "dispatchAsync", "(" + sig(RUNNABLE) + ")V");
+                        mv.visitMethodInsn(INVOKEINTERFACE, DISPATCH_QUEUE, "execute", "(" + sig(RUNNABLE) + ")V");
                         
                         Type returnType = Type.getType(method.getReturnType());
                         Integer returnValue = defaultConstant(returnType);

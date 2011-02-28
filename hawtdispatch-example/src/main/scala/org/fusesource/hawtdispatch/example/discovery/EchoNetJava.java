@@ -136,7 +136,7 @@ public class EchoNetJava {
         }
 
         public void connect(final URI uri) {
-            queue.dispatchAsync(new Runnable() {
+            queue.execute(new Runnable() {
                 public void run() {
                     if (me.equals(uri) || seen.contains(uri))
                         return;
@@ -324,7 +324,7 @@ public class EchoNetJava {
         }
 
         public void start_write_hearbeat() {
-            queue.dispatchAfter(1, TimeUnit.SECONDS, new Runnable() {
+            queue.executeAfter(1, TimeUnit.SECONDS, new Runnable() {
                 public void run() {
                     try {
                         trace("ping");

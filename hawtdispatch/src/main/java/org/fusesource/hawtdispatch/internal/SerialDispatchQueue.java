@@ -45,7 +45,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         this.label = label;
     }
 
-    public void dispatchAsync(final Runnable runnable) {
+    public void execute(final Runnable runnable) {
         assert runnable != null;
         enqueue(metricsCollector.track(runnable));
     }
@@ -152,16 +152,12 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         dispatchSelfAsync();
     }
 
-    public void execute(Runnable command) {
-        dispatchAsync(command);
-    }
-
     public QueueType getQueueType() {
         return QueueType.SERIAL_QUEUE;
     }
 
     protected void dispatchSelfAsync() {
-        getTargetQueue().dispatchAsync(this);
+        getTargetQueue().execute(this);
     }
 
     protected void dispatch(Runnable runnable) {
@@ -180,7 +176,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         QueueSupport.dispatchApply(this, iterations, runnable);
     }
 
-    public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable) {
+    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
         getDispatcher().timerThread.addRelative(runnable, this, delay, unit);
     }
 

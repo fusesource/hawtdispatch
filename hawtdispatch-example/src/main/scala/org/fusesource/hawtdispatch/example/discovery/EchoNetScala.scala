@@ -247,7 +247,7 @@ object EchoNetScala {
     }
 
     def start_write_hearbeat:Unit = {
-      queue.dispatchAfter(1, TimeUnit.SECONDS, ^{
+      queue.executeAfter(1, TimeUnit.SECONDS, ^{
         trace("ping");
         start_write_data("ping"::Nil, ^{
           start_write_hearbeat

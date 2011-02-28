@@ -47,7 +47,7 @@ package object hawtdispatch {
      * <p>
      * Submits a partial function for asynchronous execution on a dispatch queue.
      * </p><p>
-     * Calls to {@link #dispatchAsync(Runnable)} always return immediately after the runnable has
+     * Calls to {@link #execute(Runnable)} always return immediately after the runnable has
      * been submitted, and never wait for the runnable to be executed.
      * </p><p>
      * The target queue determines whether the runnable will be invoked serially or
@@ -186,7 +186,7 @@ package object hawtdispatch {
      * @param task
      * The runnable to submit to the dispatch queue.
      */
-    def after(time:Long, unit:TimeUnit)(task: =>Unit) = actual.dispatchAfter(time, unit, runnable(task _))
+    def after(time:Long, unit:TimeUnit)(task: =>Unit) = actual.executeAfter(time, unit, runnable(task _))
 
     /**
      * <p>
@@ -207,7 +207,7 @@ package object hawtdispatch {
             e.printStackTrace
         }
       } else {
-        actual.dispatchAsync(task);
+        actual.execute(task);
       }
       this
     }

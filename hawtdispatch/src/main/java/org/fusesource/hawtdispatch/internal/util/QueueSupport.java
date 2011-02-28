@@ -38,7 +38,7 @@ public class QueueSupport {
             }
         };
         for( int i=0; i < itterations; i++ ) { 
-            queue.dispatchAsync(wrapper);
+            queue.execute(wrapper);
         }
         done.await();
     }

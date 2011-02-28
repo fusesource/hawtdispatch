@@ -90,7 +90,7 @@ public class RunnableSupport {
         return new Runnable() {
             public void run() {
                 if( counter.decrementAndGet()==0 ) {
-                    queue.dispatchAsync(runnable);
+                    queue.execute(runnable);
                 }
             }
             public String toString() {
@@ -107,7 +107,7 @@ public class RunnableSupport {
         return new Runnable() {
             public void run() {
                 if( counter.decrementAndGet()<=0 ) {
-                    queue.dispatchAsync(runnable);
+                    queue.execute(runnable);
                 }
             }
             public String toString() {

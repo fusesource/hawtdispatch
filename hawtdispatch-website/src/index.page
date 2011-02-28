@@ -49,9 +49,9 @@ objects at a later time.  They come in 2 flavors:
 
 [DispatchQueue]: ${api_dir}/DispatchQueue.html 
 
-* __Concurrent Dispatch Queue__: The tasks submitted to the concurrent dispatch queues will execute 
+* __Global Dispatch Queue__: The tasks submitted to the global dispatch queues will execute 
   concurrently and therefore must be thread safe.  The order of execution of the tasks
-  is non deterministic.  There are only 3 concurrent queues shared system wide.  One for
+  is non deterministic.  There are only 3 global queues shared system wide.  One for
   each priority level and can be accessed using the [`Dispatch.getGlobalQueue`][Dispatch_getGlobalQueue]
   method.
   
@@ -136,13 +136,9 @@ queue {
   System.out.println("Hi!");
 }
 // or
-queue << ^{
+queue.execute(^{
   System.out.println("Hi!");
-}
-// or
-^{
-  System.out.println("Hi!");
-} >>: queue
+})
 {pygmentize_and_compare}
 
 The `^{ .... }` block syntax in the Scala example is browed from the GCD.  It produces
@@ -204,14 +200,14 @@ scala: In Scala
 val channel:SelectableChannel = ...
 val queue = createQueue
 val source = createSource(channel, OP_READ, queue)
-source.setEventHandler(^{
+source.onEvent {
   val buffer = ByteBuffer.allocate(1024)
   var count=0
   while( (c=channel.read(buffer)) > 0 ) {
     // just dump it to the console
-    System.out.write(buffer.array(), buffer.offset(), buffer.position());
+    System.out.write(buffer.array(), buffer.offset(), buffer.position())
   }
-});
+}
 source.resume
 {pygmentize_and_compare}
 </div>
@@ -275,11 +271,11 @@ val done = new Semaphore(1 - (1000 * 1000))
 
 val queue = createQueue()
 val source = createSource(EventAggregators.INTEGER_ADD, queue)
-source.setEventHandler(^{
+source.onEvent {
   val count = source.getData()
   println("got: " + count)
   done.release(count.intValue)
-});
+}
 source.resume();
 
 // Produce 1,000,000 concurrent merge events

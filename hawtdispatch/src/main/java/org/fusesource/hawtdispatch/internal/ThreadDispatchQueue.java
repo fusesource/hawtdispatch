@@ -62,12 +62,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return globalQueue.dispatcher;
     }
 
-
     public void execute(java.lang.Runnable runnable) {
-        dispatchAsync(runnable);
-    }
-    
-    public void dispatchAsync(java.lang.Runnable runnable) {
         runnable = metricsCollector.track(runnable);
         // We don't have to take the synchronization hit 
         if( Thread.currentThread()!=thread ) {
@@ -86,8 +81,8 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return rc;
     }
 
-    public void dispatchAfter(long delay, TimeUnit unit, Runnable runnable) {
-        throw new RuntimeException("TODO: implement me.");
+    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
+        getDispatcher().timerThread.addRelative(runnable, this, delay, unit);
     }
 
     public void dispatchSync(final java.lang.Runnable runnable) throws InterruptedException {

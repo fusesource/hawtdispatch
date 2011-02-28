@@ -128,7 +128,7 @@ final public class TimerThread extends Thread {
                             List<TimerRequest> requests = timerHeap.clear();
                             for (TimerRequest r : requests) {
                                 // execute them all..
-                                r.target.dispatchAsync(r.runnable);
+                                r.target.execute(r.runnable);
                             }
                             if( request.runnable!=null ) {
                                 timerHeap.execute(request);
@@ -147,7 +147,7 @@ final public class TimerThread extends Thread {
                         final LinkedList<Runnable> runnables = entry.getValue();
                         if( runnables.size() > 1 ) {
                             // execute the runnables as a batch.
-                            queue.dispatchAsync(new Runnable(){
+                            queue.execute(new Runnable(){
                                 public void run() {
                                     for ( Runnable runnable: runnables) {
                                         runnable.run();
@@ -155,7 +155,7 @@ final public class TimerThread extends Thread {
                                 }
                             });
                         } else {
-                            queue.dispatchAsync(runnables.getFirst());
+                            queue.execute(runnables.getFirst());
                         }
                     }
                     readyRequests.clear();

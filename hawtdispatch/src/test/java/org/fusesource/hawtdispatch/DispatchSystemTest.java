@@ -84,12 +84,12 @@ public class DispatchSystemTest {
                     public void run() {
                         counter.countDown();
                         if( counter.getCount()>0 ) {
-                            queue.dispatchAsync(this);
+                            queue.execute(this);
                         }
                     }
                 };
                 for (int i = 0; i < 1000; i++) {
-                    queue.dispatchAsync(task);
+                    queue.execute(task);
                 }
                 counter.await();
 
@@ -109,12 +109,12 @@ public class DispatchSystemTest {
                     public void run() {
                         counter.countDown();
                         if( counter.getCount()>0 ) {
-                            queue.dispatchAsync(this);
+                            queue.execute(this);
                         }
                     }
                 };
                 for (int i = 0; i < 1000; i++) {
-                    queue.dispatchAsync(task);
+                    queue.execute(task);
                 }
                 counter.await();
 
