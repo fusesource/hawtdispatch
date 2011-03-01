@@ -88,26 +88,12 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         dispatcher.timerThread.addRelative(runnable, this, delay, unit);
     }
 
-    public void dispatchSync(final Runnable runnable) throws InterruptedException {
-        dispatchApply(1, runnable);
-    }
-    
-    public void dispatchApply(int iterations, final Runnable runnable) throws InterruptedException {
-        QueueSupport.dispatchApply(this, iterations, runnable);
-    }
-
     public ThreadDispatchQueue getTargetQueue() {
         return null;
     }
 
     public DispatchPriority getPriority() {
         return priority;
-    }
-
-    public void release() {
-    }
-
-    public void retain() {
     }
 
     public void resume() {
@@ -119,18 +105,6 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     }
 
     public boolean isSuspended() {
-        throw new UnsupportedOperationException();
-    }
-
-    public <Context> Context getContext() {
-        throw new UnsupportedOperationException();
-    }
-
-    public <Context> void setContext(Context context) {
-        throw new UnsupportedOperationException();
-    }
-
-    public void setDisposer(Runnable finalizer) {
         throw new UnsupportedOperationException();
     }
 
@@ -153,10 +127,6 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     @Override
     public String toString() {
         return IntrospectionSupport.toString(this);
-    }
-
-    public int retained() {
-        return 1;
     }
 
     public DispatchQueue createQueue(String label) {

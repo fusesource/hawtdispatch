@@ -42,12 +42,6 @@ final public class HawtDispatcher implements Dispatcher {
     private final Object LOW_MUTEX = new Object();
     private GlobalDispatchQueue LOW_QUEUE;
 
-    private final SerialDispatchQueue mainQueue = new SerialDispatchQueue("main") {
-        public HawtDispatcher getDispatcher() {
-            return HawtDispatcher.this;
-        }
-    };
-
     private final String label;
     volatile TimerThread timerThread;
 
@@ -128,10 +122,6 @@ final public class HawtDispatcher implements Dispatcher {
         }
     }
 
-    public DispatchQueue getMainQueue() {
-        return mainQueue;
-    }
-
     public DispatchQueue getGlobalQueue() {
         return getGlobalQueue(DEFAULT);
     }
@@ -171,10 +161,6 @@ final public class HawtDispatcher implements Dispatcher {
         rc.setTargetQueue(getGlobalQueue());
         rc.profile(profile);
         return rc;
-    }
-
-    public void dispatchMain() {
-        mainQueue.run();
     }
 
     public DispatchSource createSource(SelectableChannel channel, int interestOps, DispatchQueue queue) {

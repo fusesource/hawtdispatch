@@ -85,14 +85,6 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         getDispatcher().timerThread.addRelative(runnable, this, delay, unit);
     }
 
-    public void dispatchSync(final java.lang.Runnable runnable) throws InterruptedException {
-        dispatchApply(1, runnable);
-    }
-    
-    public void dispatchApply(int iterations, final java.lang.Runnable runnable) throws InterruptedException {
-        QueueSupport.dispatchApply(this, iterations, runnable);
-    }
-
     public void resume() {
         throw new UnsupportedOperationException();
     }
@@ -102,18 +94,6 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     }
 
     public boolean isSuspended() {
-        throw new UnsupportedOperationException();
-    }
-
-    public <Context> Context getContext() {
-        throw new UnsupportedOperationException();
-    }
-
-    public <Context> void setContext(Context context) {
-        throw new UnsupportedOperationException();
-    }
-
-    public void setDisposer(java.lang.Runnable finalizer) {
         throw new UnsupportedOperationException();
     }
 
@@ -127,16 +107,6 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     
     public DispatchPriority getPriority() {
         return globalQueue.getPriority();
-    }
-
-    public void release() {
-    }
-
-    public void retain() {
-    }
-
-    public int retained() {
-        return 1;
     }
 
     public GlobalDispatchQueue isGlobalDispatchQueue() {
