@@ -16,15 +16,13 @@
  */
 package org.fusesource.hawtdispatch.internal;
 
+import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Metrics;
+
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.Metrics;
-import org.fusesource.hawtdispatch.internal.util.QueueSupport;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 
@@ -34,8 +32,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
 
     protected volatile String label;
 
-    protected final AtomicInteger size = new AtomicInteger();
-    protected final AtomicInteger executeCounter = new AtomicInteger();
+    protected final AtomicBoolean triggered = new AtomicBoolean();
     protected final ConcurrentLinkedQueue<Runnable> externalQueue = new ConcurrentLinkedQueue<Runnable>();
     private final LinkedList<Runnable> localQueue = new LinkedList<Runnable>();
     private final ThreadLocal<Boolean> executing = new ThreadLocal<Boolean>();
@@ -56,76 +53,46 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
             localQueue.add(runnable);
         } else {
             externalQueue.add(runnable);
-        }
-        if( size.incrementAndGet()==1 ) {
-            if( !isSuspended() ) {
-                dispatchSelfAsync();
-            }
+            triggerExecution();
         }
     }
 
     public void run() {
         HawtDispatchQueue original = HawtDispatcher.CURRENT_QUEUE.get();
         HawtDispatcher.CURRENT_QUEUE.set(this);
-        try {
-            dispatch();
-        } finally {
-            HawtDispatcher.CURRENT_QUEUE.set(original);
-        }
-    }
-
-    protected void dispatch() {
-        executing.set(true);
-        while( true ) {
-            if( executeCounter.incrementAndGet()==1 ) {
-                dispatchLoop();
-
-                // Do additional loops for each thread that could
-                // not make it in.  This protects us from exiting
-                // the dispatch loop but still just after a new
-                // thread was trying to get in.
-                if( executeCounter.getAndSet(0)==1 ) {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-        executing.remove();
-    }
-    
-    protected final AtomicLong drained = new AtomicLong();
-
-    private void dispatchLoop() {
-        int counter=0;
-        int max = drains();
+        executing.set(Boolean.TRUE);
         try {
             Runnable runnable;
-            // Drain the external queue...
             while( (runnable = externalQueue.poll())!=null ) {
                 localQueue.add(runnable);
             }
-            // dispatch the local queue..
-            while( counter < max) {
+            while(true) {
                 if( isSuspended() ) {
-                    break;
+                    return;
                 }
                 runnable = localQueue.poll();
                 if( runnable==null ) {
-                    break;
+                    return;
                 }
-                counter++;
-                dispatch(runnable);
+                try {
+                    runnable.run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-
         } finally {
-            if( counter>0 ) {
-                if( size.addAndGet(-counter)!=0 ) {
-                    if( !isSuspended() ) {
-                        dispatchSelfAsync();
-                    }
-                }
+            executing.remove();
+            HawtDispatcher.CURRENT_QUEUE.set(original);
+            triggered.set(false);
+            if( !externalQueue.isEmpty() || !localQueue.isEmpty()) {
+                triggerExecution();
             }
+        }
+    }
+
+    protected void triggerExecution() {
+        if( triggered.compareAndSet(false, true) ) {
+            getTargetQueue().execute(this);
         }
     }
 
@@ -138,42 +105,21 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     }
 
     public boolean isExecuting() {
-        Boolean b = executing.get();
-        return b!=null && b.booleanValue();
+        return executing.get()!=null;
     }
 
     @Override
     protected void onStartup() {
-        dispatchSelfAsync();
+        triggerExecution();
     }
 
     @Override
     protected void onResume() {
-        dispatchSelfAsync();
+        triggerExecution();
     }
 
     public QueueType getQueueType() {
         return QueueType.SERIAL_QUEUE;
-    }
-
-    protected void dispatchSelfAsync() {
-        getTargetQueue().execute(this);
-    }
-
-    protected void dispatch(Runnable runnable) {
-        try {
-            runnable.run();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void dispatchSync(Runnable runnable) throws InterruptedException {
-       dispatchApply(1, runnable);
-    }
-
-    public void dispatchApply(int iterations, Runnable runnable) throws InterruptedException {
-        QueueSupport.dispatchApply(this, iterations, runnable);
     }
 
     public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
