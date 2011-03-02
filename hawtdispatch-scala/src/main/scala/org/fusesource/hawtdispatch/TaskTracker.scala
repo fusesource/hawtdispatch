@@ -45,21 +45,19 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
 
   def task(name:Any="unknown"):Task = {
     val rc = new Task(name)
-    val x = ^ {
+    queue {
       assert(_callback==null || !tasks.isEmpty)
       tasks.add(rc)
     }
-
-    x >>: queue
     return rc
   }
 
   def callback(handler: Runnable) {
     var start = System.currentTimeMillis
-    ^ {
+    queue {
       _callback = handler
       checkDone()
-    }  >>: queue
+    }
 
     def schedualCheck(timeout:Long):Unit = {
       if( timeout>0 ) {
@@ -74,7 +72,7 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
   }
 
   def callback(handler: =>Unit ) {
-    callback(runnable(handler _))
+    callback(^(handler))
   }
 
   /**
@@ -84,11 +82,11 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
    */
   protected def onTimeout(duration:Long, tasks: List[String]):Long = 0
 
-  private def remove(r:Runnable) = ^{
+  private def remove(r:Runnable) = queue {
     if( tasks.remove(r) ) {
       checkDone()
     }
-  } >>: queue
+  }
 
   private def checkDone() = {
     assert(!done)

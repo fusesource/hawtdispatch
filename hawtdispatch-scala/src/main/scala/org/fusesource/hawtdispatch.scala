@@ -19,6 +19,8 @@ import org.fusesource.hawtdispatch._
 import java.nio.channels.SelectableChannel
 import scala.util.continuations._
 import java.util.concurrent.{ExecutorService, CountDownLatch, Executor, TimeUnit}
+import java.util.concurrent.atomic.AtomicBoolean
+import java.io.Closeable
 
 /**
  * <p>
@@ -60,12 +62,23 @@ package object hawtdispatch {
      * @param task
      * The function to submit to the dispatch queue.
      */
-    def apply(task: =>Unit) = execute(runnable(task _))
+    def apply(task: =>Unit) = execute(r(task _))
+
+    /**
+     * Creates a Runnable object which executes the supplied partial
+     * function on this executor when run.
+     */
+    def runnable(task: =>Unit) = new Runnable() {
+      val target = r(task _)
+      def run: Unit = {
+        execute(target)
+      }
+    }
 
     /**
      * Same as {@link #apply(=>Unit)}
      */
-    def ^(task: =>Unit) = execute(runnable(task _))
+    def ^(task: =>Unit) = execute(r(task _))
 
     /**
      * <p>
@@ -149,8 +162,8 @@ package object hawtdispatch {
   class RichDispatchSource(val actual:DispatchSource) extends Proxy with RichDispatchObject {
     def self = actual
 
-    def onEvent(task: =>Unit) { actual.setEventHandler( runnable(task _) ) }
-    def onCancel(task: =>Unit) { actual.setCancelHandler( runnable(task _) ) }
+    def onEvent(task: =>Unit) { actual.setEventHandler( r(task _) ) }
+    def onCancel(task: =>Unit) { actual.setCancelHandler( r(task _) ) }
 
   }
 
@@ -172,7 +185,6 @@ package object hawtdispatch {
     def label_=(value: String) { actual.setLabel( value ) }
     def label:String = actual.getLabel
 
-
     /**
      * <p>
      * Submits a partial function for asynchronous execution on a dispatch queue after
@@ -186,7 +198,43 @@ package object hawtdispatch {
      * @param task
      * The runnable to submit to the dispatch queue.
      */
-    def after(time:Long, unit:TimeUnit)(task: =>Unit) = actual.executeAfter(time, unit, runnable(task _))
+    def after(time:Long, unit:TimeUnit)(task: =>Unit) = actual.executeAfter(time, unit, r(task _))
+
+    /**
+     * <p>
+     * Submits a partial function for repetitive asynchronous execution on a dispatch queue
+     * each time specified time delay elapses.  Returns a Closable which when closed will
+     * stop future executions of the task.
+     * </p>
+     *
+     * @param time
+     * The amount of time to delay
+     * @param unit
+     * The units of time the delay is specified in
+     * @param task
+     * The runnable to submit to the dispatch queue.
+     */
+    def repeatAfter(time:Long, unit:TimeUnit)(task: =>Unit):Closeable = new Closeable {
+      val closed = new AtomicBoolean
+      def close: Unit = closed.set(true)
+
+      val action:Runnable = new Runnable() {
+        def run: Unit = {
+          if (!closed.get) {
+            try {
+              task
+            } catch {
+              case e => e.printStackTrace
+            }
+            if (!closed.get) {
+              actual.executeAfter(time, unit, action)
+            }
+          }
+        }
+      }
+
+      actual.executeAfter(time, unit, action)
+    }
 
     /**
      * <p>
@@ -216,6 +264,7 @@ package object hawtdispatch {
      * A right-associative version of the {@link #<<|(Runnable)} method
      */
     def |>>:(task: Runnable) = this <<| task
+
   }
 
   /////////////////////////////////////////////////////////////////////
@@ -283,15 +332,16 @@ package object hawtdispatch {
   /**
    * Creates a runnable object from a partial function
    */
-  def ^(proc: => Unit): Runnable = runnable(proc _)
+  def ^(proc: => Unit): Runnable = r(proc _)
 
   /**
    * Creates a runnable object from a partial function
    */
-  implicit def runnable(proc: ()=>Unit): Runnable = new Runnable() {
+  private def r(proc: ()=>Unit): Runnable = new Runnable() {
     def run() {
       proc()
     }
   }
+
 
 }
