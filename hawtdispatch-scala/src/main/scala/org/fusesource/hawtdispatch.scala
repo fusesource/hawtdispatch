@@ -261,6 +261,20 @@ package object hawtdispatch {
     }
 
     /**
+     * <p>
+     * Submits a runnable for asynchronous execution on a dispatch queue if the
+     * queue is not currently executing, otherwise if the queue is currently executing,
+     * then the runnable is directly executed.
+     * </p>
+     *
+     * @param task
+     * The runnable to submit to execute
+     */
+    def | (task: =>Unit ) = {
+      this.<<|( r(task _))
+    }
+
+    /**
      * A right-associative version of the {@link #<<|(Runnable)} method
      */
     def |>>:(task: Runnable) = this <<| task
