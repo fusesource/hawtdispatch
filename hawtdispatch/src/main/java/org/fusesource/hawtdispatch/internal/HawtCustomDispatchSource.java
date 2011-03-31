@@ -114,7 +114,11 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
                             e = event;
                         }
                         firedEvent.set(e);
-                        eventHandler.run();
+                        try {
+                            eventHandler.run();
+                        } catch (Throwable e1) {
+                            e1.printStackTrace();
+                        }
                         firedEvent.remove();
                         debug("eventHandler done");
                     }
