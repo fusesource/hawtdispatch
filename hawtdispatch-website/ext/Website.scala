@@ -36,6 +36,10 @@ object Website {
   val project_logo= "/images/project-logo.png"
   val project_version= "1.2"
   val project_snapshot_version= "1.3-SNAPSHOT"
+  val project_versions = List(
+        project_version,
+        "1.1",
+        "1.0")  
 
   val project_keywords= "dispatch,executor,java,scala,libdispatch,gcd,actor,thread,pool"
 
