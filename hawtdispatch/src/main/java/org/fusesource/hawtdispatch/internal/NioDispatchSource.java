@@ -222,7 +222,11 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                 public void run() {
                     if( !isSuspended() && !isCanceled()) {
                         if(DEBUG) debug("fired %s", opsToString(readyOps));
-                        eventHandler.run();
+                        try {
+                            eventHandler.run();
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
                         updateInterest();
                     }
                 }
