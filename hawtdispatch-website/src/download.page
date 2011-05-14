@@ -29,17 +29,12 @@ Download it today!
     # Latest Releases
 .right
   - val release_base= "http://repo.fusesource.com/nexus/content/groups/public/org/fusesource/%s".format(project_id)
-  :&markdown
+  - for( version <- project_versions )
+    :&markdown
+      ### Version #{version}
     
-    ### Version 1.1, released on 2011-01-20
-    
-    *  [#{project_id}-1.1.jar](#{release_base}/#{project_id}/1.1/#{project_id}-1.1.jar) 
-    *  [#{project_id}-scala-1.1.jar](#{release_base}/#{project_id}-scala/1.1/#{project_id}-scala-1.1.jar) 
-
-    ### Version 1.0, released on 2010-07-22
-    
-    *  [#{project_id}-1.0.jar](#{release_base}/#{project_id}/1.0/#{project_id}-1.0.jar) 
-    *  [#{project_id}-scala-1.0.jar](#{release_base}/#{project_id}-scala/1.0/#{project_id}-scala-1.0.jar) 
+      *  [#{project_id}-#{version}.jar](#{release_base}/#{project_id}/#{version}/#{project_id}-#{version}.jar) 
+      *  [#{project_id}-scala-#{version}.jar](#{release_base}/#{project_id}-scala/#{version}/#{project_id}-scala-#{version}.jar) 
 
 .left
   :markdown

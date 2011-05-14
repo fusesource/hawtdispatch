@@ -1,7 +1,26 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
-## [HawtDispatch 1.1](http://hawtdb.fusesource.org/maven/1.1), released 2011-01-20
+## [HawtDispatch 1.2](http://hawtdispatch.fusesource.org/maven/1.2), released 2011-01-20
+
+* Protect against exceptions from the event dispatch source handlers.
+* Adding a new HawtServerSocketChannel and HawtSocketChannel which use scala continuations and hawtdispatch to implement NIO based sockets
+* Enriching executors with a `runnable` - enriching dispatch queues with a `repeatAfter` method
+* Trimming dead code.
+* Inline the dispatch a bit.
+* Making dispatch queue interface more consistent with java executors.  renamed dispatchAsync to just plain execute, and renamed dispatchAfter to executeAfter
+* Removing the Retained interface from the dispatch objects.  It adds complexity and overhead without providing the much benefit due to the JVM's automatic GC
+* Added scala type getter/setters for the a dispatch queue label.
+* Protect against ConcurrentModificationException on the selector's selecteKeys.
+* Enriched the DispatchSource objects
+* Added some doco on the new `!!` method.
+* Adjusted paul's auto reset method so that it also returns a future.
+* Added await methods to the future since they are easier to spot than the apply methods.
+* Support for function, !^, that wraps a partial function in a reset block, thus hiding shift/reset.
+* OSGi integration, added activator so that started thread can be shutdown when the bundle is stopped.  Also exposed the Dispatch interface
+* Added OSGi metadata to the jars.
+
+## [HawtDispatch 1.1](http://hawtdispatch.fusesource.org/maven/1.1), released 2011-01-20
 
 * Fix bug where the scala version of getCurrentThreadQueue was returning null
 * A Future can trigger a callback once it's completed.
@@ -21,6 +40,6 @@
 * More test cases
 * Add getThreadQueue method
 
-## [HawtDispatch 1.0](http://hawtdb.fusesource.org/maven/1.0), released 2010-07-22
+## [HawtDispatch 1.0](http://hawtdispatch.fusesource.org/maven/1.0), released 2010-07-22
 
 * Initial release

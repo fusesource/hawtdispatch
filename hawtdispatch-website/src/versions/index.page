@@ -18,21 +18,24 @@ title: Website Versions
 in_menu: false
 sort_info: 5
 
---- name:content
+--- name:content pipeline:ssp,jade
 
-# Released Websites
+.left
+  :markdown
+    # Releases
+.right
+  :markdown
+    * [Current Website](../index.html)
 
-### Version 1.1, released on 2011-01-20
+  - for( version <- project_versions )
+    :&markdown
+      * [#{version} Website](${website_base_url}/versions/#{version}/website/index.html)
 
-* [1.1 Website](${website_base_url}/versions/1.1/website/index.html)
-* [1.1 Maven Report](${website_base_url}/versions/1.1/maven/index.html)
+.left
+  :markdown
+    # Snapshot
+.right
+  :&markdown
+  
+    * [Development Snapshot](http://scalate.fusesource.org/versions/#{project_snapshot_version}/index.html) based on #{project_snapshot_version}
 
-### Version 1.0, released on 2010-07-22
-
-* [1.0 Website](${website_base_url}/versions/1.0/website/index.html)
-* [1.0 Maven Report](${website_base_url}/versions/1.0/maven/index.html)
-
-# Nightly Development Snapshots
-
-* [${project_snapshot_version} Website](${website_base_url}/versions/${project_snapshot_version}/website/index.html)
-* [${project_snapshot_version} Maven Report](${website_base_url}/versions/${project_snapshot_version}/maven/index.html)

@@ -59,7 +59,7 @@ case class HawtServerSocketChannel(channel: ServerSocketChannel, queue: Dispatch
   }
 
 
-  def accept: Either[SocketChannel, IOException]@suspendable = shift { k =>
+  def accept: Either[SocketChannel, IOException]@suspendable = shift { k:(Either[SocketChannel, IOException]=>Unit) =>
     queue {
       if( canceled ) {
         k(Right(new IOException("canceled")))
@@ -109,7 +109,7 @@ case class HawtSocketChannel(channel: SocketChannel, queue: DispatchQueue = crea
   var connect_request: (Option[IOException])=>Unit = _
   var connect_source:DispatchSource = _
 
-  def connect(address:SocketAddress): Option[IOException]@suspendable = shift { k =>
+  def connect(address:SocketAddress): Option[IOException]@suspendable = shift { k:(Option[IOException]=>Unit) =>
     queue {
       if( canceled ) {
         k(Some(new IOException("canceled")))
@@ -190,7 +190,7 @@ case class HawtSocketChannel(channel: SocketChannel, queue: DispatchQueue = crea
     }
   }
 
-  def read(buffer:ByteBuffer): Option[IOException]@suspendable = shift { k =>
+  def read(buffer:ByteBuffer): Option[IOException]@suspendable = shift { k:(Option[IOException]=>Unit) =>
     queue {
       if( canceled ) {
         k(canceled_exception)
@@ -231,7 +231,7 @@ case class HawtSocketChannel(channel: SocketChannel, queue: DispatchQueue = crea
     }
   }
 
-  def write(buffer:ByteBuffer): Option[IOException]@suspendable = shift { k =>
+  def write(buffer:ByteBuffer): Option[IOException]@suspendable = shift { k:(Option[IOException]=>Unit) =>
     queue {
       if( canceled ) {
         k(canceled_exception)
