@@ -106,7 +106,7 @@ package object hawtdispatch {
      * and returns a Future that can be used to wait on the future
      * result of the function.
      */
-    def future[T](func: =>T) = {
+    def future[T](func: =>T):Future[T] = {
       val rc = Future[T]()
       apply {
         rc(func)
@@ -114,7 +114,7 @@ package object hawtdispatch {
       rc
     }
 
-    def flatFuture[T](func: =>Future[T]) = {
+    def flatFuture[T](func: =>Future[T]):Future[T] = {
       val rc = Future[T]()
       apply {
         func.onComplete(rc(_))
@@ -146,7 +146,7 @@ package object hawtdispatch {
     /**
      * Same as {@link #future(=>T)} except that the partial function is wrapped in a {@link reset} block.
      */
-    def !![T](func: =>T @suspendable) = {
+    def !![T](func: =>T @suspendable):Future[T] = {
       val rc = Future[T]()
       apply {
         reset {

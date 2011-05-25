@@ -20,10 +20,10 @@ import java.util.concurrent.{TimeUnit}
 import scala.collection.mutable.ListBuffer
 
 trait Future[R] extends ( ()=>R ) {
-  def await() = apply()
-  def await(time:Long, unit:TimeUnit) = apply(time, unit)
+  def await():R
+  def await(time:Long, unit:TimeUnit):Option[R]
 
-  def apply(time:Long, unit:TimeUnit):Option[R]
+  def apply() = await()
 
   def onComplete(func: (R)=>Unit):Unit
   def completed:Boolean
@@ -38,7 +38,9 @@ trait SettableFuture[T,R] extends (T => Unit) with Future[R] {
 
   protected def merge(value:T):Option[R]
 
-  def apply(value:T):Unit = {
+  def apply(value:T):Unit = set(value)
+
+  def set(value:T) = {
     val callback = mutex synchronized  {
       if( !_result.isDefined ) {
         _result = merge(value)
@@ -53,16 +55,17 @@ trait SettableFuture[T,R] extends (T => Unit) with Future[R] {
       }
     }
     callback.foreach(_(_result.get))
+    this
   }
 
-  def apply():R = mutex synchronized {
+  def await():R = mutex synchronized {
     while(_result.isEmpty) {
       mutex.wait
     }
     return _result.get
   }
 
-  def apply(time:Long, unit:TimeUnit):Option[R] = mutex synchronized {
+  def await(time:Long, unit:TimeUnit):Option[R] = mutex synchronized {
     var now = System.currentTimeMillis
     var deadline = now + unit.toMillis(time)
     while(_result.isEmpty && now < deadline ) {
@@ -106,7 +109,7 @@ object Future {
   /**
    * creates a new future.
    */
-  def apply[T]() = new SettableFuture[T,T] {
+  def apply[T]():SettableFuture[T,T] = new SettableFuture[T,T] {
     protected def merge(value: T): Option[T] = Some(value)
   }
 
@@ -114,7 +117,7 @@ object Future {
    * creates a new future which does an on the fly
    * transformation of the value.
    */
-  def apply[T,R](func: T=>R) = new SettableFuture[T,R] {
+  def apply[T,R](func: T=>R):SettableFuture[T,R] = new SettableFuture[T,R] {
     protected def merge(value: T): Option[R] = Some(func(value))
   }
 
@@ -122,7 +125,7 @@ object Future {
    * creates a future which only waits for the first
    * of the supplied futures to get set.
    */
-  def first[T](futures:Iterable[Future[T]]) = {
+  def first[T](futures:Iterable[Future[T]]):SettableFuture[T,T] = {
     assert(!futures.isEmpty)
     new SettableFuture[T,T] {
       futures.foreach(_.onComplete(apply _))
