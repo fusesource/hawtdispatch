@@ -146,17 +146,8 @@ package object hawtdispatch {
     /**
      * Same as {@link #future(=>T)} except that the partial function is wrapped in a {@link reset} block.
      */
-    def !![T](func: =>T @suspendable):Future[T] = {
-      val rc = Future[T]()
-      apply {
-        reset {
-          val r = func
-          rc(r)
-        }
-      }
-      rc
+    def !![T](func: =>T @suspendable):Future[T] = reset_future { func }
 
-    }
   }
 
   class RichDispatchSource(val actual:DispatchSource) extends Proxy with RichDispatchObject {
@@ -357,5 +348,15 @@ package object hawtdispatch {
     }
   }
 
-
+  /**
+   * resets a CPS block, and returns it's result in a future.
+   */
+  def reset_future[T](func: =>T @suspendable):Future[T] = {
+    val rc = Future[T]()
+    reset {
+      val r = func
+      rc(r)
+    }
+    rc
+  }
 }

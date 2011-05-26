@@ -55,14 +55,16 @@ trait SettableFuture[T,R] extends (T => Unit) with Future[R] {
       }
     }
     callback.foreach(_(_result.get))
-    this
+
   }
 
-  def await():R = mutex synchronized {
-    while(_result.isEmpty) {
-      mutex.wait
+  def await():R = {
+    mutex.synchronized {
+      while(_result.isEmpty) {
+        mutex.wait
+      }
+      _result.get
     }
-    return _result.get
   }
 
   def await(time:Long, unit:TimeUnit):Option[R] = mutex synchronized {
