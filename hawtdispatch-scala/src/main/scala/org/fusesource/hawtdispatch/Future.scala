@@ -59,6 +59,7 @@ trait SettableFuture[T,R] extends (T => Unit) with Future[R] {
   }
 
   def await():R = {
+    assert(getCurrentQueue==null, "You must not do any blocking waits when executing on HawtDispatch thread pool.")
     mutex.synchronized {
       while(_result.isEmpty) {
         mutex.wait
@@ -68,6 +69,7 @@ trait SettableFuture[T,R] extends (T => Unit) with Future[R] {
   }
 
   def await(time:Long, unit:TimeUnit):Option[R] = mutex synchronized {
+    assert(getCurrentQueue==null, "You must not do any blocking waits when executing on HawtDispatch thread pool.")
     var now = System.currentTimeMillis
     var deadline = now + unit.toMillis(time)
     while(_result.isEmpty && now < deadline ) {
