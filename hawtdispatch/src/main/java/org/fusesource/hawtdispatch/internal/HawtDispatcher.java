@@ -234,4 +234,28 @@ final public class HawtDispatcher implements Dispatcher {
 
     }
 
+    String assertMessage() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Dispatch queue '");
+        if( getLabel()!=null ) {
+            sb.append(getLabel());
+        } else {
+            sb.append("<no-label>");
+        }
+        sb.append("' was not executing, (currently executing: '");
+        DispatchQueue q = getCurrentQueue();
+        if( q!=null ) {
+            if( q.getLabel()!=null ) {
+                sb.append(q.getLabel());
+            } else {
+                sb.append("<no-label>");
+            }
+        } else {
+            sb.append("<not-dispatched>");
+        }
+        sb.append("')");
+        return sb.toString();
+    }
+
+
 }

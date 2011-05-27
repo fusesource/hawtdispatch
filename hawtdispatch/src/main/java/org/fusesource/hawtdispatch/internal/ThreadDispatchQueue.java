@@ -58,6 +58,10 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return globalQueue.dispatcher.getCurrentThreadQueue() == this;
     }
 
+    public void assertExecuting() {
+        assert isExecuting() : getDispatcher().assertMessage();
+    }
+
     public HawtDispatcher getDispatcher() {
         return globalQueue.dispatcher;
     }

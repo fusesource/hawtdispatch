@@ -74,6 +74,10 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         return false;
     }
 
+    public void assertExecuting() {
+        assert isExecuting() : getDispatcher().assertMessage();
+    }
+
     public void execute(Runnable runnable) {
         if( dispatcher.shutdownState.get() > 1 ) {
             throw new ShutdownException();

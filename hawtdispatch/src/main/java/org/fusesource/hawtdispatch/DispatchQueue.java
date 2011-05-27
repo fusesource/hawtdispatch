@@ -183,6 +183,11 @@ public interface DispatchQueue extends DispatchObject, Executor {
     public boolean isExecuting();
 
     /**
+     * Asserts that the current dispatch queue is executing.
+     */
+    public void assertExecuting();
+
+    /**
      * Enables or disables profiler metric tracking on the queue.
      * @param on
      */

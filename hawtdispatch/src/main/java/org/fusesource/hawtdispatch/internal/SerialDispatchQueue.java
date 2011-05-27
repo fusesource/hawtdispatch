@@ -108,6 +108,11 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         return executing.get()!=null;
     }
 
+    public void assertExecuting() {
+        assert isExecuting() : getDispatcher().assertMessage();
+    }
+
+
     @Override
     protected void onStartup() {
         triggerExecution();
