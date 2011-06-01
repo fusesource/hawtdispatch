@@ -1,9 +1,11 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
-## [HawtDispatch 1.3](http://hawtdispatch.fusesource.org/maven/1.3), unreleased
+## [HawtDispatch 1.3](http://hawtdispatch.fusesource.org/maven/1.3), released 2011-06-01
 
-* Upgrade to Scala 2.9.0
+* Added an assertExecuting method to the DispatchQueue interface.
+* Protect against exceptions from the event dispatch source handlers.
+* Upgrade to Scala 2.9.0-1
 
 ## [HawtDispatch 1.2](http://hawtdispatch.fusesource.org/maven/1.2), released 2011-01-20
 

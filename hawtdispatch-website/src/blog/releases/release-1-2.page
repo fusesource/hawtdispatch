@@ -17,7 +17,7 @@
 blog_post: true
 title: HawtDispatch 1.2 Released
 author: Hiram Chirino
-author_url: http://fusesource.org
+author_url: http://fusesource.com
 created_at: 2011-03-31 16:06:40 -0500
 --- 
 
@@ -31,7 +31,7 @@ allows you to easily develop multi-threaded applications without having to
 deal with the problems that traditionally plague multi-threaded application
 development.
 
-**HawtDispatch 1.1 Highlights**
+**HawtDispatch 1.2 Highlights**
 
 * New await methods on Futures.
 * OSGi Support
