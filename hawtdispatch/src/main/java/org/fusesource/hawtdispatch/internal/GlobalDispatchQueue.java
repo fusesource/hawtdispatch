@@ -24,6 +24,7 @@ import org.fusesource.hawtdispatch.internal.pool.SimplePool;
 import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
 import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
+import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -67,11 +68,19 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     }
 
     public boolean isExecuting() {
-        ThreadDispatchQueue tq = (ThreadDispatchQueue) dispatcher.getCurrentThreadQueue();
+        ThreadDispatchQueue tq = dispatcher.getCurrentThreadQueue();
         if( tq!=null ){
             return tq.globalQueue == this;
         }
         return false;
+    }
+
+    public LinkedList<Runnable> getSourceQueue() {
+        ThreadDispatchQueue tq = dispatcher.getCurrentThreadQueue();
+        if( tq!=null ){
+            return tq.getSourceQueue();
+        }
+        return null;
     }
 
     public void assertExecuting() {

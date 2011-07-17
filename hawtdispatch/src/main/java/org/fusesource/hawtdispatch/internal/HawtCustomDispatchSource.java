@@ -18,6 +18,7 @@ package org.fusesource.hawtdispatch.internal;
 import org.fusesource.hawtdispatch.CustomDispatchSource;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.EventAggregator;
+import org.fusesource.hawtdispatch.OrderedEventAggregator;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,10 +40,12 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
     private final ThreadLocal<MergedEvent> firedEvent = new ThreadLocal<MergedEvent>();
     private final EventAggregator<Event, MergedEvent> aggregator;
     private MergedEvent pendingEvent;
+    private final boolean ordered;
 
     public HawtCustomDispatchSource(HawtDispatcher dispatcher, EventAggregator<Event, MergedEvent> aggregator, DispatchQueue queue) {
         this.aggregator = aggregator;
         this.suspended.incrementAndGet();
+        this.ordered = aggregator instanceof OrderedEventAggregator;
         setTargetQueue(queue);
     }
 
@@ -66,7 +69,12 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
                 outboundEvent.set(next);
                 if( previous==null ) {
                     debug("first merge, posting deferred fire event");
-                    thread.getSourceQueue().add(this);
+                    if( ordered ) {
+                        HawtDispatchQueue current = HawtDispatcher.CURRENT_QUEUE.get();
+                        current.getSourceQueue().add(this);
+                    } else {
+                        thread.getDispatchQueue().getSourceQueue().add(this);
+                    }
                 } else {
                     debug("there was a previous merge, no need to post deferred fire event");
                 }

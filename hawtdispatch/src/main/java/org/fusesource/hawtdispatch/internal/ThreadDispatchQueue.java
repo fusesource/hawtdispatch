@@ -38,12 +38,17 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     final WorkerThread thread;
     final GlobalDispatchQueue globalQueue;
     private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
+    private final LinkedList<Runnable> sourceQueue= new LinkedList<Runnable>();
 
     public ThreadDispatchQueue(GlobalDispatchQueue globalQueue, WorkerThread thread) {
         this.thread = thread;
         this.globalQueue = globalQueue;
         this.label=thread.getName()+" pritority: "+globalQueue.getLabel();
         getDispatcher().track(this);
+    }
+
+    public LinkedList<Runnable> getSourceQueue() {
+        return sourceQueue;
     }
 
     public String getLabel() {

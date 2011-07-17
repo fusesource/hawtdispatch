@@ -26,7 +26,7 @@ import collection.mutable.ListBuffer
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-class ListEventAggregator[T] extends EventAggregator[T, ListBuffer[T]] {
+class ListEventAggregator[T] extends OrderedEventAggregator[T, ListBuffer[T]] {
 
   def mergeEvent(previous:ListBuffer[T], event:T) = {
     if( previous == null ) {

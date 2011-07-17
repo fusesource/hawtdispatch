@@ -17,6 +17,8 @@ package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
 
+import java.util.LinkedList;
+
 /**
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
@@ -31,5 +33,7 @@ public interface HawtDispatchQueue extends DispatchQueue {
     GlobalDispatchQueue isGlobalDispatchQueue();
     
     HawtDispatchQueue getTargetQueue();
+
+    LinkedList<Runnable> getSourceQueue();
 
 }

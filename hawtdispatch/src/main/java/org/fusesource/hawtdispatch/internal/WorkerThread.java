@@ -27,7 +27,6 @@ abstract public class WorkerThread extends Thread {
 
     public abstract void unpark();
     public abstract NioManager getNioManager();
-    public abstract LinkedList<Runnable> getSourceQueue();
 
     public static WorkerThread currentWorkerThread() {
         Thread thread = Thread.currentThread();

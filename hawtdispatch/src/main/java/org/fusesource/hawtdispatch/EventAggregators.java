@@ -1,13 +1,26 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.fusesource.hawtdispatch;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 
 /**
- * Created by IntelliJ IDEA.
- * User: chirino
- * Date: Apr 13, 2010
- * Time: 5:48:06 AM
- * To change this template use File | Settings | File Templates.
+ * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class EventAggregators {
 
@@ -84,7 +97,8 @@ public class EventAggregators {
      * An EventAggregator that coalesces object data obtained via calls to
      * {@link CustomDispatchSource#merge(Object)} into a linked list.
      */
-    public static <T> EventAggregator<T, LinkedList<T>> linkedList(){ return new EventAggregator<T, LinkedList<T>>() {
+    public static <T> EventAggregator<T, LinkedList<T>> linkedList(){
+        return new OrderedEventAggregator<T, LinkedList<T>>() {
             public LinkedList<T> mergeEvent(LinkedList<T> previous, T event) {
                 if( previous == null ) {
                     previous = new LinkedList<T>();
@@ -100,4 +114,28 @@ public class EventAggregators {
         };
     }
 
+    /**
+     * An EventAggregator that coalesces object data obtained via calls to
+     * {@link CustomDispatchSource#merge(Object)} into a hash set.
+     */
+    public static <T> EventAggregator<T, HashSet<T>> hashSet(){
+        return new EventAggregator<T, HashSet<T>>() {
+            public HashSet<T> mergeEvent(HashSet<T> previous, T event) {
+                if( previous == null ) {
+                    previous = new HashSet<T>();
+}
+                previous.add(event);
+                return previous;
+            }
+
+            public HashSet<T> mergeEvents(HashSet<T> previous, HashSet<T> events) {
+                previous.addAll(events);
+                return previous;
+            }
+
+            public boolean ordered() {
+                return false;
+            }
+        };
+    }
 }

@@ -17,17 +17,11 @@ public class SimpleThread extends WorkerThread {
     private SimplePool pool;
     private ThreadDispatchQueue threadQueue;
     private final NioManager nioManager;
-    private final LinkedList<Runnable> sourceQueue= new LinkedList<Runnable>();
-    
+
     public SimpleThread(SimplePool pool) throws IOException {
         this.pool = pool;
         this.nioManager = new NioManager();
         this.threadQueue = new ThreadDispatchQueue(pool.globalQueue, this);
-    }
-
-    @Override
-    public LinkedList<Runnable> getSourceQueue() {
-        return sourceQueue;
     }
 
     @Override
@@ -56,7 +50,7 @@ public class SimpleThread extends WorkerThread {
                 if( runnable==null ) {
                     runnable = sharedQueue.poll();
                     if( runnable==null ) {
-                        runnable = sourceQueue.poll();
+                        runnable = threadQueue.getSourceQueue().poll();
                     }
                 }
 

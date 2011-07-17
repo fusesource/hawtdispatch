@@ -128,8 +128,6 @@ public class StealingThread extends WorkerThread {
      */
     int nestedExecutions;
     
-    private final LinkedList<Runnable> sourceQueue= new LinkedList<Runnable>();
-
     /**
      * Creates a WorkerThread operating in the given pool.
      *
@@ -413,7 +411,7 @@ public class StealingThread extends WorkerThread {
                 }
             }
         }
-        return sourceQueue.poll();
+        return dispatchQueue.getSourceQueue().poll();
     }
 
     /**
@@ -736,8 +734,4 @@ public class StealingThread extends WorkerThread {
         return ioManager;
     }
     
-    @Override
-    public LinkedList<Runnable> getSourceQueue() {
-        return sourceQueue;
-    }
 }

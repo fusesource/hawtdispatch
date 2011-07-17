@@ -180,7 +180,7 @@ final public class HawtDispatcher implements Dispatcher {
     }
 
 
-    public DispatchQueue getCurrentThreadQueue() {
+    public ThreadDispatchQueue getCurrentThreadQueue() {
         WorkerThread thread = WorkerThread.currentWorkerThread();
         if( thread ==null ) {
             return null;
