@@ -28,12 +28,11 @@ import org.fusesource.hawtdispatch._
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueue) {
+class TaskTracker(val name:String="unknown", var timeout: Long = 0) {
 
-  var timeout: Long = 0
   private[this] val tasks = new HashSet[Task]()
   private[this] var _callback:Runnable = null
-  val queue = parent.createQueue("tracker: "+name);
+  val queue = createQueue("tracker: "+name);
   var done = false
 
   class Task(var name:Any) extends Runnable {
@@ -63,7 +62,7 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
       if( timeout>0 ) {
         queue.after(timeout, TimeUnit.MILLISECONDS) {
           if( !done ) {
-            schedualCheck(onTimeout(System.currentTimeMillis-start, tasks.toArray.toList.map(_.toString)))
+            schedualCheck(onTimeout(start, tasks.toArray.toList.map(_.toString)))
           }
         }
       }
@@ -80,7 +79,7 @@ class TaskTracker(val name:String="unknown", val parent:DispatchQueue=globalQueu
    * the method should return the next timeout value.  If 0, then
    * it will not check for further timeouts.
    */
-  protected def onTimeout(duration:Long, tasks: List[String]):Long = 0
+  protected def onTimeout(started:Long, tasks: List[String]):Long = 0
 
   private def remove(r:Runnable) = queue {
     if( tasks.remove(r) ) {
