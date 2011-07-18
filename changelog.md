@@ -1,13 +1,17 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
-## [HawtDispatch 1.3](http://hawtdispatch.fusesource.org/maven/1.3), released 2011-06-01
+## [HawtDispatch 1.4](http://hawtdispatch.fusesource.org/blog/releases/release-1-4.html), released 2011-07-18
+
+* Support ordered EventAggregators
+
+## [HawtDispatch 1.3](http://hawtdispatch.fusesource.org/blog/releases/release-1-3.html), released 2011-06-01
 
 * Added an assertExecuting method to the DispatchQueue interface.
 * Protect against exceptions from the event dispatch source handlers.
 * Upgrade to Scala 2.9.0-1
 
-## [HawtDispatch 1.2](http://hawtdispatch.fusesource.org/maven/1.2), released 2011-01-20
+## [HawtDispatch 1.2](http://hawtdispatch.fusesource.org/blog/releases/release-1-2.html), released 2011-01-20
 
 * Protect against exceptions from the event dispatch source handlers.
 * Adding a new HawtServerSocketChannel and HawtSocketChannel which use scala continuations and hawtdispatch to implement NIO based sockets
@@ -26,7 +30,7 @@
 * OSGi integration, added activator so that started thread can be shutdown when the bundle is stopped.  Also exposed the Dispatch interface
 * Added OSGi metadata to the jars.
 
-## [HawtDispatch 1.1](http://hawtdispatch.fusesource.org/maven/1.1), released 2011-01-20
+## [HawtDispatch 1.1](http://hawtdispatch.fusesource.org/blog/releases/release-1-1.html), released 2011-01-20
 
 * Fix bug where the scala version of getCurrentThreadQueue was returning null
 * A Future can trigger a callback once it's completed.
@@ -46,6 +50,6 @@
 * More test cases
 * Add getThreadQueue method
 
-## [HawtDispatch 1.0](http://hawtdispatch.fusesource.org/maven/1.0), released 2010-07-22
+## [HawtDispatch 1.0](http://hawtdispatch.fusesource.org/blog/releases/release-1-0.html), released 2010-07-22
 
 * Initial release
