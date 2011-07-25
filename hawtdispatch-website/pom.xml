@@ -34,9 +34,9 @@
   <description>The HawtDispatch Website</description>
 
   <properties>
-    <scala-version>2.8.0</scala-version>
+    <scala-version>2.9.0-1</scala-version>
     <scala-plugin-version>2.14</scala-plugin-version>
-    <scalate-version>1.4.0</scalate-version>
+    <scalate-version>1.6.0-SNAPSHOT</scalate-version>
     <scalamd-version>1.5</scalamd-version>
     <slf4j-version>1.6.0</slf4j-version>
     <jetty-plugin-version>7.0.1.v20091125</jetty-plugin-version>
@@ -108,7 +108,7 @@
         <version>${scalate-version}</version>
         
         <configuration>
-          <warSourceDirectory>${basedir}/src</warSourceDirectory>
+          <webappDirectory>${basedir}/src</webappDirectory>
           <remoteServerId>website.fusesource.org</remoteServerId>
           <remoteServerUrl>dav:http://fusesource.com/forge/dav/${forge-project-id}/versions/${project.version}/website</remoteServerUrl>
           <!-- <remoteServerUrl>dav:https://fusesource.com/forge/dav/${forge-project-id}</remoteServerUrl> -->
