@@ -98,7 +98,8 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
             executing.remove();
             HawtDispatcher.CURRENT_QUEUE.set(original);
             triggered.set(false);
-            if( !externalQueue.isEmpty() || !localQueue.isEmpty()) {
+            boolean empty = externalQueue.isEmpty() && localQueue.isEmpty();
+            if( !isSuspended() && !empty) {
                 triggerExecution();
             }
         }
