@@ -112,15 +112,17 @@ object UdpEchoServer {
       }
       outbound_events.resume();
 
+      // We need to drain the list of outbound packets when socket reports it 
+      // can be written to.
       val write_events = createSource(channel, SelectionKey.OP_WRITE, queue);
-      write_events.onEvent{
-      }
+      write_events.onEvent(drainOutbound)
 
       def drainOutbound:Unit = try {
         while(!outbound.isEmpty) {
           val (buffer, address) = outbound.peek();
           channel.send(buffer, address)
           if(buffer.remaining()==0) {
+            // Packet sent, let the receive know in case he stopped.
             receiver.outbound_ack_events.merge(1)
             outbound.poll()
           } else {
