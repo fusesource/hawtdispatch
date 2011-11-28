@@ -19,6 +19,7 @@ public class SimpleThread extends WorkerThread {
     private final NioManager nioManager;
 
     public SimpleThread(SimplePool pool) throws IOException {
+        super(pool.group, pool.name);
         this.pool = pool;
         this.nioManager = new NioManager();
         this.threadQueue = new ThreadDispatchQueue(pool.globalQueue, this);

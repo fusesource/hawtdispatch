@@ -1,10 +1,7 @@
 package org.fusesource.hawtdispatch.internal.pool;
 
 import org.fusesource.hawtdispatch.DispatchPriority;
-import org.fusesource.hawtdispatch.internal.GlobalDispatchQueue;
-import org.fusesource.hawtdispatch.internal.NioManager;
-import org.fusesource.hawtdispatch.internal.WorkerPool;
-import org.fusesource.hawtdispatch.internal.WorkerThread;
+import org.fusesource.hawtdispatch.internal.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,10 +21,12 @@ public class SimplePool implements WorkerPool {
     final int priority;
     final SimpleThread[] threads;
     volatile boolean shutdown = false;
+    final ThreadGroup group;
 
     public SimplePool(GlobalDispatchQueue globalQueue, int parallelism, DispatchPriority priority) {
         this.globalQueue = globalQueue;
         this.name = globalQueue.dispatcher.getLabel()+"-"+priority;
+        this.group = new HawtThreadGroup(globalQueue.dispatcher, name);
         this.priority = priority(priority);
         this.threads = new SimpleThread[parallelism];
     }

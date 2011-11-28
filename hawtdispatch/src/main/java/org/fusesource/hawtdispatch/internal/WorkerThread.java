@@ -28,6 +28,17 @@ abstract public class WorkerThread extends Thread {
     public abstract void unpark();
     public abstract NioManager getNioManager();
 
+    protected WorkerThread() {
+    }
+
+    protected WorkerThread(ThreadGroup threadGroup, String s) {
+        super(threadGroup, s);
+    }
+
+    protected WorkerThread(String s) {
+        super(s);
+    }
+
     public static WorkerThread currentWorkerThread() {
         Thread thread = Thread.currentThread();
         if( thread instanceof WorkerThread) {
@@ -37,5 +48,8 @@ abstract public class WorkerThread extends Thread {
     }
 
 
-
+    @Override
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
+        getDispatchQueue().getDispatcher().setUncaughtExceptionHandler(uncaughtExceptionHandler);
+    }
 }

@@ -50,6 +50,8 @@ final public class HawtDispatcher implements Dispatcher {
     final int drains;
     final AtomicInteger shutdownState = new AtomicInteger(0);
 
+    volatile Thread.UncaughtExceptionHandler uncaughtExceptionHandler=null;
+
     public HawtDispatcher(DispatcherConfig config) {
         this.threads = config.getThreads();
         this.label = config.getLabel();
@@ -258,4 +260,11 @@ final public class HawtDispatcher implements Dispatcher {
     }
 
 
+    public Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
+        return uncaughtExceptionHandler;
+    }
+
+    public void setUncaughtExceptionHandler(Thread.UncaughtExceptionHandler uncaughtExceptionHandler) {
+        this.uncaughtExceptionHandler = uncaughtExceptionHandler;
+    }
 }
