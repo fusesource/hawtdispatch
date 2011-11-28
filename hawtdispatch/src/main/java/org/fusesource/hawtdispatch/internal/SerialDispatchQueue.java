@@ -81,8 +81,9 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
                 }
                 try {
                     runnable.run();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                } catch (Throwable e) {
+                    Thread thread = Thread.currentThread();
+                    thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
                 }
             }
         } finally {

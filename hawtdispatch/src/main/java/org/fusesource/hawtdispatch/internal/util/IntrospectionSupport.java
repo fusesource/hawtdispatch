@@ -332,7 +332,8 @@ public final class IntrospectionSupport {
             }
             return buffer.toString();
         } catch (Throwable e) {
-            e.printStackTrace();
+            Thread thread = Thread.currentThread();
+            thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
             return "Could not toString: "+e.toString();
         }
     }
@@ -371,7 +372,8 @@ public final class IntrospectionSupport {
                 }
                 map.put(field.getName(), o);
             } catch (Throwable e) {
-                e.printStackTrace();
+                Thread thread = Thread.currentThread();
+                thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
             }
         }
 

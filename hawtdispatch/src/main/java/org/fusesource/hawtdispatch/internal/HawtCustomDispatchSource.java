@@ -125,7 +125,8 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
                         try {
                             eventHandler.run();
                         } catch (Throwable e1) {
-                            e1.printStackTrace();
+                            Thread thread = Thread.currentThread();
+                            thread.getUncaughtExceptionHandler().uncaughtException(thread, e1);
                         }
                         firedEvent.remove();
                         debug("eventHandler done");

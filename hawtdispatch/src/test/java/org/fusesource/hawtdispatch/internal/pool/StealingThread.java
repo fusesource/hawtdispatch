@@ -714,7 +714,8 @@ public class StealingThread extends WorkerThread {
         try {
             ioManager.select(-1);
         } catch (IOException e) {
-            e.printStackTrace();
+            Thread thread = Thread.currentThread();
+            thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
         }
     }
 

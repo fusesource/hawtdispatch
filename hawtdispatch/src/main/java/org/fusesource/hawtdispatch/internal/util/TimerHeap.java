@@ -92,7 +92,8 @@ public abstract class TimerHeap<V> {
                 execute(timed);
                 size--;
             } catch (Throwable thrown) {
-                thrown.printStackTrace();
+                Thread thread = Thread.currentThread();
+                thread.getUncaughtExceptionHandler().uncaughtException(thread, thrown);
             }
         }
     }

@@ -225,7 +225,8 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                         try {
                             eventHandler.run();
                         } catch (Throwable e) {
-                            e.printStackTrace();
+                          Thread thread = Thread.currentThread();
+                          thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
                         }
                         updateInterest();
                     }

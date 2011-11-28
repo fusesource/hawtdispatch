@@ -42,7 +42,8 @@ public class AggregatingExecutor implements Executor {
                     try {
                         runnable.run();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                      Thread thread = Thread.currentThread();
+                      thread.getUncaughtExceptionHandler().uncaughtException(thread, e);
                     }
                 }
             }
