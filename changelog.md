@@ -3,7 +3,6 @@
 
 ## [HawtDispatch 1.5](http://hawtdispatch.fusesource.org/blog/releases/release-1-5.html), released 2011-11-29
 
-* Support ordered EventAggregators
 * HawtDispatch threads are now in a thread group.  Setting the UnchaughtExceptionHandler on one of the HawtDispatch threads set the handler for all the threads in the pool.
 * Pass an uncaught exceptions to the UncaughtExceptionHandler configured on the HawtDispatch threads.
 * Added UDP example
