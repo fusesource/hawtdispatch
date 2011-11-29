@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.fusesource</groupId>
     <artifactId>fusesource-pom</artifactId>
-    <version>1.5</version>
+    <version>1.9</version>
   </parent>
 
   <groupId>org.fusesource.hawtdispatch</groupId>
@@ -37,7 +37,6 @@
     <forge-project-id-uc>HAWTDISPATCH</forge-project-id-uc>
     
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <release-altGitURL>scm:git:ssh://git@forge.fusesource.com/${forge-project-id}.git</release-altGitURL>
     
     <junit-version>4.7</junit-version>
     <log4j-version>1.2.14</log4j-version>
@@ -86,8 +85,7 @@
   
   <scm>
     <connection>scm:git:git://forge.fusesource.com/${forge-project-id}.git</connection>
-    <!-- Work around for issue: http://jira.codehaus.org/browse/SCM-444 -->
-    <developerConnection>${release-altGitURL}</developerConnection>
+    <developerConnection>scm:git:ssh://git@forge.fusesource.com/${forge-project-id}.git</developerConnection>
     <url>http://github.com/fusesource/hawtdispatch/tree/master</url>
   </scm>
 
