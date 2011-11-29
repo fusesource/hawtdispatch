@@ -62,13 +62,13 @@ package object hawtdispatch {
      * @param task
      * The function to submit to the dispatch queue.
      */
-    def apply[T](task: =>T) = execute(r(task _))
+    def apply(task: =>Unit) = execute(r(task _))
 
     /**
      * Creates a Runnable object which executes the supplied partial
      * function on this executor when run.
      */
-    def runnable[T](task: =>T) = new Runnable() {
+    def runnable(task: =>Unit) = new Runnable() {
       val target = r(task _)
       def run: Unit = {
         execute(target)
@@ -78,7 +78,7 @@ package object hawtdispatch {
     /**
      * Same as {@link #apply(=>Unit)}
      */
-    def ^[T](task: =>T) = execute(r(task _))
+    def ^(task: =>Unit) = execute(r(task _))
 
     /**
      * <p>
@@ -153,8 +153,8 @@ package object hawtdispatch {
   class RichDispatchSource(val actual:DispatchSource) extends Proxy with RichDispatchObject {
     def self = actual
 
-    def onEvent[T](task: =>T) { actual.setEventHandler( r(task _) ) }
-    def onCancel[T](task: =>T) { actual.setCancelHandler( r(task _) ) }
+    def onEvent(task: =>Unit) { actual.setEventHandler( r(task _) ) }
+    def onCancel(task: =>Unit) { actual.setCancelHandler( r(task _) ) }
 
   }
 
@@ -189,7 +189,7 @@ package object hawtdispatch {
      * @param task
      * The runnable to submit to the dispatch queue.
      */
-    def after[T](time:Long, unit:TimeUnit)(task: =>T) = actual.executeAfter(time, unit, r(task _))
+    def after(time:Long, unit:TimeUnit)(task: =>Unit) = actual.executeAfter(time, unit, r(task _))
 
     /**
      * <p>
@@ -205,7 +205,7 @@ package object hawtdispatch {
      * @param task
      * The runnable to submit to the dispatch queue.
      */
-    def repeatAfter[T](time:Long, unit:TimeUnit)(task: =>T):Closeable = new Closeable {
+    def repeatAfter(time:Long, unit:TimeUnit)(task: =>Unit):Closeable = new Closeable {
       val closed = new AtomicBoolean
       def close: Unit = closed.set(true)
 
@@ -261,7 +261,7 @@ package object hawtdispatch {
      * @param task
      * The runnable to submit to execute
      */
-    def | [T](task: =>T ) = {
+    def | (task: =>Unit ) = {
       this.<<|( r(task _))
     }
 
@@ -337,12 +337,12 @@ package object hawtdispatch {
   /**
    * Creates a runnable object from a partial function
    */
-  def ^[T](proc: => T): Runnable = r(proc _)
+  def ^(proc: => Unit): Runnable = r(proc _)
 
   /**
    * Creates a runnable object from a partial function
    */
-  private def r[T](proc: ()=>T): Runnable = new Runnable() {
+  private def r(proc: ()=>Unit): Runnable = new Runnable() {
     def run() {
       proc()
     }
