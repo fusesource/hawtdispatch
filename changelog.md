@@ -1,6 +1,15 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.5](http://hawtdispatch.fusesource.org/blog/releases/release-1-5.html), released 2011-11-29
+
+* Support ordered EventAggregators
+* HawtDispatch threads are now in a thread group.  Setting the UnchaughtExceptionHandler on one of the HawtDispatch threads set the handler for all the threads in the pool.
+* Pass an uncaught exceptions to the UncaughtExceptionHandler configured on the HawtDispatch threads.
+* Added UDP example
+* Fix race condition that was occurring when a serial dispatch queue was suspended.
+* Switch to new scalate version which fixes build problems when on OS X Lion.
+
 ## [HawtDispatch 1.4](http://hawtdispatch.fusesource.org/blog/releases/release-1-4.html), released 2011-07-18
 
 * Support ordered EventAggregators
