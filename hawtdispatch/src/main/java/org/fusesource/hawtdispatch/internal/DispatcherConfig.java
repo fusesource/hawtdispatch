@@ -34,7 +34,7 @@ public class DispatcherConfig {
     }
 
     private String label="hawtdispatch";
-    private int threads = Runtime.getRuntime().availableProcessors();
+    private int threads = Integer.getInteger("hawtdispatch.threads", Runtime.getRuntime().availableProcessors());
     private boolean profile = Boolean.getBoolean("hawtdispatch.profile");
     private int drains = Integer.getInteger("hawtdispatch.drains", 1000);
 
