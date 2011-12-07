@@ -235,11 +235,10 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
     }
 
-
-    private void updateInterest() {
-        if( isCurrent(selectorQueue) ) {
+    private Runnable updateInterestTask = new Runnable(){
+        public void run() {
             if( !isSuspended() && !isCanceled() ) {
-                if(DEBUG) debug("adding interest: %s", opsToString(interestOps));
+                if(DEBUG) debug("adding interest: %d", opsToString(interestOps));
                 KeyState state = keyState.get();
                 if( state==null ) {
                     return;
@@ -249,22 +248,14 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                     state.key.interestOps(state.key.interestOps()|interestOps);
                 }
             }
-        } else {
-            selectorQueue.execute(new Runnable(){
-                public void run() {
-                    if( !isSuspended() && !isCanceled() ) {
-                        if(DEBUG) debug("adding interest: %d", opsToString(interestOps));
-                        KeyState state = keyState.get();
-                        if( state==null ) {
-                            return;
-                        }
+        }
+    };
 
-                        if( state.key.isValid() ) {
-                            state.key.interestOps(state.key.interestOps()|interestOps);
-                        }
-                    }
-                }
-            });
+    private void updateInterest() {
+        if( isCurrent(selectorQueue) ) {
+            updateInterestTask.run();
+        } else {
+            selectorQueue.execute(updateInterestTask);
         }
     }
 
