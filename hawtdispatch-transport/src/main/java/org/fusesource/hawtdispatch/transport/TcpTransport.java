@@ -19,6 +19,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -168,6 +169,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     int maxWriteRate;
     int receiveBufferSize = 1024*64;
     int sendBufferSize = 1024*64;
+    boolean keepAlive = true;
 
 
     public static final int IPTOS_LOWCOST = 0x02;
@@ -310,10 +312,14 @@ public class TcpTransport extends ServiceBase implements Transport {
     public void connected(SocketChannel channel) throws IOException, Exception {
         this.channel = channel;
         initializeChannel();
+
+        if( codec !=null ) {
+            initializeCodec();
+        }
         this.socketState = new CONNECTED();
     }
 
-    private void initializeChannel() throws Exception {
+    private void initializeChannel() throws IOException {
         this.channel.configureBlocking(false);
         Socket socket = channel.socket();
         try {
@@ -329,6 +335,10 @@ public class TcpTransport extends ServiceBase implements Transport {
         } catch (SocketException e) {
         }
         try {
+            socket.setKeepAlive(keepAlive);
+        } catch (SocketException e) {
+        }
+        try {
             socket.setTcpNoDelay(true);
         } catch (SocketException e) {
         }
@@ -339,9 +349,6 @@ public class TcpTransport extends ServiceBase implements Transport {
         try {
             socket.setSendBufferSize(sendBufferSize);
         } catch (SocketException e) {
-        }
-        if( codec !=null ) {
-            initializeCodec();
         }
     }
 
@@ -584,7 +591,7 @@ public class TcpTransport extends ServiceBase implements Transport {
             long initial = codec.getReadCounter();
             // Only process upto 2 x the read buffer worth of data at a time so we can give
             // other connections a chance to process their requests.
-            while( codec.getReadCounter()-initial <  codec.getReadBufferSize()<<2 ) {
+            while( codec.getReadCounter()-initial < codec.getReadBufferSize()<<2 ) {
                 Object command = codec.read();
                 if ( command!=null ) {
                     try {
@@ -788,4 +795,13 @@ public class TcpTransport extends ServiceBase implements Transport {
     public void setSendBufferSize(int sendBufferSize) {
         this.sendBufferSize = sendBufferSize;
     }
+
+    public boolean isKeepAlive() {
+        return keepAlive;
+    }
+
+    public void setKeepAlive(boolean keepAlive) {
+        this.keepAlive = keepAlive;
+    }
+
 }

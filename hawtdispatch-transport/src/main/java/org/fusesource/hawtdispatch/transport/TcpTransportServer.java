@@ -32,7 +32,6 @@ public class TcpTransportServer implements TransportServer {
     private final InetSocketAddress bindAddress;
 
     private int backlog = 100;
-    private Map<String, String> transportOptions;
 
     private ServerSocketChannel channel;
     private TransportServerListener listener;
@@ -178,33 +177,12 @@ public class TcpTransportServer implements TransportServer {
 
     protected final void handleSocket(SocketChannel socket) throws Exception {
         TcpTransport transport = createTransport();
-        if (transportOptions != null) {
-            for (Map.Entry<String, String> entry: transportOptions.entrySet()){
-                if( entry.getKey().equals("send_buffer_size") ) {
-                    transport.setSendBufferSize(new Integer(entry.getValue()));
-                } else if( entry.getKey().equals("receive_buffer_size") ) {
-                    transport.setReceiveBufferSize(new Integer(entry.getValue()));
-                } else if( entry.getKey().equals("max_read_rate") ) {
-                    transport.setMaxReadRate(new Integer(entry.getValue()));
-                } else if( entry.getKey().equals("max_write_rate") ) {
-                    transport.setMaxWriteRate(new Integer(entry.getValue()));
-                } else if( entry.getKey().equals("traffic_class") ) {
-                    transport.setTrafficClass(new Integer(entry.getValue()));
-                }
-            }
-
-//            IntrospectionSupport.setProperties(transport, new HashMap<String,String>(transportOptions) );
-        }
         transport.connected(socket);
         listener.onAccept(transport);
     }
 
     protected TcpTransport createTransport() {
         return new TcpTransport();
-    }
-
-    public void setTransportOption(Map<String, String> transportOptions) {
-        this.transportOptions = transportOptions;
     }
 
     /**
