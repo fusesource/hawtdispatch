@@ -34,14 +34,23 @@ import static javax.net.ssl.SSLEngineResult.Status.BUFFER_OVERFLOW;
  */
 public class SslTransport extends TcpTransport {
 
-    public static final HashMap<String, String> SCHEME_MAPPINGS = new HashMap<String, String>();
-    static {
-        SCHEME_MAPPINGS.put("tls", "TLS");
-        SCHEME_MAPPINGS.put("tlsv1", "TLSv1");
-        SCHEME_MAPPINGS.put("tlsv1.1", "TLSv1.1");
-        SCHEME_MAPPINGS.put("ssl", "SSL");
-        SCHEME_MAPPINGS.put("sslv2", "SSLv2");
-        SCHEME_MAPPINGS.put("sslv3", "SSLv3");
+
+    /**
+     * Maps uri schemes to a protocol algorithm names.
+     * Valid algorithm names listed at:
+     * http://download.oracle.com/javase/6/docs/technotes/guides/security/StandardNames.html#SSLContext
+     */
+    public static String protocol(String scheme) {
+        if( scheme.equals("tls") ) {
+            return "TLS";
+        } else if( scheme.startsWith("tlsv") ) {
+            return "TLSv"+scheme.substring(4);
+        } else if( scheme.equals("ssl") ) {
+            return "SSL";
+        } else if( scheme.startsWith("sslv") ) {
+            return "SSLv"+scheme.substring(4);
+        }
+        return null;
     }
 
     private SSLContext sslContext;
@@ -67,7 +76,7 @@ public class SslTransport extends TcpTransport {
      * TcpTransport.
      */
     public static SslTransport createTransport(URI uri) throws Exception {
-        String protocol = SCHEME_MAPPINGS.get(uri.getScheme());
+        String protocol = protocol(uri.getScheme());
         if( protocol !=null ) {
             SslTransport rc = new SslTransport();
             rc.setSSLContext(SSLContext.getInstance(protocol));

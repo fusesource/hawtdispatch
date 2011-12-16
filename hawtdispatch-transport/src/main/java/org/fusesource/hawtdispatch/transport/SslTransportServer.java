@@ -15,6 +15,7 @@ import javax.net.ssl.TrustManager;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.concurrent.Executor;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
@@ -24,7 +25,7 @@ public class SslTransportServer extends TcpTransportServer {
 
     public static SslTransportServer createTransportServer(URI uri) throws Exception {
         SslTransportServer rc = new SslTransportServer(uri);
-        rc.setSSLContext(SSLContext.getInstance(SslTransport.SCHEME_MAPPINGS.get(uri.getScheme())));
+        rc.setSSLContext(SSLContext.getInstance(SslTransport.protocol(uri.getScheme())));
         return rc;
     }
 
@@ -47,7 +48,6 @@ public class SslTransportServer extends TcpTransportServer {
 
     public void start(Runnable onCompleted) throws Exception {
         if( keyManagers!=null ) {
-            sslContext = SSLContext.getInstance(protocol);
             sslContext.init(keyManagers, trustManagers, null);
         } else {
             sslContext = SSLContext.getDefault();
@@ -58,11 +58,13 @@ public class SslTransportServer extends TcpTransportServer {
     protected TcpTransport createTransport() {
         SslTransport rc = new SslTransport();
         rc.setSSLContext(sslContext);
+        rc.setBlockingExecutor(blockingExecutor);
         return rc;
     }
 
-    public SslTransportServer protocol(String value) {
+    public SslTransportServer protocol(String value) throws NoSuchAlgorithmException {
         this.protocol = value;
+        sslContext = SSLContext.getInstance(protocol);
         return this;
     }
 
@@ -73,4 +75,13 @@ public class SslTransportServer extends TcpTransportServer {
     public void setSSLContext(SSLContext sslContext) {
         this.sslContext = sslContext;
     }
+
+    public Executor getBlockingExecutor() {
+        return blockingExecutor;
+    }
+
+    public void setBlockingExecutor(Executor blockingExecutor) {
+        this.blockingExecutor = blockingExecutor;
+    }
+
 }
