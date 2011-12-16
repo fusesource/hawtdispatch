@@ -312,6 +312,7 @@
 
   <modules>
     <module>hawtdispatch</module>
+    <module>hawtdispatch-transport</module>
     <module>hawtdispatch-scala</module>
     <module>hawtdispatch-example</module>
     <module>hawtdispatch-website</module>
