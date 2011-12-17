@@ -312,14 +312,10 @@ public class TcpTransport extends ServiceBase implements Transport {
     public void connected(SocketChannel channel) throws IOException, Exception {
         this.channel = channel;
         initializeChannel();
-
-        if( codec !=null ) {
-            initializeCodec();
-        }
         this.socketState = new CONNECTED();
     }
 
-    private void initializeChannel() throws IOException {
+    private void initializeChannel() throws Exception {
         this.channel.configureBlocking(false);
         Socket socket = channel.socket();
         try {
@@ -349,6 +345,10 @@ public class TcpTransport extends ServiceBase implements Transport {
         try {
             socket.setSendBufferSize(sendBufferSize);
         } catch (SocketException e) {
+        }
+
+        if( channel!=null && codec!=null ) {
+            initializeCodec();
         }
     }
 
