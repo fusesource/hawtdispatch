@@ -116,6 +116,10 @@ public class PipeTransport implements Transport {
         });
     }
 
+    public void flush() {
+        listener.onRefill();
+    }
+
     public void stop(Runnable onCompleted)  {
         if( connected ) {
             peer.dispatchSource.merge(EOF_TOKEN);

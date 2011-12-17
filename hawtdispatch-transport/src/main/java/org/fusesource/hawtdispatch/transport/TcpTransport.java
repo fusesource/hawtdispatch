@@ -19,7 +19,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -457,7 +456,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         drainOutboundSource = Dispatch.createSource(EventAggregators.INTEGER_ADD, dispatchQueue);
         drainOutboundSource.setEventHandler(new Runnable() {
             public void run() {
-                drainOutbound();
+                flush();
             }
         });
         drainOutboundSource.resume();
@@ -475,7 +474,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         });
         writeSource.setEventHandler(new Runnable() {
             public void run() {
-                drainOutbound();
+                flush();
             }
         });
 
@@ -554,13 +553,13 @@ public class TcpTransport extends ServiceBase implements Transport {
     /**
      *
      */
-    protected void drainOutbound() {
+    public void flush() {
         dispatchQueue.assertExecuting();
         if (getServiceState() != STARTED || !socketState.is(CONNECTED.class)) {
             return;
         }
         try {
-            if( codec.flush() == ProtocolCodec.BufferState.EMPTY && flush() ) {
+            if( codec.flush() == ProtocolCodec.BufferState.EMPTY && transportFlush() ) {
                 if( writeResumedForCodecFlush) {
                     writeResumedForCodecFlush = false;
                     suspendWrite();
@@ -579,7 +578,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         }
     }
 
-    protected boolean flush() throws IOException {
+    protected boolean transportFlush() throws IOException {
         return true;
     }
 

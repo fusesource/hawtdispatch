@@ -19,7 +19,6 @@ import java.nio.channels.WritableByteChannel;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.Executor;
 
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_UNWRAP;
@@ -157,11 +156,11 @@ public class SslTransport extends TcpTransport {
     }
 
     @Override
-    protected void drainOutbound() {
+    public void flush() {
         if ( engine.getHandshakeStatus()!=NOT_HANDSHAKING ) {
             handshake();
         } else {
-            super.drainOutbound();
+            super.flush();
         }
     }
 
@@ -178,7 +177,7 @@ public class SslTransport extends TcpTransport {
      * @return true if fully flushed.
      * @throws IOException
      */
-    protected boolean flush() throws IOException {
+    protected boolean transportFlush() throws IOException {
         while (true) {
             if(writeFlushing) {
                 int count = super.writeChannel().write(writeBuffer);
@@ -203,7 +202,7 @@ public class SslTransport extends TcpTransport {
     }
 
     private int secure_write(ByteBuffer plain) throws IOException {
-        if( !flush() ) {
+        if( !transportFlush() ) {
             // can't write anymore until the write_secured_buffer gets fully flushed out..
             return 0;
         }
@@ -212,7 +211,7 @@ public class SslTransport extends TcpTransport {
             SSLEngineResult result = engine.wrap(plain, writeBuffer);
             assert result.getStatus()!= BUFFER_OVERFLOW;
             rc += result.bytesConsumed();
-            if( !flush() ) {
+            if( !transportFlush() ) {
                 break;
             }
         }
@@ -301,7 +300,7 @@ public class SslTransport extends TcpTransport {
 
     public void handshake() {
         try {
-            if( !flush() ) {
+            if( !transportFlush() ) {
                 return;
             }
             switch (engine.getHandshakeStatus()) {

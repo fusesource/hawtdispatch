@@ -47,6 +47,12 @@ public interface Transport {
     boolean offer(Object command);
 
     /**
+     * Forces a flush of any output buffers.  Once the flush completes the listener's
+     * 'onRefill()' method will execute.
+     */
+    public void flush();
+
+    /**
      * Returns the current transport listener
      *
      * @return
