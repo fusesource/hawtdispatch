@@ -83,7 +83,7 @@ public class HeartBeatMonitor {
                 }
             };
         }
-        schedule(session, writeInterval / 2, func);
+        schedule(session, writeInterval, func);
     }
 
     private void scheduleCheckReads(final short session) {
