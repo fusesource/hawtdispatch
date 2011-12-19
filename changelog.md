@@ -1,6 +1,11 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.6](http://hawtdispatch.fusesource.org/blog/releases/release-1-6.html), released 2011-12-19
+
+* Support using a system property to configure the number of dispatch threads.
+* Added a hawtdispatch-transport module which provides nice Transport abstraction for working with Sockets and HawtDispatch.
+
 ## [HawtDispatch 1.5](http://hawtdispatch.fusesource.org/blog/releases/release-1-5.html), released 2011-11-29
 
 * HawtDispatch threads are now in a thread group.  Setting the UnchaughtExceptionHandler on one of the HawtDispatch threads set the handler for all the threads in the pool.
