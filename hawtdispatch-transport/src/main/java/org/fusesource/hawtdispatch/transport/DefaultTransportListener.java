@@ -35,7 +35,7 @@ public class DefaultTransportListener implements TransportListener {
     public void onTransportConnected() {
     }
 
-    public void onTransportDisconnected() {
+    public void onTransportDisconnected(boolean reconnecting) {
     }
 
     public void onTransportFailure(IOException error) {

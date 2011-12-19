@@ -41,9 +41,11 @@ public interface TransportListener {
     public void onTransportConnected();
 
     /**
-     * The transport has suffered a disconnection from
-     * which it hopes to recover
+     * The transport has been disconnected.
+     *
+     * @param reconnecting is true if the transport is attempting
+     *                     to reconnect.
      */
-    public void onTransportDisconnected();
+    public void onTransportDisconnected(boolean reconnecting);
 
 }

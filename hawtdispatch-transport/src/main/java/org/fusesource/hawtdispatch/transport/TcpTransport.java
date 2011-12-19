@@ -79,7 +79,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         Runnable createDisconnectTask() {
             return new Runnable(){
                 public void run() {
-                    listener.onTransportDisconnected();
+                    listener.onTransportDisconnected(false);
                 }
             };
         }
