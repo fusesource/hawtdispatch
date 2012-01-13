@@ -55,7 +55,7 @@ public interface ProtocolCodec {
     /**
      * @return The number of bytes read in the last read io performed.
      */
-    public int getLastReadSize();
+    public long getLastReadSize();
 
 
     ///////////////////////////////////////////////////////////////////
@@ -106,7 +106,7 @@ public interface ProtocolCodec {
     /**
      * @return The number of bytes read in the last write io performed.
      */
-    public int getLastWriteSize();
+    public long getLastWriteSize();
 
 
 }

@@ -11,11 +11,10 @@ package org.fusesource.hawtdispatch.transport;
 
 import javax.net.ssl.*;
 import java.io.IOException;
+import java.net.Socket;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.WritableByteChannel;
+import java.nio.channels.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -84,7 +83,7 @@ public class SslTransport extends TcpTransport {
         return null;
     }
 
-    class SSLChannel implements ReadableByteChannel, WritableByteChannel {
+    public class SSLChannel implements ScatteringByteChannel, GatheringByteChannel {
 
         public int write(ByteBuffer plain) throws IOException {
             return secure_write(plain);
@@ -100,6 +99,56 @@ public class SslTransport extends TcpTransport {
 
         public void close() throws IOException {
             getSocketChannel().close();
+        }
+
+        public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+            if(offset+length > srcs.length || length<0 || offset<0) {
+                throw new IndexOutOfBoundsException();
+            }
+            long rc=0;
+            for (int i = 0; i < length; i++) {
+                ByteBuffer src = srcs[offset+i];
+                if(src.hasRemaining()) {
+                    rc += write(src);
+                }
+                if( src.hasRemaining() ) {
+                    return rc;
+                }
+            }
+            return rc;
+        }
+
+        public long write(ByteBuffer[] srcs) throws IOException {
+            return write(srcs, 0, srcs.length);
+        }
+
+        public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+            if(offset+length > dsts.length || length<0 || offset<0) {
+                throw new IndexOutOfBoundsException();
+            }
+            long rc=0;
+            for (int i = 0; i < length; i++) {
+                ByteBuffer dst = dsts[offset+i];
+                if(dst.hasRemaining()) {
+                    rc += read(dst);
+                }
+                if( dst.hasRemaining() ) {
+                    return rc;
+                }
+            }
+            return rc;
+        }
+
+        public long read(ByteBuffer[] dsts) throws IOException {
+            return read(dsts, 0, dsts.length);
+        }
+        
+        public Socket socket() {
+            SocketChannel c = channel;
+            if( c == null ) {
+                return null;
+            }
+            return c.socket();
         }
     }
 

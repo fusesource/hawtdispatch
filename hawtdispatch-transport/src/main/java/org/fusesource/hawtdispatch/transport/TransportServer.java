@@ -40,7 +40,7 @@ public interface TransportServer {
      * 
      * @param acceptListener
      */
-    void setAcceptListener(TransportServerListener acceptListener);
+    void setTransportServerListener(TransportServerListener acceptListener);
 
     String getBoundAddress();
 

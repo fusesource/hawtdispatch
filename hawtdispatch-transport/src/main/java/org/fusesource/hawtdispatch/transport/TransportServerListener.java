@@ -17,7 +17,7 @@ package org.fusesource.hawtdispatch.transport;
  */
 public interface TransportServerListener {
     
-    void onAccept(Transport transport);
+    void onAccept(Transport transport) throws Exception;
     
     void onAcceptError(Exception error);
 

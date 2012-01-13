@@ -44,6 +44,12 @@
       <artifactId>hawtdispatch</artifactId>
       <version>1.7-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>org.fusesource.hawtbuf</groupId>
+      <artifactId>hawtbuf</artifactId>
+      <version>${hawtbuf-version}</version>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>junit</groupId>

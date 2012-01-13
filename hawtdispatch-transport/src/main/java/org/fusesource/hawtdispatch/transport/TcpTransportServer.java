@@ -46,7 +46,7 @@ public class TcpTransportServer implements TransportServer {
         bindAddress = new InetSocketAddress(InetAddress.getByName(host), location.getPort());
     }
 
-    public void setAcceptListener(TransportServerListener listener) {
+    public void setTransportServerListener(TransportServerListener listener) {
         this.listener = listener;
     }
 

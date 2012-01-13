@@ -70,7 +70,7 @@ public class PipeTransportServer implements TransportServer {
         acceptSource.resume();
     }
 
-    public void setAcceptListener(TransportServerListener listener) {
+    public void setTransportServerListener(TransportServerListener listener) {
         this.listener = listener;
     }
 
@@ -83,7 +83,11 @@ public class PipeTransportServer implements TransportServer {
             public void run() {
                 LinkedList<PipeTransport> transports = acceptSource.getData();
                 for (PipeTransport transport : transports) {
-                    listener.onAccept(transport);
+                    try {
+                        listener.onAccept(transport);
+                    } catch (Exception e) {
+                        listener.onAcceptError(e);
+                    }
                 }
             }
         });
