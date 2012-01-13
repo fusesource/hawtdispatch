@@ -1,6 +1,10 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.7](http://hawtdispatch.fusesource.org/blog/releases/release-1-7.html), released 2012-01-13
+
+* Cleaning up the transport interfaces. Added an abstract protocol codec that makes it easier to implement them.
+
 ## [HawtDispatch 1.6](http://hawtdispatch.fusesource.org/blog/releases/release-1-6.html), released 2011-12-19
 
 * Support using a system property to configure the number of dispatch threads.
