@@ -188,18 +188,21 @@ public class SslTransport extends TcpTransport {
             engine.setUseClientMode(false);
             engine.setWantClientAuth(true);
         }
+        super.connected(channel);
+    }
+
+    @Override
+    protected void initializeChannel() throws Exception {
+        super.initializeChannel();
         SSLSession session = engine.getSession();
         readBuffer = ByteBuffer.allocateDirect(session.getPacketBufferSize());
         readBuffer.flip();
         writeBuffer = ByteBuffer.allocateDirect(session.getPacketBufferSize());
-
-        super.connected(channel);
     }
 
     @Override
     protected void onConnected() throws IOException {
         super.onConnected();
-        engine.setWantClientAuth(true);
         engine.beginHandshake();
         handshake();
     }
@@ -256,7 +259,7 @@ public class SslTransport extends TcpTransport {
             return 0;
         }
         int rc = 0;
-        while ( plain.hasRemaining() || engine.getHandshakeStatus()==NEED_WRAP ) {
+        while ( plain.hasRemaining() ^ engine.getHandshakeStatus()==NEED_WRAP ) {
             SSLEngineResult result = engine.wrap(plain, writeBuffer);
             assert result.getStatus()!= BUFFER_OVERFLOW;
             rc += result.bytesConsumed();
@@ -276,7 +279,7 @@ public class SslTransport extends TcpTransport {
 
     private int secure_read(ByteBuffer plain) throws IOException {
         int rc=0;
-        while ( plain.hasRemaining() || engine.getHandshakeStatus() == NEED_UNWRAP ) {
+        while ( plain.hasRemaining() ^ engine.getHandshakeStatus() == NEED_UNWRAP ) {
             if( readOverflowBuffer !=null ) {
                 if(  plain.hasRemaining() ) {
                     // lets drain the overflow buffer before trying to suck down anymore
@@ -381,6 +384,7 @@ public class SslTransport extends TcpTransport {
 
                 case FINISHED:
                 case NOT_HANDSHAKING:
+                    drainOutboundSource.merge(1);
                     break;
 
                 default:

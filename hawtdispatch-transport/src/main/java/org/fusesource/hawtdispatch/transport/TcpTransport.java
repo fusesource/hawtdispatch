@@ -159,8 +159,8 @@ public class TcpTransport extends ServiceBase implements Transport {
     protected DispatchQueue dispatchQueue;
     private DispatchSource readSource;
     private DispatchSource writeSource;
-    private CustomDispatchSource<Integer, Integer> drainOutboundSource;
-    private CustomDispatchSource<Integer, Integer> yieldSource;
+    protected CustomDispatchSource<Integer, Integer> drainOutboundSource;
+    protected CustomDispatchSource<Integer, Integer> yieldSource;
 
     protected boolean useLocalHost = true;
 
@@ -314,7 +314,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         this.socketState = new CONNECTED();
     }
 
-    private void initializeChannel() throws Exception {
+    protected void initializeChannel() throws Exception {
         this.channel.configureBlocking(false);
         Socket socket = channel.socket();
         try {
