@@ -10,6 +10,7 @@
 package org.fusesource.hawtdispatch.transport;
 
 import javax.net.ssl.*;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URI;
@@ -379,7 +380,9 @@ public class SslTransport extends TcpTransport {
                     break;
 
                 case NEED_UNWRAP:
-                    secure_read(ByteBuffer.allocate(0));
+                    if( secure_read(ByteBuffer.allocate(0)) == -1) {
+                        throw new EOFException("Peer disconnected during ssl handshake");
+                    }
                     break;
 
                 case FINISHED:
