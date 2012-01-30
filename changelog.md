@@ -1,6 +1,11 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.8](http://hawtdispatch.fusesource.org/blog/releases/release-1-8.html), released 2012-01-30
+
+* Fixes CPU spin that occurred when a peer disconnected while SSL handshake is in progress.
+* Could not create a client initiated SSL connection.
+
 ## [HawtDispatch 1.7](http://hawtdispatch.fusesource.org/blog/releases/release-1-7.html), released 2012-01-13
 
 * Cleaning up the transport interfaces. Added an abstract protocol codec that makes it easier to implement them.
