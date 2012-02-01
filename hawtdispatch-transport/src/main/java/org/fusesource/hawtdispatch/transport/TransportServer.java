@@ -44,8 +44,6 @@ public interface TransportServer {
 
     String getBoundAddress();
 
-    String getConnectAddress();
-
     /**
      * @return The socket address that this transport is accepting connections
      *         on or null if this does not or is not currently accepting

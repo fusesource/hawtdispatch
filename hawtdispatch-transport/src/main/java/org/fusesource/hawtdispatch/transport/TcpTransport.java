@@ -79,7 +79,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         Runnable createDisconnectTask() {
             return new Runnable(){
                 public void run() {
-                    listener.onTransportDisconnected(false);
+                    listener.onTransportDisconnected();
                 }
             };
         }
@@ -622,13 +622,6 @@ public class TcpTransport extends ServiceBase implements Transport {
         return remoteAddress;
     }
 
-    public <T> T narrow(Class<T> target) {
-        if (target.isAssignableFrom(getClass())) {
-            return target.cast(this);
-        }
-        return null;
-    }
-
     private boolean assertConnected() {
         try {
             if ( !isConnected() ) {
@@ -679,20 +672,12 @@ public class TcpTransport extends ServiceBase implements Transport {
         }
     }
 
-    public String getTypeId() {
-        return "tcp";
-    }
-
-    public void reconnect(URI uri) {
-        throw new UnsupportedOperationException();
-    }
-
     public TransportListener getTransportListener() {
         return listener;
     }
 
-    public void setTransportListener(TransportListener listener) {
-        this.listener = listener;
+    public void setTransportListener(TransportListener transportListener) {
+        this.listener = transportListener;
     }
 
     public ProtocolCodec getProtocolCodec() {
@@ -710,12 +695,8 @@ public class TcpTransport extends ServiceBase implements Transport {
         return socketState.is(CONNECTED.class);
     }
 
-    public boolean isDisposed() {
+    public boolean isClosed() {
         return getServiceState() == STOPPED;
-    }
-
-    public boolean isFaultTolerant() {
-        return false;
     }
 
     public boolean isUseLocalHost() {

@@ -18,7 +18,6 @@ import java.net.*;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Map;
 
 /**
  * A TCP based implementation of {@link TransportServer}
@@ -37,7 +36,7 @@ public class TcpTransportServer implements TransportServer {
     private TransportServerListener listener;
     private DispatchQueue dispatchQueue;
     private DispatchSource acceptSource;
-    private int receive_buffer_size = 64*1024;
+    private int receiveBufferSize = 64*1024;
 
     public TcpTransportServer(URI location) throws UnknownHostException {
         bindScheme = location.getScheme();
@@ -79,7 +78,7 @@ public class TcpTransportServer implements TransportServer {
             channel = ServerSocketChannel.open();
             channel.configureBlocking(false);
             try {
-                channel.socket().setReceiveBufferSize(receive_buffer_size);
+                channel.socket().setReceiveBufferSize(receiveBufferSize);
             } catch (SocketException ignore) {
             }
             channel.socket().bind(bindAddress, backlog);
@@ -121,30 +120,6 @@ public class TcpTransportServer implements TransportServer {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public String getConnectAddress() {
-        try {
-            return new URI(bindScheme, null, resolveHostName(), channel.socket().getLocalPort(), null, null, null).toString();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    protected String resolveHostName() {
-        String result;
-        if (bindAddress.getAddress().isAnyLocalAddress()) {
-            // make it more human readable and useful, an alternative to 0.0.0.0
-            try {
-                result = InetAddress.getLocalHost().getCanonicalHostName();
-            } catch (UnknownHostException e) {
-                result = "localhost";
-            }
-        } else {
-            result = bindAddress.getAddress().getCanonicalHostName();
-        }
-        return result;
     }
 
     public void stop() throws Exception {
@@ -192,13 +167,12 @@ public class TcpTransportServer implements TransportServer {
         return getBoundAddress();
     }
 
-
-    public int getReceive_buffer_size() {
-        return receive_buffer_size;
+    public int getReceiveBufferSize() {
+        return receiveBufferSize;
     }
 
-    public void setReceive_buffer_size(int receive_buffer_size) {
-        this.receive_buffer_size = receive_buffer_size;
+    public void setReceiveBufferSize(int receiveBufferSize) {
+        this.receiveBufferSize = receiveBufferSize;
     }
 
 }

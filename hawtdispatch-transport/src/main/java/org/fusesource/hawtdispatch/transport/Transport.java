@@ -62,9 +62,9 @@ public interface Transport {
     /**
      * Registers an inbound command listener
      *
-     * @param commandListener
+     * @param transportListener
      */
-    void setTransportListener(TransportListener commandListener);
+    void setTransportListener(TransportListener transportListener);
 
     /**
      * Returns the dispatch queue used by the transport
@@ -91,12 +91,6 @@ public interface Transport {
     void resumeRead();
 
     /**
-     * @param target
-     * @return the target
-     */
-    <T> T narrow(Class<T> target);
-
-    /**
      * @return the remote address for this connection
      */
     SocketAddress getRemoteAddress();
@@ -107,16 +101,9 @@ public interface Transport {
     SocketAddress getLocalAddress();
 
     /**
-     * Indicates if the transport can handle faults
-     * 
-     * @return true if fault tolerant
+     * @return true if the transport is closed/stopped.
      */
-    boolean isFaultTolerant();
-
-    /**
-     * @return true if the transport is disposed
-     */
-    boolean isDisposed();
+    boolean isClosed();
     
     /**
      * @return true if the transport is connected
@@ -134,15 +121,4 @@ public interface Transport {
      */
     void setProtocolCodec(ProtocolCodec protocolCodec) throws Exception;
 
-    /**
-     * reconnect to another location
-     * @param uri
-     * @throws IOException on failure of if not supported
-     */
-    void reconnect(URI uri);
-
-    /**
-     * @return the identifier for the transport type.  Example "tcp" for the tcp transport. 
-     */
-    String getTypeId();
 }

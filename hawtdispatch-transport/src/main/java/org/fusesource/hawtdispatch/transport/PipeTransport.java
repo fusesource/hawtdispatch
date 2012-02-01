@@ -194,26 +194,12 @@ public class PipeTransport implements Transport {
         return remoteAddress;
     }
 
-    public <T> T narrow(Class<T> target) {
-        if (target.isAssignableFrom(getClass())) {
-            return target.cast(this);
-        }
-        return null;
-    }
-
     public void suspendRead() {
         dispatchSource.suspend();
     }
 
     public void resumeRead() {
         dispatchSource.resume();
-    }
-    public void reconnect(URI uri) {
-        throw new UnsupportedOperationException();
-    }
-
-    public String getTypeId() {
-        return "pipe";
     }
 
     public void setRemoteAddress(final String remoteAddress) {
@@ -235,8 +221,8 @@ public class PipeTransport implements Transport {
     public TransportListener getTransportListener() {
         return listener;
     }
-    public void setTransportListener(TransportListener listener) {
-        this.listener = listener;
+    public void setTransportListener(TransportListener transportListener) {
+        this.listener = transportListener;
     }
 
     public ProtocolCodec getProtocolCodec() {
@@ -265,10 +251,7 @@ public class PipeTransport implements Transport {
     public boolean isConnected() {
         return !stopping.get();
     }
-    public boolean isDisposed() {
-        return false;
-    }
-    public boolean isFaultTolerant() {
+    public boolean isClosed() {
         return false;
     }
 }

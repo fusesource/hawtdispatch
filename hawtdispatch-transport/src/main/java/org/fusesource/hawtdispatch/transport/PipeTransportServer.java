@@ -46,10 +46,6 @@ public class PipeTransportServer implements TransportServer {
         return connectURI;
     }
 
-    public String getConnectAddress() {
-        return connectURI;
-    }
-
     public InetSocketAddress getSocketAddress() {
         return null;
     }
