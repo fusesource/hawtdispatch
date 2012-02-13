@@ -29,6 +29,7 @@ abstract public class AbstractDispatchObject extends BaseSuspendable implements 
     protected volatile HawtDispatchQueue targetQueue;
 
     public void setTargetQueue(DispatchQueue next) {
+        assert next!=this : "You cannot not set the target queue to this";
 
         if( next!=targetQueue ) {
             // Don't see why someone would concurrently try to set the target..

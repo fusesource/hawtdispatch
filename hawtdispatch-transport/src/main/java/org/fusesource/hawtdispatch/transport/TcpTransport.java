@@ -388,6 +388,10 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     public void setDispatchQueue(DispatchQueue queue) {
         this.dispatchQueue = queue;
+        if(readSource!=null) readSource.setTargetQueue(queue);
+        if(writeSource!=null) writeSource.setTargetQueue(queue);
+        if(drainOutboundSource!=null) drainOutboundSource.setTargetQueue(queue);
+        if(yieldSource!=null) yieldSource.setTargetQueue(queue);
     }
 
     public void _start(Runnable onCompleted) {
