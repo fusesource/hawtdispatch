@@ -163,7 +163,7 @@ public class NioManager {
     }
 
     public boolean isSelecting() {
-        return selecting;
+        return selecting && wakeupCounter == selectCounter;
     }
 
     /**
@@ -196,8 +196,8 @@ public class NioManager {
                         selectStrategy.select(timeout);
                     }
                 } finally {
-                    selectCounter = wakeupCounter;
                     selecting=false;
+                    selectCounter = wakeupCounter;
                 }
             }
         } catch (CancelledKeyException e) {
