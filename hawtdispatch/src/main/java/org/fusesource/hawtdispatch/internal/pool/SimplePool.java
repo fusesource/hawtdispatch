@@ -119,8 +119,7 @@ public class SimplePool implements WorkerPool {
 
             // A sleeping thread will be waiting in his selector..
             NioManager nio = threads[i].getNioManager();
-            if( nio.isSelecting() ) {
-                nio.wakeup();
+            if( nio.wakeupIfSelecting() ) {
                 break;
             }
         }

@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.*;
 
@@ -73,7 +74,7 @@ public class NioManager {
          * @return
          */
         public boolean wakeupPending() {
-            return selectCounter != wakeupCounter;
+            return selectCounter != wakeupCounter.get();
         }
 
         /**
@@ -149,7 +150,7 @@ public class NioManager {
 
 
     private Selector selector;
-    volatile protected int wakeupCounter;
+    final protected AtomicInteger wakeupCounter = new AtomicInteger();
     volatile protected int selectCounter;
 
     volatile protected boolean selecting;
@@ -162,16 +163,16 @@ public class NioManager {
         return selector;
     }
 
-    public boolean isSelecting() {
-        return selecting && wakeupCounter == selectCounter;
-    }
-
     /**
-     * Subclasses may override this to provide an alternative wakeup mechanism.
+     * @return true if the selector was selecting..
      */
-    public void wakeup() {
-        ++wakeupCounter;
-        selector.wakeup();
+    public boolean wakeupIfSelecting() {
+        int wc = wakeupCounter.get();
+        if( selecting && wc == selectCounter && wakeupCounter.compareAndSet(wc, wc+1)) {
+            selector.wakeup();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -192,12 +193,12 @@ public class NioManager {
             } else {
                 selecting=true;
                 try {
-                    if( selectCounter == wakeupCounter) {
+                    if( selectCounter == wakeupCounter.get()) {
                         selectStrategy.select(timeout);
                     }
                 } finally {
                     selecting=false;
-                    selectCounter = wakeupCounter;
+                    selectCounter = wakeupCounter.get();
                 }
             }
         } catch (CancelledKeyException e) {

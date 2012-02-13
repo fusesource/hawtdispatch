@@ -720,7 +720,7 @@ public class StealingThread extends WorkerThread {
     }
 
     public void unpark() {
-        ioManager.wakeup();
+        ioManager.wakeupIfSelecting();
     }
 
     public void setDispatchQueue(ThreadDispatchQueue queue) {

@@ -48,8 +48,7 @@ public class SimpleThread extends WorkerThread {
     }
     @Override
     public void unpark() {
-        debug("unpark");
-        nioManager.wakeup();
+        nioManager.wakeupIfSelecting();
     }
 
     @Override
