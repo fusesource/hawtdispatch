@@ -167,8 +167,7 @@ public class NioManager {
      * @return true if the selector was selecting..
      */
     public boolean wakeupIfSelecting() {
-        int wc = wakeupCounter.get();
-        if( selecting && wc == selectCounter && wakeupCounter.compareAndSet(wc, wc+1)) {
+        if( wakeupCounter.getAndIncrement() == selectCounter && selecting) {
             selector.wakeup();
             return true;
         }
