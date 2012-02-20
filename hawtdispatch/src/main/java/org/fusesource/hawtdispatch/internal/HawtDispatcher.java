@@ -149,7 +149,7 @@ final public class HawtDispatcher implements Dispatcher {
                 // the queue at all.
                 synchronized(LOW_MUTEX) {
                     if( LOW_QUEUE==null ) {
-                        LOW_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.HIGH, threads);
+                        LOW_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.LOW, threads);
                         LOW_QUEUE.start();
                         LOW_QUEUE.profile(profile);
                     }
