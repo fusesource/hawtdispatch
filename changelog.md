@@ -1,6 +1,14 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.9](http://hawtdispatch.fusesource.org/blog/releases/release-1-9.html), released 2012-02-27
+
+* Fixes LOW priority global queue was being created with a high thread priority.
+* Distribute work load spikes fairly to the worker threads.
+* Support updating the transport's dispatch queue.
+* Add assertion that catches the following error: queue.setTargetQueue(queue)
+* Adding a SecureTransport interface and removing many of the leaky abstractions in the transport package.
+
 ## [HawtDispatch 1.8](http://hawtdispatch.fusesource.org/blog/releases/release-1-8.html), released 2012-01-30
 
 * Fixes CPU spin that occurred when a peer disconnected while SSL handshake is in progress.
