@@ -60,6 +60,12 @@ public class SslTransport extends TcpTransport implements SecureTransport {
         return null;
     }
 
+    enum ClientAuth {
+        WANT, NEED, NONE
+    };
+
+    private ClientAuth clientAuth = ClientAuth.WANT;
+
     private SSLContext sslContext;
     private SSLEngine engine;
 
@@ -195,7 +201,12 @@ public class SslTransport extends TcpTransport implements SecureTransport {
         if (engine == null) {
             engine = sslContext.createSSLEngine();
             engine.setUseClientMode(false);
-            engine.setWantClientAuth(true);
+            switch (clientAuth) {
+                case WANT: engine.setWantClientAuth(true); break;
+                case NEED: engine.setNeedClientAuth(true); break;
+                case NONE: engine.setWantClientAuth(false); break;
+            }
+
         }
         super.connected(channel);
     }
@@ -422,6 +433,14 @@ public class SslTransport extends TcpTransport implements SecureTransport {
 
     public void setBlockingExecutor(Executor blockingExecutor) {
         this.blockingExecutor = blockingExecutor;
+    }
+
+    public String getClientAuth() {
+        return clientAuth.name();
+    }
+
+    public void setClientAuth(String clientAuth) {
+        this.clientAuth = ClientAuth.valueOf(clientAuth.toUpperCase());
     }
 }
 

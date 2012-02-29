@@ -28,7 +28,7 @@ import java.util.LinkedList;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-abstract class ServiceBase {
+public abstract class ServiceBase {
 
     public static class State {
         public String toString() {
