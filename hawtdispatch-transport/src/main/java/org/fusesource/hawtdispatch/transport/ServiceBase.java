@@ -37,6 +37,9 @@ public abstract class ServiceBase {
         public boolean isStarted() {
             return false;
         }
+        public boolean isStarting() {
+            return false;
+        }
     }
 
     static class CallbackSupport extends State {
@@ -57,6 +60,9 @@ public abstract class ServiceBase {
 
     public static final State CREATED = new State();
     public static class STARTING extends CallbackSupport {
+        public boolean isStarting() {
+            return true;
+        }
     }
     public static final State STARTED = new State() {
         public boolean isStarted() {
