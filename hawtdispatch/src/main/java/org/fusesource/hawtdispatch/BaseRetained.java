@@ -39,7 +39,22 @@ public class BaseRetained implements Retained {
     private static final boolean TRACE = Boolean.getBoolean("org.fusesource.hawtdispatch.BaseRetained.TRACE");
 
     final private AtomicInteger retained = new AtomicInteger(1);
-    volatile private Runnable disposer;
+    volatile private Task disposer;
+    /**
+     * <p>
+     * Adds a disposer runnable that is executed once the object is disposed.
+     * </p><p>
+     * A dispatch object's disposer runnable will be invoked on the object's target queue
+     * once the object's retain counter reaches zero. This disposer may be
+     * used by the application to release any resources associated with the object.
+     * </p>
+     *
+     * @param disposer
+     * @deprecated Use {@link #setDisposer(Task)} instead.
+     */
+    final public void setDisposer(final Runnable disposer) {
+        this.setDisposer(new TaskWrapper(disposer));
+    }
 
     /**
      * <p>
@@ -52,12 +67,12 @@ public class BaseRetained implements Retained {
      *
      * @param disposer
      */
-    final public void setDisposer(Runnable disposer) {
+    final public void setDisposer(Task disposer) {
         assertRetained();
         this.disposer = disposer;
     }
 
-    final public Runnable getDisposer() {
+    final public Task getDisposer() {
         return disposer;
     }
 

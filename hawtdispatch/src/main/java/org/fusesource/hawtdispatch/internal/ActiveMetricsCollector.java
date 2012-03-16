@@ -19,6 +19,7 @@ package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.Metrics;
+import org.fusesource.hawtdispatch.Task;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -27,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  *
  */
-final public class ActiveMetricsCollector implements MetricsCollector {
+final public class ActiveMetricsCollector extends MetricsCollector {
 
     private final DispatchQueue queue;
 
@@ -55,10 +56,10 @@ final public class ActiveMetricsCollector implements MetricsCollector {
         }
     }
 
-    public Runnable track(final Runnable runnable) {
+    public Task track(final Task runnable) {
         enqueued.incrementAndGet();
         final long enqueuedAt = System.nanoTime();
-        return new Runnable(){
+        return new Task(){
             public void run() {
                 long dequeued_at = System.nanoTime();
                 long wait_time = dequeued_at - enqueuedAt;

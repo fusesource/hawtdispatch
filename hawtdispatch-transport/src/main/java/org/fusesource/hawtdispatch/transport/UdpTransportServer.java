@@ -17,6 +17,7 @@
 package org.fusesource.hawtdispatch.transport;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Task;
 
 import java.net.*;
 import java.nio.channels.DatagramChannel;
@@ -62,7 +63,7 @@ public class UdpTransportServer extends ServiceBase implements TransportServer {
     }
 
     @Override
-    protected void _start(Runnable onCompleted) {
+    protected void _start(Task onCompleted) {
         accept();
         if( onCompleted!=null ) {
             dispatchQueue.execute(onCompleted);
@@ -70,7 +71,7 @@ public class UdpTransportServer extends ServiceBase implements TransportServer {
     }
 
     private void queueAccept() {
-        dispatchQueue.execute(new Runnable() {
+        dispatchQueue.execute(new Task() {
             public void run() {
                 accept();
             }
@@ -82,7 +83,7 @@ public class UdpTransportServer extends ServiceBase implements TransportServer {
             try {
                 UdpTransport udpTransport = createTransport();
                 transport = udpTransport;
-                transport.onDispose = new Runnable() {
+                transport.onDispose = new Task() {
                     public void run() {
                         queueAccept();
                     }
@@ -102,7 +103,7 @@ public class UdpTransportServer extends ServiceBase implements TransportServer {
     }
 
     @Override
-    protected void _stop(Runnable onCompleted) {
+    protected void _stop(Task onCompleted) {
         transport.stop(onCompleted);
     }
 

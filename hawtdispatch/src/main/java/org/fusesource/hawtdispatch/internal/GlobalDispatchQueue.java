@@ -17,13 +17,9 @@
 
 package org.fusesource.hawtdispatch.internal;
 
-import org.fusesource.hawtdispatch.DispatchPriority;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.Metrics;
-import org.fusesource.hawtdispatch.ShutdownException;
+import org.fusesource.hawtdispatch.*;
 import org.fusesource.hawtdispatch.internal.pool.SimplePool;
 import org.fusesource.hawtdispatch.internal.util.IntrospectionSupport;
-import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
@@ -76,7 +72,7 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         return false;
     }
 
-    public LinkedList<Runnable> getSourceQueue() {
+    public LinkedList<Task> getSourceQueue() {
         ThreadDispatchQueue tq = dispatcher.getCurrentThreadQueue();
         if( tq!=null ){
             return tq.getSourceQueue();
@@ -88,18 +84,28 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         assert isExecuting() : getDispatcher().assertMessage();
     }
 
-    public void execute(Runnable runnable) {
+    @Deprecated
+    public void execute(final Runnable runnable) {
+        execute(new TaskWrapper(runnable));
+    }
+
+    @Deprecated()
+    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
+        this.executeAfter(delay, unit, new TaskWrapper(runnable));
+    }
+
+    public void execute(Task task) {
         if( dispatcher.shutdownState.get() > 1 ) {
             throw new ShutdownException();
         }
-        workers.execute(metricsCollector.track(runnable));
+        workers.execute(metricsCollector.track(task));
     }
 
-    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
+    public void executeAfter(long delay, TimeUnit unit, Task task) {
         if( dispatcher.shutdownState.get() > 0 ) {
             throw new ShutdownException();
         }
-        dispatcher.timerThread.addRelative(runnable, this, delay, unit);
+        dispatcher.timerThread.addRelative(task, this, delay, unit);
     }
 
     public ThreadDispatchQueue getTargetQueue() {

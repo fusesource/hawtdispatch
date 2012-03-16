@@ -18,6 +18,7 @@
 package org.fusesource.hawtdispatch.transport;
 
 import org.fusesource.hawtdispatch.Dispatch;
+import org.fusesource.hawtdispatch.Task;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,8 +37,8 @@ public class HeartBeatMonitor {
     long writeInterval;
     long readInterval;
 
-    Runnable onKeepAlive = Dispatch.NOOP;
-    Runnable onDead = Dispatch.NOOP;
+    Task onKeepAlive = Dispatch.NOOP;
+    Task onDead = Dispatch.NOOP;
 
     short session = 0;
 
@@ -53,9 +54,9 @@ public class HeartBeatMonitor {
         readSuspendCount--;
     }
 
-    private void schedule(final short session, long interval, final Runnable func) {
+    private void schedule(final short session, long interval, final Task func) {
         if (this.session == session) {
-            transport.getDispatchQueue().executeAfter(interval, TimeUnit.MILLISECONDS, new Runnable() {
+            transport.getDispatchQueue().executeAfter(interval, TimeUnit.MILLISECONDS, new Task() {
                 public void run() {
                     if (HeartBeatMonitor.this.session == session) {
                         func.run();
@@ -67,16 +68,16 @@ public class HeartBeatMonitor {
 
     private void scheduleCheckWrites(final short session) {
         final ProtocolCodec codec = transport.getProtocolCodec();
-        Runnable func;
+        Task func;
         if (codec == null) {
-            func = new Runnable() {
+            func = new Task() {
                 public void run() {
                     scheduleCheckWrites(session);
                 }
             };
         } else {
             final long lastWriteCounter = codec.getWriteCounter();
-            func = new Runnable() {
+            func = new Task() {
                 public void run() {
                     if (lastWriteCounter == codec.getWriteCounter()) {
                         onKeepAlive.run();
@@ -90,16 +91,16 @@ public class HeartBeatMonitor {
 
     private void scheduleCheckReads(final short session) {
         final ProtocolCodec codec = transport.getProtocolCodec();
-        Runnable func;
+        Task func;
         if (codec == null) {
-            func = new Runnable() {
+            func = new Task() {
                 public void run() {
                     scheduleCheckReads(session);
                 }
             };
         } else {
             final long lastReadCounter = codec.getReadCounter();
-            func = new Runnable() {
+            func = new Task() {
                 public void run() {
                     if (lastReadCounter == codec.getReadCounter() && !readSuspendedInterval && readSuspendCount == 0) {
                         onDead.run();
@@ -117,7 +118,7 @@ public class HeartBeatMonitor {
         readSuspendedInterval = false;
         if (writeInterval != 0) {
             if (initialWriteCheckDelay != 0) {
-                transport.getDispatchQueue().executeAfter(initialWriteCheckDelay, TimeUnit.MILLISECONDS, new Runnable() {
+                transport.getDispatchQueue().executeAfter(initialWriteCheckDelay, TimeUnit.MILLISECONDS, new Task() {
                     public void run() {
                         scheduleCheckWrites(session);
                     }
@@ -128,7 +129,7 @@ public class HeartBeatMonitor {
         }
         if (readInterval != 0) {
             if (initialReadCheckDelay != 0) {
-                transport.getDispatchQueue().executeAfter(initialReadCheckDelay, TimeUnit.MILLISECONDS, new Runnable() {
+                transport.getDispatchQueue().executeAfter(initialReadCheckDelay, TimeUnit.MILLISECONDS, new Task() {
                     public void run() {
                         scheduleCheckReads(session);
                     }
@@ -160,19 +161,19 @@ public class HeartBeatMonitor {
         this.initialWriteCheckDelay = initialWriteCheckDelay;
     }
 
-    public Runnable getOnDead() {
+    public Task getOnDead() {
         return onDead;
     }
 
-    public void setOnDead(Runnable onDead) {
+    public void setOnDead(Task onDead) {
         this.onDead = onDead;
     }
 
-    public Runnable getOnKeepAlive() {
+    public Task getOnKeepAlive() {
         return onKeepAlive;
     }
 
-    public void setOnKeepAlive(Runnable onKeepAlive) {
+    public void setOnKeepAlive(Task onKeepAlive) {
         this.onKeepAlive = onKeepAlive;
     }
 

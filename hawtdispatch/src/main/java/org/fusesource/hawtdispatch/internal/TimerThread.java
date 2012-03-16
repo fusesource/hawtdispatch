@@ -18,6 +18,7 @@
 package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Task;
 import org.fusesource.hawtdispatch.internal.util.TimerHeap;
 
 import java.util.*;
@@ -40,7 +41,7 @@ final public class TimerThread extends Thread {
         Type type;
         long time;
         TimeUnit unit;
-        Runnable runnable;
+        Task task;
         DispatchQueue target;
     }
 
@@ -52,31 +53,31 @@ final public class TimerThread extends Thread {
         setDaemon(true);
     }
 
-    public final void addAbsolute(Runnable runnable, DispatchQueue target, long time, TimeUnit unit) {
+    public final void addAbsolute(Task task, DispatchQueue target, long time, TimeUnit unit) {
         TimerRequest request = new TimerRequest();
         request.type = ABSOLUTE;
         request.time = time;
         request.unit = unit;
-        request.runnable = runnable;
+        request.task = task;
         request.target = target;
         add(request);
     }
 
-    public final void addRelative(Runnable runnable, DispatchQueue target, long delay, TimeUnit unit) {
+    public final void addRelative(Task task, DispatchQueue target, long delay, TimeUnit unit) {
         TimerRequest request = new TimerRequest();
         request.type = RELATIVE;
         request.time = delay;
         request.unit = unit;
-        request.runnable = runnable;
+        request.task = task;
         request.target = target;
         add(request);
     }
 
-    public final void shutdown(Runnable onShutdown, DispatchQueue target) {
+    public final void shutdown(Task onShutdown, DispatchQueue target) {
         TimerRequest request = new TimerRequest();
         request.type = SHUTDOWN;
         request.target = target;
-        request.runnable = onShutdown;
+        request.task = onShutdown;
         add(request);
     }
 
@@ -89,18 +90,18 @@ final public class TimerThread extends Thread {
 
     public void run() {
 
-        final HashMap<DispatchQueue, LinkedList<Runnable>> readyRequests =
-                new HashMap<DispatchQueue, LinkedList<Runnable>>();
+        final HashMap<DispatchQueue, LinkedList<Task>> readyRequests =
+                new HashMap<DispatchQueue, LinkedList<Task>>();
 
         final TimerHeap<TimerRequest> timerHeap = new TimerHeap<TimerRequest>() {
             @Override
             public final void execute(TimerRequest request) {
-                LinkedList<Runnable> runnables = readyRequests.get(request.target);
-                if( runnables==null ) {
-                    runnables = new LinkedList<Runnable>();
-                    readyRequests.put(request.target, runnables);
+                LinkedList<Task> tasks = readyRequests.get(request.target);
+                if( tasks==null ) {
+                    tasks = new LinkedList<Task>();
+                    readyRequests.put(request.target, tasks);
                 }
-                runnables.add(request.runnable);
+                tasks.add(request.task);
             }
         };
         
@@ -129,9 +130,9 @@ final public class TimerThread extends Thread {
                             List<TimerRequest> requests = timerHeap.clear();
                             for (TimerRequest r : requests) {
                                 // execute them all..
-                                r.target.execute(r.runnable);
+                                r.target.execute(r.task);
                             }
-                            if( request.runnable!=null ) {
+                            if( request.task !=null ) {
                                 timerHeap.execute(request);
                             }
                             return;
@@ -143,20 +144,20 @@ final public class TimerThread extends Thread {
                 timerHeap.executeReadyTimers();
 
                 if( !readyRequests.isEmpty() ) {
-                    for (Map.Entry<DispatchQueue,LinkedList<Runnable>> entry: readyRequests.entrySet()) {
+                    for (Map.Entry<DispatchQueue,LinkedList<Task>> entry: readyRequests.entrySet()) {
                         final DispatchQueue queue = entry.getKey();
-                        final LinkedList<Runnable> runnables = entry.getValue();
-                        if( runnables.size() > 1 ) {
-                            // execute the runnables as a batch.
-                            queue.execute(new Runnable(){
+                        final LinkedList<Task> tasks = entry.getValue();
+                        if( tasks.size() > 1 ) {
+                            // execute the tasks as a batch.
+                            queue.execute(new Task(){
                                 public void run() {
-                                    for ( Runnable runnable: runnables) {
-                                        runnable.run();
+                                    for ( Task task: tasks) {
+                                        task.run();
                                     }
                                 }
                             });
                         } else {
-                            queue.execute(runnables.getFirst());
+                            queue.execute(tasks.getFirst());
                         }
                     }
                     readyRequests.clear();

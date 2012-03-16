@@ -21,6 +21,7 @@
  */
 package org.fusesource.hawtdispatch.internal.pool;
 
+import org.fusesource.hawtdispatch.Task;
 import org.fusesource.hawtdispatch.internal.WorkerPool;
 import org.fusesource.hawtdispatch.internal.WorkerThread;
 
@@ -86,7 +87,7 @@ final public class StealingPool implements WorkerPool {
     /**
      * Queue for external submissions.
      */
-    private final LinkedTransferQueue<Runnable> submissionQueue;
+    private final LinkedTransferQueue<Task> submissionQueue;
 
     /**
      * Head of Treiber stack for barrier sync. See below for explanation.
@@ -260,7 +261,7 @@ final public class StealingPool implements WorkerPool {
         this.workerLock = new ReentrantLock();
         this.termination = workerLock.newCondition();
         this.stealCount = new AtomicLong();
-        this.submissionQueue = new LinkedTransferQueue<Runnable>();
+        this.submissionQueue = new LinkedTransferQueue<Task>();
 
 
         threads = new StealingThread[parallelism];
@@ -352,7 +353,7 @@ final public class StealingPool implements WorkerPool {
     /**
      * Common code for execute, invoke and submit
      */
-    private void doSubmit(Runnable task) {
+    private void doSubmit(Task task) {
         if (task == null)
             throw new NullPointerException();
         if (isShutdown())
@@ -369,7 +370,7 @@ final public class StealingPool implements WorkerPool {
      * @throws RejectedExecutionException if the task cannot be
      *         scheduled for execution
      */
-    public void execute(Runnable task) {
+    public void execute(Task task) {
         doSubmit(task);
     }
 
@@ -511,7 +512,7 @@ final public class StealingPool implements WorkerPool {
      *
      * @return the next submission, or {@code null} if none
      */
-    protected Runnable pollSubmission() {
+    protected Task pollSubmission() {
         return submissionQueue.poll();
     }
 
@@ -532,7 +533,7 @@ final public class StealingPool implements WorkerPool {
      * @param c the collection to transfer elements into
      * @return the number of elements transferred
      */
-    protected int drainTasksTo(Collection<? super Runnable> c) {
+    protected int drainTasksTo(Collection<? super Task> c) {
         int n = submissionQueue.drainTo(c);
         StealingThread[] ws = threads;
         if (ws != null) {
@@ -623,7 +624,7 @@ final public class StealingPool implements WorkerPool {
      *
      * @return an empty list
      */
-    public List<java.lang.Runnable> shutdownNow() {
+    public List<Task> shutdownNow() {
         terminate();
         return Collections.emptyList();
     }

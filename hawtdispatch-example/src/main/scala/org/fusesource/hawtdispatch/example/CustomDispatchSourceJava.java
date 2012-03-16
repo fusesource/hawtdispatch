@@ -40,7 +40,7 @@ public class CustomDispatchSourceJava {
 
         DispatchQueue queue = createQueue();
         final CustomDispatchSource<Integer, Integer> source = createSource(EventAggregators.INTEGER_ADD, queue);
-        source.setEventHandler(new Runnable() {
+        source.setEventHandler(new Task() {
             public void run() {
                 int count = source.getData();
                 System.out.println("got: " + count);
@@ -51,7 +51,7 @@ public class CustomDispatchSourceJava {
 
         // Produce 1,000,000 concurrent merge events
         for (int i = 0; i < 1000; i++) {
-            getGlobalQueue().execute(new Runnable() {
+            getGlobalQueue().execute(new Task() {
                 public void run() {
                     for (int j = 0; j < 1000; j++) {
                         source.merge(1);

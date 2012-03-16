@@ -45,13 +45,14 @@ package object hawtdispatch {
 
   trait RichExecutorTrait {
 
-    protected def execute(task:Runnable):Unit
+    protected def execute(task:Task):Unit
+    protected def execute(runnable:Runnable):Unit
 
     /**
      * <p>
      * Submits a partial function for asynchronous execution on a dispatch queue.
      * </p><p>
-     * Calls to {@link #execute(Runnable)} always return immediately after the runnable has
+     * Calls to {@link #execute(Task)} always return immediately after the runnable has
      * been submitted, and never wait for the runnable to be executed.
      * </p><p>
      * The target queue determines whether the runnable will be invoked serially or
@@ -67,10 +68,10 @@ package object hawtdispatch {
     def apply(task: =>Unit) = execute(r(task _))
 
     /**
-     * Creates a Runnable object which executes the supplied partial
+     * Creates a Task object which executes the supplied partial
      * function on this executor when run.
      */
-    def runnable(task: =>Unit) = new Runnable() {
+    def runnable(task: =>Unit) = new Task() {
       val target = r(task _)
       def run: Unit = {
         execute(target)
@@ -91,11 +92,13 @@ package object hawtdispatch {
      * The runnable to submit to the dispatch queue.
      */
     def <<(task: Runnable) = execute(task)
+    def <<(task: Task) = execute(task)
 
     /**
      * A right-associative version of the {@link #<<(Runnable)} method
      */
     def >>:(task: Runnable) = execute(task)
+    def >>:(task: Task) = execute(task)
 
     /**
      * Executes the supplied function on the dispatch queue
@@ -165,6 +168,7 @@ package object hawtdispatch {
    */
   final class RichExecutor(val executor: Executor) extends Proxy with RichExecutorTrait {
     def self: Any = executor
+    protected def execute(task:Task) = executor.execute(task)
     protected def execute(task:Runnable) = executor.execute(task)
   }
 
@@ -173,7 +177,9 @@ package object hawtdispatch {
    */
   final class RichDispatchQueue(val actual: DispatchQueue) extends Proxy with RichExecutorTrait with RichDispatchObject {
     def self = actual
+    @Deprecated
     protected def execute(task:Runnable) = actual.execute(task)
+    protected def execute(task:Task) = actual.execute(task)
 
     def label_=(value: String) { actual.setLabel( value ) }
     def label:String = actual.getLabel
@@ -211,7 +217,7 @@ package object hawtdispatch {
       val closed = new AtomicBoolean
       def close: Unit = closed.set(true)
 
-      val action:Runnable = new Runnable() {
+      val action:Task = new Task() {
         def run: Unit = {
           if (!closed.get) {
             try {
@@ -239,7 +245,7 @@ package object hawtdispatch {
      * @param task
      * The runnable to submit to execute
      */
-    def <<|(task: Runnable) = {
+    def <<|(task: Task) = {
       if( actual.isExecuting ) {
         try {
           task.run
@@ -252,6 +258,8 @@ package object hawtdispatch {
       }
       this
     }
+
+    def <<|(task: Runnable):RichDispatchQueue = this <<|(new TaskWrapper(task))
 
     /**
      * <p>
@@ -270,7 +278,8 @@ package object hawtdispatch {
     /**
      * A right-associative version of the {@link #<<|(Runnable)} method
      */
-    def |>>:(task: Runnable) = this <<| task
+    def |>>:(task: Runnable) =this <<| task
+    def |>>:(task: Task) = this <<| task
 
   }
 
@@ -332,19 +341,19 @@ package object hawtdispatch {
 
   /////////////////////////////////////////////////////////////////////
   //
-  // Make it easier to create Runnable objects.
+  // Make it easier to create Task objects.
   //
   /////////////////////////////////////////////////////////////////////
 
   /**
    * Creates a runnable object from a partial function
    */
-  def ^(proc: => Unit): Runnable = r(proc _)
+  def ^(proc: => Unit): Task = r(proc _)
 
   /**
    * Creates a runnable object from a partial function
    */
-  private def r(proc: ()=>Unit): Runnable = new Runnable() {
+  private def r(proc: ()=>Unit): Task = new Task() {
     def run() {
       proc()
     }

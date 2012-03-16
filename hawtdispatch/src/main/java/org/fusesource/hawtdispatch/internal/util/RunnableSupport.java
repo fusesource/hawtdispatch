@@ -20,6 +20,8 @@ package org.fusesource.hawtdispatch.internal.util;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Task;
+import org.fusesource.hawtdispatch.TaskWrapper;
 
 /**
  * 
@@ -27,7 +29,7 @@ import org.fusesource.hawtdispatch.DispatchQueue;
  */
 public class RunnableSupport {
 
-    private static Runnable NO_OP = new Runnable() {
+    private static Task NO_OP = new Task() {
         public void run() {
         }
         public String toString() {
@@ -35,11 +37,16 @@ public class RunnableSupport {
         };
     };
     
-    public static Runnable runNoop() {
+    public static Task runNoop() {
         return NO_OP;
     }
-    
-    public static Runnable runOnceAfter(final Runnable runnable, int count) {
+
+    @Deprecated
+    public static Task runOnceAfter(final Runnable runnable, int count) {
+        return runOnceAfter(new TaskWrapper(runnable), count);
+    }
+
+    public static Task runOnceAfter(final Task runnable, int count) {
         if( runnable==null ) {
             return NO_OP;
         }
@@ -51,7 +58,7 @@ public class RunnableSupport {
             return runnable;
         }
         final AtomicInteger counter = new AtomicInteger(count);
-        return new Runnable() {
+        return new Task() {
             public void run() {
                 if( counter.decrementAndGet()==0 ) {
                     runnable.run();
@@ -63,7 +70,11 @@ public class RunnableSupport {
         };
     }
     
-    public static Runnable runAfter(final Runnable runnable, int count) {
+    @Deprecated
+    public static Task runAfter(final Runnable runnable, int count) {
+        return runAfter(new TaskWrapper(runnable), count);
+    }
+    public static Task runAfter(final Task runnable, int count) {
         if( count <= 0 || runnable==null ) {
             return NO_OP;
         }
@@ -71,7 +82,7 @@ public class RunnableSupport {
             return runnable;
         }
         final AtomicInteger counter = new AtomicInteger(count);
-        return new Runnable() {
+        return new Task() {
             public void run() {
                 if( counter.decrementAndGet()<=0 ) {
                     runnable.run();
@@ -83,36 +94,45 @@ public class RunnableSupport {
         };
     }
     
-    public static Runnable runOnceAfter(final DispatchQueue queue, final Runnable runnable, int count) {
-        if( count <= 0 || runnable==null ) {
+    @Deprecated
+    public static Task runOnceAfter(final DispatchQueue queue, final Runnable runnable, int count) {
+        return runOnceAfter(queue, new TaskWrapper(runnable), count);
+    }
+    public static Task runOnceAfter(final DispatchQueue queue, final Task task, int count) {
+        if( count <= 0 || task==null ) {
             return NO_OP;
         }
         final AtomicInteger counter = new AtomicInteger(count);
-        return new Runnable() {
+        return new Task() {
             public void run() {
                 if( counter.decrementAndGet()==0 ) {
-                    queue.execute(runnable);
+                    queue.execute(task);
                 }
             }
             public String toString() {
-                return "{"+runnable+"}";
+                return "{"+task+"}";
             };
         };
     }
     
-    public static Runnable runAfter(final DispatchQueue queue,  final Runnable runnable, int count) {
-        if( count <= 0 || runnable==null ) {
+    @Deprecated
+    public static Task runAfter(final DispatchQueue queue,  final Runnable runnable, int count) {
+        return runAfter(queue, new TaskWrapper(runnable), count);
+    }
+
+    public static Task runAfter(final DispatchQueue queue,  final Task task, int count) {
+        if( count <= 0 || task==null ) {
             return NO_OP;
         }
         final AtomicInteger counter = new AtomicInteger(count);
-        return new Runnable() {
+        return new Task() {
             public void run() {
                 if( counter.decrementAndGet()<=0 ) {
-                    queue.execute(runnable);
+                    queue.execute(task);
                 }
             }
             public String toString() {
-                return "{"+runnable.toString()+"}";
+                return "{"+task.toString()+"}";
             };
         };
     }

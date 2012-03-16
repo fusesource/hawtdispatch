@@ -20,6 +20,7 @@ package org.fusesource.hawtdispatch.transport;
 import java.net.SocketAddress;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Task;
 
 /**
  * A TransportServer asynchronously accepts {@see Transport} objects and then
@@ -33,6 +34,8 @@ public interface TransportServer {
      *
      * @param onComplete my be set to null if not interested in a callback.
      */
+    void start(Task onComplete) throws Exception;
+    @Deprecated
     void start(Runnable onComplete) throws Exception;
 
     /**
@@ -40,6 +43,8 @@ public interface TransportServer {
      *
      * @param onComplete my be set to null if not interested in a callback.
      */
+    void stop(Task onComplete) throws Exception;
+    @Deprecated
     void stop(Runnable onComplete) throws Exception;
 
     /**

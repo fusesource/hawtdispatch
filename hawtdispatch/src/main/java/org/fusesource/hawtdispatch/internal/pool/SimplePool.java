@@ -18,12 +18,11 @@
 package org.fusesource.hawtdispatch.internal.pool;
 
 import org.fusesource.hawtdispatch.DispatchPriority;
+import org.fusesource.hawtdispatch.Task;
 import org.fusesource.hawtdispatch.internal.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
 
@@ -31,7 +30,7 @@ import static java.lang.String.format;
  */
 public class SimplePool implements WorkerPool {
 
-    final ConcurrentLinkedQueue<Runnable> runnables = new ConcurrentLinkedQueue<Runnable>();
+    final ConcurrentLinkedQueue<Task> tasks = new ConcurrentLinkedQueue<Task>();
 
     final GlobalDispatchQueue globalQueue;
     final String name;
@@ -88,7 +87,7 @@ public class SimplePool implements WorkerPool {
     public void shutdown() {
         try {
             // wait for the queue to get drained..
-            while( !runnables.isEmpty() ) {
+            while( !tasks.isEmpty() ) {
                 Thread.sleep(50);
             }
 
@@ -105,9 +104,9 @@ public class SimplePool implements WorkerPool {
         }
     }
 
-    public void execute(Runnable runnable) {
+    public void execute(Task runnable) {
         WorkerThread current = WorkerThread.currentWorkerThread();
-        runnables.add(runnable);
+        tasks.add(runnable);
 
         // If there are idle threads.. wake one up to process the runnable.
         for (int i=0; i < threads.length; i++) {

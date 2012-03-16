@@ -22,8 +22,6 @@ import org.fusesource.hawtdispatch.*;
 import java.io.IOException;
 import java.nio.channels.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
@@ -52,8 +50,8 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
     final AtomicBoolean canceled = new AtomicBoolean();
     final int interestOps;
 
-    Runnable cancelHandler;
-    Runnable eventHandler;
+    Task cancelHandler;
+    Task eventHandler;
 
     // These fields are only accessed by the ioManager's thread.
     public static class KeyState {
@@ -135,7 +133,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
 
     public void cancel() {
         if( canceled.compareAndSet(false, true) ) {
-            selectorQueue.execute(new Runnable(){
+            selectorQueue.execute(new Task(){
                 public void run() {
                     internal_cancel();
                 }
@@ -179,7 +177,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
     }
 
     private void register_on(final DispatchQueue queue) {
-        queue.execute(new Runnable(){
+        queue.execute(new Task(){
             public void run() {
                 assert keyState.get()==null;
 
@@ -220,7 +218,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         state.readyOps |= readyOps;
         if( state.readyOps!=0  && !isSuspended()&& !isCanceled() ) {
             state.readyOps = 0;
-            targetQueue.execute(new Runnable() {
+            targetQueue.execute(new Task() {
                 public void run() {
                     if( !isSuspended() && !isCanceled()) {
                         if(DEBUG) debug("fired %s", opsToString(readyOps));
@@ -237,7 +235,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
     }
 
-    private Runnable updateInterestTask = new Runnable(){
+    private Task updateInterestTask = new Task(){
         public void run() {
             if( !isSuspended() && !isCanceled() ) {
                 if(DEBUG) debug("adding interest: %d", opsToString(interestOps));
@@ -285,7 +283,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                 fire(state.readyOps);
             }
         } else {
-            selectorQueue.execute(new Runnable(){
+            selectorQueue.execute(new Task(){
                 public void run() {
                     KeyState state = keyState.get();
                     if( state==null || state.readyOps==0 ) {
@@ -302,11 +300,21 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         return canceled.get();
     }
 
-    public void setCancelHandler(Runnable cancelHandler) {
+    @Deprecated
+    public void setCancelHandler(Runnable handler) {
+        this.setCancelHandler(new TaskWrapper(handler));
+    }
+
+    @Deprecated
+    public void setEventHandler(Runnable handler) {
+        this.setEventHandler(new TaskWrapper(handler));
+    }
+
+    public void setCancelHandler(Task cancelHandler) {
         this.cancelHandler = cancelHandler;
     }
 
-    public void setEventHandler(Runnable eventHandler) {
+    public void setEventHandler(Task eventHandler) {
         this.eventHandler = eventHandler;
     }
 
@@ -329,7 +337,7 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
             register_on(queue);
             selectorQueue = queue;
             if( previous!=null ) {
-                previous.execute(new Runnable(){
+                previous.execute(new Task(){
                     public void run() {
                         key_cancel();
                     }

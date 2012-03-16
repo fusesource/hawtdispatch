@@ -19,6 +19,8 @@ package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.Metrics;
+import org.fusesource.hawtdispatch.Task;
+import org.fusesource.hawtdispatch.TaskWrapper;
 
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -29,14 +31,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class SerialDispatchQueue extends AbstractDispatchObject implements HawtDispatchQueue, Runnable {
+public class SerialDispatchQueue extends AbstractDispatchObject implements HawtDispatchQueue {
 
     protected volatile String label;
 
     protected final AtomicBoolean triggered = new AtomicBoolean();
-    protected final ConcurrentLinkedQueue<Runnable> externalQueue = new ConcurrentLinkedQueue<Runnable>();
-    private final LinkedList<Runnable> localQueue = new LinkedList<Runnable>();
-    private final LinkedList<Runnable> sourceQueue= new LinkedList<Runnable>();
+    protected final ConcurrentLinkedQueue<Task> externalQueue = new ConcurrentLinkedQueue<Task>();
+    private final LinkedList<Task> localQueue = new LinkedList<Task>();
+    private final LinkedList<Task> sourceQueue= new LinkedList<Task>();
     private final ThreadLocal<Boolean> executing = new ThreadLocal<Boolean>();
     private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
 
@@ -44,16 +46,26 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         this.label = label;
     }
 
-    public void execute(final Runnable runnable) {
-        assert runnable != null;
-        enqueue(metricsCollector.track(runnable));
+    public void execute(Task task) {
+        assert task != null;
+        enqueue(metricsCollector.track(task));
     }
 
-    public LinkedList<Runnable> getSourceQueue() {
+    @Deprecated
+    public void execute(final Runnable runnable) {
+        execute(new TaskWrapper(runnable));
+    }
+
+    @Deprecated()
+    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
+        this.executeAfter(delay, unit, new TaskWrapper(runnable));
+    }
+
+    public LinkedList<Task> getSourceQueue() {
         return sourceQueue;
     }
 
-    private void enqueue(Runnable runnable) {
+    private void enqueue(Task runnable) {
         // We can take a shortcut...
         if( executing.get()!=null ) {
             localQueue.add(runnable);
@@ -68,7 +80,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         HawtDispatcher.CURRENT_QUEUE.set(this);
         executing.set(Boolean.TRUE);
         try {
-            Runnable runnable;
+            Task runnable;
             while( (runnable = externalQueue.poll())!=null ) {
                 localQueue.add(runnable);
             }
@@ -144,10 +156,9 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         return QueueType.SERIAL_QUEUE;
     }
 
-    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
-        getDispatcher().timerThread.addRelative(runnable, this, delay, unit);
+    public void executeAfter(long delay, TimeUnit unit, Task task) {
+        getDispatcher().timerThread.addRelative(task, this, delay, unit);
     }
-
 
     public DispatchQueue createQueue(String label) {
         DispatchQueue rc = getDispatcher().createQueue(label);

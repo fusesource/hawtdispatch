@@ -17,14 +17,11 @@
 
 package org.fusesource.hawtdispatch.internal;
 
+import org.fusesource.hawtdispatch.*;
+
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-
-import org.fusesource.hawtdispatch.DispatchPriority;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.Metrics;
-import org.fusesource.hawtdispatch.internal.util.QueueSupport;
 
 /**
  * 
@@ -34,12 +31,12 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
 
     volatile String label;
 
-    final LinkedList<Runnable> localRunnables = new LinkedList<Runnable>();
-    final ConcurrentLinkedQueue<Runnable> sharedRunnables = new ConcurrentLinkedQueue<Runnable>();
+    final LinkedList<Task> localTasks = new LinkedList<Task>();
+    final ConcurrentLinkedQueue<Task> sharedTasks = new ConcurrentLinkedQueue<Task>();
     final WorkerThread thread;
     final GlobalDispatchQueue globalQueue;
     private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
-    private final LinkedList<Runnable> sourceQueue= new LinkedList<Runnable>();
+    private final LinkedList<Task> sourceQueue= new LinkedList<Task>();
 
     public ThreadDispatchQueue(GlobalDispatchQueue globalQueue, WorkerThread thread) {
         this.thread = thread;
@@ -48,7 +45,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         getDispatcher().track(this);
     }
 
-    public LinkedList<Runnable> getSourceQueue() {
+    public LinkedList<Task> getSourceQueue() {
         return sourceQueue;
     }
 
@@ -72,27 +69,37 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
         return globalQueue.dispatcher;
     }
 
-    public void execute(java.lang.Runnable runnable) {
-        runnable = metricsCollector.track(runnable);
+    @Deprecated
+    public void execute(Runnable runnable) {
+        this.execute(new TaskWrapper(runnable));
+    }
+
+    @Deprecated
+    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
+        this.executeAfter(delay, unit, new TaskWrapper(runnable));
+    }
+
+    public void execute(Task task) {
+        task = metricsCollector.track(task);
         // We don't have to take the synchronization hit 
         if( Thread.currentThread()!=thread ) {
-            sharedRunnables.add(runnable);
+            sharedTasks.add(task);
             thread.unpark();
         } else {
-            localRunnables.add(runnable);
+            localTasks.add(task);
         }
     }
 
-    public Runnable poll() {
-        Runnable rc = localRunnables.poll();
+    public Task poll() {
+        Task rc = localTasks.poll();
         if (rc ==null) {
-            rc = sharedRunnables.poll();
+            rc = sharedTasks.poll();
         }
         return rc;
     }
 
-    public void executeAfter(long delay, TimeUnit unit, Runnable runnable) {
-        getDispatcher().timerThread.addRelative(runnable, this, delay, unit);
+    public void executeAfter(long delay, TimeUnit unit, Task task) {
+        getDispatcher().timerThread.addRelative(task, this, delay, unit);
     }
 
     public void resume() {

@@ -17,13 +17,14 @@
 
 package org.fusesource.hawtdispatch.internal;
 
+import org.fusesource.hawtdispatch.Task;
+
 /**
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public interface WorkerPool {
-    public void execute(Runnable runnable);
-    
-    
+    public void execute(Task runnable);
+
     WorkerThread[] getThreads();
 
     void start();

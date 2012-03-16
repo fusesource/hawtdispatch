@@ -74,7 +74,7 @@ final public class HawtDispatcher implements Dispatcher {
             // give every one a chance to notice
             // the state change.
             sleep(100);
-            timerThread.shutdown(new Runnable() {
+            timerThread.shutdown(new Task() {
                 public void run() {
                     // all outstanding timers will have been
                     // queued for execution

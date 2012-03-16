@@ -61,14 +61,18 @@ public class PipeTransport implements Transport {
         this.dispatchQueue = queue;
     }
 
+    @Deprecated
     public void start(final Runnable onCompleted) {
+        start(new TaskWrapper(onCompleted));
+    }
+    public void start(final Task onCompleted) {
         if (dispatchQueue == null) {
             throw new IllegalArgumentException("dispatchQueue is not set");
         }
-        server.dispatchQueue.execute(new Runnable(){
+        server.dispatchQueue.execute(new Task(){
             public void run() {
                 dispatchSource = Dispatch.createSource(EventAggregators.linkedList(), dispatchQueue);
-                dispatchSource.setEventHandler(new Runnable() {
+                dispatchSource.setEventHandler(new Task() {
                     public void run() {
                         try {
                             final LinkedList<Object> commands = dispatchSource.getData();
@@ -82,7 +86,7 @@ public class PipeTransport implements Transport {
                             }
 
                             // let the peer know that they have been processed.
-                            peer.dispatchQueue.execute(new Runnable() {
+                            peer.dispatchQueue.execute(new Task() {
                                 public void run() {
                                     outbound -= commands.size();
                                     drainInbound();
@@ -107,7 +111,7 @@ public class PipeTransport implements Transport {
     }
 
     private void fireConnected() {
-        dispatchQueue.execute(new Runnable() {
+        dispatchQueue.execute(new Task() {
             public void run() {
                 connected = true;
                 dispatchSource.resume();
@@ -121,7 +125,11 @@ public class PipeTransport implements Transport {
         listener.onRefill();
     }
 
-    public void stop(Runnable onCompleted)  {
+    @Deprecated
+    public void stop(final Runnable onCompleted) {
+        stop(new TaskWrapper(onCompleted));
+    }
+    public void stop(Task onCompleted)  {
         if( connected ) {
             peer.dispatchSource.merge(EOF_TOKEN);
         }

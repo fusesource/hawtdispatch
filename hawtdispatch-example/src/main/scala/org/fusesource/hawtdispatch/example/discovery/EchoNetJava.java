@@ -70,7 +70,7 @@ public class EchoNetJava {
             queue = createQueue(me.toString());
             accept_source = createSource(serverChannel, SelectionKey.OP_ACCEPT, queue);
 
-            accept_source.setEventHandler(new Runnable() {
+            accept_source.setEventHandler(new Task() {
                 public void run() {
                     // we are a server
 
@@ -104,7 +104,7 @@ public class EchoNetJava {
                 }
             });
 
-            accept_source.setCancelHandler(new Runnable() {
+            accept_source.setCancelHandler(new Task() {
                 public void run() {
                     try {
                         serverChannel.close();
@@ -137,7 +137,7 @@ public class EchoNetJava {
         }
 
         public void connect(final URI uri) {
-            queue.execute(new Runnable() {
+            queue.execute(new Task() {
                 public void run() {
                     if (me.equals(uri) || seen.contains(uri))
                         return;
@@ -156,7 +156,7 @@ public class EchoNetJava {
                         socketChannel.connect(address);
 
                         final DispatchSource connect_source = createSource(socketChannel, SelectionKey.OP_CONNECT, queue);
-                        connect_source.setEventHandler(new Runnable() {
+                        connect_source.setEventHandler(new Task() {
                             public void run() {
                                 connect_source.cancel();
                                 try {
@@ -225,8 +225,8 @@ public class EchoNetJava {
         }
 
 
-        public Runnable read_greeting() {
-            return new Runnable() {
+        public Task read_greeting() {
+            return new Task() {
                 public void run() {
                     try {
                         String message = read_frame();
@@ -242,7 +242,7 @@ public class EchoNetJava {
                             list.remove(uri);
                             list.add("end");
 
-                            start_write_data(new Runnable() {
+                            start_write_data(new Task() {
                                 public void run() {
                                     start_read_hearbeat();
                                 }
@@ -257,7 +257,7 @@ public class EchoNetJava {
 
         public void start_write_greeting() throws IOException {
             trace("hello");
-            start_write_data(new Runnable() {
+            start_write_data(new Task() {
                 public void run() {
                     start_read_server_listings();
                 }
@@ -270,8 +270,8 @@ public class EchoNetJava {
         }
 
 
-        public Runnable read_server_listings() {
-            return new Runnable() {
+        public Task read_server_listings() {
+            return new Task() {
                 public void run() {
                     try {
                         String message = read_frame();
@@ -286,7 +286,7 @@ public class EchoNetJava {
                                 list.removeAll(listed);
                                 list.remove(server.me);
                                 list.add("end");
-                                start_write_data(new Runnable(){
+                                start_write_data(new Task(){
                                     public void run() {
                                         start_write_hearbeat();
                                     }
@@ -305,8 +305,8 @@ public class EchoNetJava {
             read_source.resume();
         }
 
-        public Runnable read_clientlistings() {
-            return new Runnable() {
+        public Task read_clientlistings() {
+            return new Task() {
                 public void run() {
                     try {
                         String message = read_frame();
@@ -325,11 +325,11 @@ public class EchoNetJava {
         }
 
         public void start_write_hearbeat() {
-            queue.executeAfter(1, TimeUnit.SECONDS, new Runnable() {
+            queue.executeAfter(1, TimeUnit.SECONDS, new Task() {
                 public void run() {
                     try {
                         trace("ping");
-                        start_write_data(new Runnable() {
+                        start_write_data(new Task() {
                             public void run() {
                                 start_write_hearbeat();
                             }
@@ -347,8 +347,8 @@ public class EchoNetJava {
             read_source.resume();
         }
 
-        public Runnable read_hearbeat() {
-            return new Runnable() {
+        public Task read_hearbeat() {
+            return new Task() {
                 public void run() {
                     try {
                         String message = read_frame();
@@ -362,7 +362,7 @@ public class EchoNetJava {
             };
         }
 
-        public void start_write_data(Runnable onDone, Object... list) throws IOException {
+        public void start_write_data(Task onDone, Object... list) throws IOException {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             for (Object next : list) {
                 baos.write(next.toString().getBytes("UTF-8"));
@@ -373,8 +373,8 @@ public class EchoNetJava {
             write_source.resume();
         }
 
-        public Runnable write_data(final ByteBuffer buffer, final Runnable onDone) {
-            return new Runnable() {
+        public Task write_data(final ByteBuffer buffer, final Task onDone) {
+            return new Task() {
                 public void run() {
                     try {
                         channel.write(buffer);

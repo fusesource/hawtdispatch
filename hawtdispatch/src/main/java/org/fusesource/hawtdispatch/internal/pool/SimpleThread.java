@@ -17,12 +17,12 @@
 
 package org.fusesource.hawtdispatch.internal.pool;
 
+import org.fusesource.hawtdispatch.Task;
 import org.fusesource.hawtdispatch.internal.NioManager;
 import org.fusesource.hawtdispatch.internal.ThreadDispatchQueue;
 import org.fusesource.hawtdispatch.internal.WorkerThread;
 
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static java.lang.String.format;
@@ -60,21 +60,21 @@ public class SimpleThread extends WorkerThread {
     public void run() {
         debug("run start");
         try {
-            ConcurrentLinkedQueue<Runnable> sharedQueue = pool.runnables;
+            ConcurrentLinkedQueue<Task> sharedQueue = pool.tasks;
             while(!pool.shutdown) {
 
-                Runnable runnable = threadQueue.poll();
-                if( runnable==null ) {
-                    runnable = sharedQueue.poll();
-                    if( runnable==null ) {
-                        runnable = threadQueue.getSourceQueue().poll();
+                Task task = threadQueue.poll();
+                if( task==null ) {
+                    task = sharedQueue.poll();
+                    if( task==null ) {
+                        task = threadQueue.getSourceQueue().poll();
                     }
                 }
 
-                if( runnable == null ) {
+                if( task == null ) {
                     pool.park(this);
                 } else {
-                    runnable.run();
+                    task.run();
                 }
             }
         } finally {

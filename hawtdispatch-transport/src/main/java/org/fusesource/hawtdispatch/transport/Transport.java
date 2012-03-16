@@ -22,6 +22,7 @@ import java.net.SocketAddress;
 import java.net.URI;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Task;
 
 /**
  * Represents an abstract connection.  It can be a client side or server side connection.
@@ -35,6 +36,7 @@ public interface Transport {
      *
      * @param onComplete my be set to null if not interested in a callback.
      */
+    @Deprecated
     void start(Runnable onComplete);
 
     /**
@@ -42,7 +44,22 @@ public interface Transport {
      *
      * @param onComplete my be set to null if not interested in a callback.
      */
+    @Deprecated
     void stop(Runnable onComplete);
+
+    /**
+     * Starts the service.  Executes the onComplete runnable once the service has fully started up.
+     *
+     * @param onComplete my be set to null if not interested in a callback.
+     */
+    void start(Task onComplete);
+
+    /**
+     * Stops the service.  Executes the onComplete runnable once the service has fully stopped.
+     *
+     * @param onComplete my be set to null if not interested in a callback.
+     */
+    void stop(Task onComplete);
 
     boolean full();
 

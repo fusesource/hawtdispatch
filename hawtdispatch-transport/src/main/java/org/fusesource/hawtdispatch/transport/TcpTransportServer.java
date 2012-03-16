@@ -17,9 +17,7 @@
 
 package org.fusesource.hawtdispatch.transport;
 
-import org.fusesource.hawtdispatch.Dispatch;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.DispatchSource;
+import org.fusesource.hawtdispatch.*;
 
 import java.io.IOException;
 import java.net.*;
@@ -77,10 +75,16 @@ public class TcpTransportServer implements TransportServer {
         acceptSource.resume();
     }
 
-    public void start() throws Exception {
-        start(null);
-    }
+    @Deprecated
     public void start(Runnable onCompleted) throws Exception {
+        start(new TaskWrapper(onCompleted));
+    }
+    @Deprecated
+    public void stop(Runnable onCompleted) throws Exception {
+        stop(new TaskWrapper(onCompleted));
+    }
+
+    public void start(Task onCompleted) throws Exception {
 
         try {
             channel = ServerSocketChannel.open();
@@ -95,7 +99,7 @@ public class TcpTransportServer implements TransportServer {
         }
 
         acceptSource = Dispatch.createSource(channel, SelectionKey.OP_ACCEPT, dispatchQueue);
-        acceptSource.setEventHandler(new Runnable() {
+        acceptSource.setEventHandler(new Task() {
             public void run() {
                 try {
                     SocketChannel client = channel.accept();
@@ -108,7 +112,7 @@ public class TcpTransportServer implements TransportServer {
                 }
             }
         });
-        acceptSource.setCancelHandler(new Runnable() {
+        acceptSource.setCancelHandler(new Task() {
             public void run() {
                 try {
                     channel.close();
@@ -130,14 +134,11 @@ public class TcpTransportServer implements TransportServer {
         }
     }
 
-    public void stop() throws Exception {
-        stop(null);
-    }
-    public void stop(final Runnable onCompleted) throws Exception {
+    public void stop(final Task onCompleted) throws Exception {
         if( acceptSource.isCanceled() ) {
             onCompleted.run();
         } else {
-            acceptSource.setCancelHandler(new Runnable() {
+            acceptSource.setCancelHandler(new Task() {
                 public void run() {
                     try {
                         channel.close();

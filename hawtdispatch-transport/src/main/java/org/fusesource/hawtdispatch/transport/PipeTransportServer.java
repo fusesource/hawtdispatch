@@ -17,10 +17,7 @@
 
 package org.fusesource.hawtdispatch.transport;
 
-import org.fusesource.hawtdispatch.CustomDispatchSource;
-import org.fusesource.hawtdispatch.Dispatch;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.EventAggregators;
+import org.fusesource.hawtdispatch.*;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -71,12 +68,18 @@ public class PipeTransportServer implements TransportServer {
         this.listener = listener;
     }
 
-    public void start() throws Exception {
-        start(null);
-    }
+    @Deprecated
     public void start(Runnable onCompleted) throws Exception {
+        start(new TaskWrapper(onCompleted));
+    }
+    @Deprecated
+    public void stop(Runnable onCompleted) throws Exception {
+        stop(new TaskWrapper(onCompleted));
+    }
+
+    public void start(Task onCompleted) throws Exception {
         acceptSource = Dispatch.createSource(EventAggregators.<PipeTransport>linkedList(), dispatchQueue);
-        acceptSource.setEventHandler(new Runnable() {
+        acceptSource.setEventHandler(new Task() {
             public void run() {
                 LinkedList<PipeTransport> transports = acceptSource.getData();
                 for (PipeTransport transport : transports) {
@@ -94,10 +97,7 @@ public class PipeTransportServer implements TransportServer {
         }
     }
 
-    public void stop() throws Exception {
-        stop(null);
-    }
-    public void stop(Runnable onCompleted) throws Exception {
+    public void stop(Task onCompleted) throws Exception {
         PipeTransportRegistry.unbind(this);
         acceptSource.setCancelHandler(onCompleted);
         acceptSource.cancel();

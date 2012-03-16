@@ -17,17 +17,43 @@
 
 package org.fusesource.hawtdispatch.internal.util;
 
+import org.fusesource.hawtdispatch.Task;
+
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class RunnableCountDownLatch extends CountDownLatch implements Runnable {
+public class RunnableCountDownLatch extends Task {
+    private final CountDownLatch latch;
+
     public RunnableCountDownLatch(int count) {
-        super(count);
+        latch = new CountDownLatch(count);
     }
     public void run() {
-        countDown();
+        latch.countDown();
+    }
+
+    public void await() throws InterruptedException {
+        latch.await();
+    }
+
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+        return latch.await(timeout, unit);
+    }
+
+    public long getCount() {
+        return latch.getCount();
+    }
+
+    public void countDown() {
+        latch.countDown();
+    }
+
+    @Override
+    public String toString() {
+        return latch.toString();
     }
 }

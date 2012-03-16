@@ -22,12 +22,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.fusesource.hawtdispatch.BaseRetained;
 import org.fusesource.hawtdispatch.Suspendable;
+import org.fusesource.hawtdispatch.Task;
 
 /**
  * 
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class BaseSuspendable implements Suspendable {
+public class BaseSuspendable extends Task implements Suspendable {
 
     protected final AtomicBoolean startup = new AtomicBoolean(true);
     protected final AtomicInteger suspended = new AtomicInteger();
@@ -61,4 +62,7 @@ public class BaseSuspendable implements Suspendable {
     protected void onResume() {
     }
 
+    @Override
+    public void run() {
+    }
 }

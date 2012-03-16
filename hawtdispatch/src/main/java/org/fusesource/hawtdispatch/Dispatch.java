@@ -257,7 +257,7 @@ public class Dispatch {
     /**
      * A Runnable task that does nothing.
      */
-    public static final Runnable NOOP = new Runnable() {
+    public static final Task NOOP = new Task() {
         public void run() {}
     };
 }

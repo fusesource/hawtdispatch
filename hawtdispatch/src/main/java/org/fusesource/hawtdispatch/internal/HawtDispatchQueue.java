@@ -18,6 +18,7 @@
 package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Task;
 
 import java.util.LinkedList;
 
@@ -36,6 +37,6 @@ public interface HawtDispatchQueue extends DispatchQueue {
     
     HawtDispatchQueue getTargetQueue();
 
-    LinkedList<Runnable> getSourceQueue();
+    LinkedList<Task> getSourceQueue();
 
 }

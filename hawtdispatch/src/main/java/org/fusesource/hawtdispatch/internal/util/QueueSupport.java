@@ -20,6 +20,8 @@ package org.fusesource.hawtdispatch.internal.util;
 import java.util.concurrent.CountDownLatch;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Task;
+import org.fusesource.hawtdispatch.TaskWrapper;
 
 /**
  * 
@@ -27,18 +29,23 @@ import org.fusesource.hawtdispatch.DispatchQueue;
  */
 public class QueueSupport {
 
-    static public void dispatchApply(DispatchQueue queue, int itterations, final Runnable runnable) throws InterruptedException {
-        final CountDownLatch done = new CountDownLatch(itterations);
-        Runnable wrapper = new Runnable() {
+    @Deprecated
+    static public void dispatchApply(DispatchQueue queue, int iterations, final Runnable runnable) throws InterruptedException {
+        dispatchApply(queue, iterations, new TaskWrapper(runnable));
+    }
+
+    static public void dispatchApply(DispatchQueue queue, int iterations, final Task task) throws InterruptedException {
+        final CountDownLatch done = new CountDownLatch(iterations);
+        Task wrapper = new Task() {
             public void run() {
                 try {
-                    runnable.run();
+                    task.run();
                 } finally {
                     done.countDown();
                 }
             }
         };
-        for( int i=0; i < itterations; i++ ) { 
+        for( int i=0; i < iterations; i++ ) {
             queue.execute(wrapper);
         }
         done.await();

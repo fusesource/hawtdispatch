@@ -18,17 +18,18 @@
 package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.Metrics;
+import org.fusesource.hawtdispatch.Task;
 
 /**
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  *
  */
-final public class InactiveMetricsCollector implements MetricsCollector {
+final public class InactiveMetricsCollector extends MetricsCollector {
 
     public static final InactiveMetricsCollector INSTANCE = new InactiveMetricsCollector();
 
-    public Runnable track(Runnable runnable) {
+    public Task track(Task runnable) {
         return runnable;
     }
 

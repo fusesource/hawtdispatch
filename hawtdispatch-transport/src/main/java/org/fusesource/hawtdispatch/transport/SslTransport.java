@@ -17,6 +17,8 @@
 
 package org.fusesource.hawtdispatch.transport;
 
+import org.fusesource.hawtdispatch.Task;
+
 import javax.net.ssl.*;
 import java.io.EOFException;
 import java.io.IOException;
@@ -288,7 +290,7 @@ public class SslTransport extends TcpTransport implements SecureTransport {
             }
         }
         if( plain.remaining()==0 && engine.getHandshakeStatus()!=NOT_HANDSHAKING ) {
-            dispatchQueue.execute(new Runnable() {
+            dispatchQueue.execute(new Task() {
                 public void run() {
                     handshake();
                 }
@@ -351,7 +353,7 @@ public class SslTransport extends TcpTransport implements SecureTransport {
                         }
                     case OK:
                         if ( engine.getHandshakeStatus()!=NOT_HANDSHAKING ) {
-                            dispatchQueue.execute(new Runnable() {
+                            dispatchQueue.execute(new Task() {
                                 public void run() {
                                     handshake();
                                 }
@@ -379,10 +381,10 @@ public class SslTransport extends TcpTransport implements SecureTransport {
                 case NEED_TASK:
                     final Runnable task = engine.getDelegatedTask();
                     if( task!=null ) {
-                        blockingExecutor.execute(new Runnable() {
+                        blockingExecutor.execute(new Task() {
                             public void run() {
                                 task.run();
-                                dispatchQueue.execute(new Runnable() {
+                                dispatchQueue.execute(new Task() {
                                     public void run() {
                                         if (isConnected()) {
                                             handshake();

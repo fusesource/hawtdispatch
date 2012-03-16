@@ -18,15 +18,16 @@
 package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.Metrics;
+import org.fusesource.hawtdispatch.Task;
 
 /**
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  *
  */
-public interface MetricsCollector {
+public abstract class MetricsCollector {
 
-    public Runnable track(Runnable runnable);
-    public Metrics metrics();
+    abstract public Task track(Task runnable);
+    abstract public Metrics metrics();
 
 }

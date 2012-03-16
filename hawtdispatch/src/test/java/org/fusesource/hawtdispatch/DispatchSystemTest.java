@@ -56,7 +56,7 @@ public class DispatchSystemTest {
         //     public void execute(int iterations) throws InterruptedException {
         //         final ForkJoinPool pool = new ForkJoinPool();
         //         final CountDownLatch counter = new CountDownLatch(iterations);
-        //         Runnable task = new Runnable(){
+        //         Task task = new Task(){
         //             public void run() {
         //                 counter.countDown();
         //                 if( counter.getCount()>0 ) {
@@ -80,7 +80,7 @@ public class DispatchSystemTest {
 
                 final DispatchQueue queue = Dispatch.getGlobalQueue();
                 final CountDownLatch counter = new CountDownLatch(iterations);
-                Runnable task = new Runnable(){
+                Task task = new Task(){
                     public void run() {
                         counter.countDown();
                         if( counter.getCount()>0 ) {
@@ -105,7 +105,7 @@ public class DispatchSystemTest {
 
                 final DispatchQueue queue = Dispatch.createQueue(null);
                 final CountDownLatch counter = new CountDownLatch(iterations);
-                Runnable task = new Runnable(){
+                Task task = new Task(){
                     public void run() {
                         counter.countDown();
                         if( counter.getCount()>0 ) {

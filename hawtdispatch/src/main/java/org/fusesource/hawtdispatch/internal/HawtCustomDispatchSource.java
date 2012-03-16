@@ -17,10 +17,7 @@
 
 package org.fusesource.hawtdispatch.internal;
 
-import org.fusesource.hawtdispatch.CustomDispatchSource;
-import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.EventAggregator;
-import org.fusesource.hawtdispatch.OrderedEventAggregator;
+import org.fusesource.hawtdispatch.*;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,12 +28,12 @@ import static java.lang.String.format;
 /**
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-final public class HawtCustomDispatchSource<Event, MergedEvent> extends AbstractDispatchObject implements CustomDispatchSource<Event, MergedEvent>, Runnable {
+final public class HawtCustomDispatchSource<Event, MergedEvent> extends AbstractDispatchObject implements CustomDispatchSource<Event, MergedEvent> {
     public static final boolean DEBUG = false;
 
     final AtomicBoolean canceled = new AtomicBoolean();
-    private Runnable cancelHandler;
-    private Runnable eventHandler;
+    private Task cancelHandler;
+    private Task eventHandler;
 
     private final ThreadLocal<MergedEvent> outboundEvent = new ThreadLocal<MergedEvent>();
     private final ThreadLocal<MergedEvent> firedEvent = new ThreadLocal<MergedEvent>();
@@ -95,7 +92,7 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
 
     private void fireEvent(final MergedEvent event) {
         if( event!=null ) {
-            targetQueue.execute(new Runnable() {
+            targetQueue.execute(new Task() {
                 public void run() {
                     if( isCanceled() ) {
                         debug("canceled");
@@ -148,7 +145,7 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
 
     public void cancel() {
         if( canceled.compareAndSet(false, true) ) {
-            targetQueue.execute(new Runnable() {
+            targetQueue.execute(new Task() {
                 public void run() {
                     if( cancelHandler!=null ) {
                         cancelHandler.run();
@@ -161,7 +158,7 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
     @Override
     protected void onResume() {
         debug("onResume");
-        targetQueue.execute(new Runnable() {
+        targetQueue.execute(new Task() {
             public void run() {
                 if( isCanceled() ) {
                     return;
@@ -186,11 +183,21 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
         return canceled.get();
     }
 
-    public void setCancelHandler(Runnable cancelHandler) {
+    @Deprecated
+    public void setCancelHandler(Runnable handler) {
+        this.setCancelHandler(new TaskWrapper(handler));
+    }
+
+    @Deprecated
+    public void setEventHandler(Runnable handler) {
+        this.setEventHandler(new TaskWrapper(handler));
+    }
+
+    public void setCancelHandler(Task cancelHandler) {
         this.cancelHandler = cancelHandler;
     }
 
-    public void setEventHandler(Runnable eventHandler) {
+    public void setEventHandler(Task eventHandler) {
         this.eventHandler = eventHandler;
     }
 

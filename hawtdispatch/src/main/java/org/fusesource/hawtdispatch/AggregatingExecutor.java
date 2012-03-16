@@ -37,7 +37,7 @@ public class AggregatingExecutor implements Executor {
     public AggregatingExecutor(DispatchQueue queue) {
         this.queue = queue;
         this.source = createSource(EventAggregators.<Runnable>linkedList(), queue);
-        this.source.setEventHandler(new Runnable() {
+        this.source.setEventHandler(new Task() {
             public void run() {
                 for (Runnable runnable: source.getData() ) {
                     try {
@@ -63,7 +63,7 @@ public class AggregatingExecutor implements Executor {
 
     public void execute(Runnable task) {
         if (getCurrentQueue() == null) {
-            queue.execute(task);
+            queue.execute(new TaskWrapper(task));
         } else {
             source.merge(task);
         }

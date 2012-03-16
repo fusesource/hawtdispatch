@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class TcpTransport extends ServiceBase implements Transport {
 
     abstract static class SocketState {
-        void onStop(Runnable onCompleted) {
+        void onStop(Task onCompleted) {
         }
         void onCanceled() {
         }
@@ -49,7 +49,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     static class DISCONNECTED extends SocketState{}
 
     class CONNECTING extends SocketState{
-        void onStop(Runnable onCompleted) {
+        void onStop(Task onCompleted) {
             trace("CONNECTING.onStop");
             CANCELING state = new CANCELING();
             socketState = state;
@@ -70,7 +70,7 @@ public class TcpTransport extends ServiceBase implements Transport {
             remoteAddress = channel.socket().getRemoteSocketAddress();
         }
 
-        void onStop(Runnable onCompleted) {
+        void onStop(Task onCompleted) {
             trace("CONNECTED.onStop");
             CANCELING state = new CANCELING();
             socketState = state;
@@ -84,8 +84,8 @@ public class TcpTransport extends ServiceBase implements Transport {
             state.add(createDisconnectTask());
             state.onCanceled();
         }
-        Runnable createDisconnectTask() {
-            return new Runnable(){
+        Task createDisconnectTask() {
+            return new Task(){
                 public void run() {
                     listener.onTransportDisconnected();
                 }
@@ -94,7 +94,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     }
 
     class CANCELING extends SocketState {
-        private LinkedList<Runnable> runnables =  new LinkedList<Runnable>();
+        private LinkedList<Task> runnables =  new LinkedList<Task>();
         private int remaining;
         private boolean dispose;
 
@@ -108,12 +108,12 @@ public class TcpTransport extends ServiceBase implements Transport {
                 writeSource.cancel();
             }
         }
-        void onStop(Runnable onCompleted) {
+        void onStop(Task onCompleted) {
             trace("CANCELING.onCompleted");
             add(onCompleted);
             dispose = true;
         }
-        void add(Runnable onCompleted) {
+        void add(Task onCompleted) {
             if( onCompleted!=null ) {
                 runnables.add(onCompleted);
             }
@@ -129,7 +129,7 @@ public class TcpTransport extends ServiceBase implements Transport {
             } catch (IOException ignore) {
             }
             socketState = new CANCELED(dispose);
-            for (Runnable runnable : runnables) {
+            for (Task runnable : runnables) {
                 runnable.run();
             }
             if (dispose) {
@@ -145,7 +145,7 @@ public class TcpTransport extends ServiceBase implements Transport {
             this.disposed=disposed;
         }
 
-        void onStop(Runnable onCompleted) {
+        void onStop(Task onCompleted) {
             trace("CANCELED.onStop");
             if( !disposed ) {
                 disposed = true;
@@ -300,7 +300,7 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     }
 
-    private final Runnable CANCEL_HANDLER = new Runnable() {
+    private final Task CANCEL_HANDLER = new Task() {
         public void run() {
             socketState.onCanceled();
         }
@@ -394,13 +394,13 @@ public class TcpTransport extends ServiceBase implements Transport {
         if(yieldSource!=null) yieldSource.setTargetQueue(queue);
     }
 
-    public void _start(Runnable onCompleted) {
+    public void _start(Task onCompleted) {
         try {
             if (socketState.is(CONNECTING.class) ) {
                 trace("connecting...");
                 // this allows the connect to complete..
                 readSource = Dispatch.createSource(channel, SelectionKey.OP_CONNECT, dispatchQueue);
-                readSource.setEventHandler(new Runnable() {
+                readSource.setEventHandler(new Task() {
                     public void run() {
                         if (getServiceState() != STARTED) {
                             return;
@@ -422,7 +422,7 @@ public class TcpTransport extends ServiceBase implements Transport {
                 readSource.resume();
 
             } else if (socketState.is(CONNECTED.class) ) {
-                dispatchQueue.execute(new Runnable() {
+                dispatchQueue.execute(new Task() {
                     public void run() {
                         try {
                             trace("was connected.");
@@ -442,7 +442,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         }
     }
 
-    public void _stop(final Runnable onCompleted) {
+    public void _stop(final Task onCompleted) {
         trace("stopping.. at state: "+socketState);
         socketState.onStop(onCompleted);
     }
@@ -459,14 +459,14 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     protected void onConnected() throws IOException {
         yieldSource = Dispatch.createSource(EventAggregators.INTEGER_ADD, dispatchQueue);
-        yieldSource.setEventHandler(new Runnable() {
+        yieldSource.setEventHandler(new Task() {
             public void run() {
                 drainInbound();
             }
         });
         yieldSource.resume();
         drainOutboundSource = Dispatch.createSource(EventAggregators.INTEGER_ADD, dispatchQueue);
-        drainOutboundSource.setEventHandler(new Runnable() {
+        drainOutboundSource.setEventHandler(new Task() {
             public void run() {
                 flush();
             }
@@ -479,12 +479,12 @@ public class TcpTransport extends ServiceBase implements Transport {
         readSource.setCancelHandler(CANCEL_HANDLER);
         writeSource.setCancelHandler(CANCEL_HANDLER);
 
-        readSource.setEventHandler(new Runnable() {
+        readSource.setEventHandler(new Task() {
             public void run() {
                 drainInbound();
             }
         });
-        writeSource.setEventHandler(new Runnable() {
+        writeSource.setEventHandler(new Task() {
             public void run() {
                 flush();
             }
@@ -498,7 +498,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     }
 
     private void schedualRateAllowanceReset() {
-        dispatchQueue.executeAfter(1, TimeUnit.SECONDS, new Runnable(){
+        dispatchQueue.executeAfter(1, TimeUnit.SECONDS, new Task(){
             public void run() {
                 if( !socketState.is(CONNECTED.class) ) {
                     return;
@@ -665,7 +665,7 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     private void _resumeRead() {
         readSource.resume();
-        dispatchQueue.execute(new Runnable(){
+        dispatchQueue.execute(new Task(){
             public void run() {
                 drainInbound();
             }

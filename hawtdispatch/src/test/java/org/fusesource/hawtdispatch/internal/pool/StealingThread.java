@@ -22,6 +22,7 @@
 
 package org.fusesource.hawtdispatch.internal.pool;
 
+import org.fusesource.hawtdispatch.Task;
 import org.fusesource.hawtdispatch.internal.NioManager;
 import org.fusesource.hawtdispatch.internal.ThreadDispatchQueue;
 import org.fusesource.hawtdispatch.internal.WorkerThread;
@@ -63,7 +64,7 @@ public class StealingThread extends WorkerThread {
      * The work-stealing queue array. Size must be a power of two.
      * Initialized when thread starts, to improve memory locality.
      */
-    private Runnable[] queue;
+    private Task[] queue;
 
     /**
      * A local thread queue which other threads do not steal from.
@@ -276,7 +277,7 @@ public class StealingThread extends WorkerThread {
     protected void onStart() {
         // Allocate while starting to improve chances of thread-local
         // isolation
-        queue = new Runnable[INITIAL_QUEUE_CAPACITY];
+        queue = new Task[INITIAL_QUEUE_CAPACITY];
         // Initial value of seed need not be especially random but
         // should differ across threads and must be nonzero
         int p = poolIndex + 1;
@@ -373,9 +374,9 @@ public class StealingThread extends WorkerThread {
      *
      * @return a task, or null if none or contended
      */
-    final Runnable deqTask() {
-        Runnable t;
-        Runnable[] q;
+    final Task deqTask() {
+        Task t;
+        Task[] q;
         int i;
         int b;
         if (sp != (b = base) &&
@@ -476,7 +477,7 @@ public class StealingThread extends WorkerThread {
         int newSize = oldSize << 1;
         if (newSize > MAXIMUM_QUEUE_CAPACITY)
             throw new RejectedExecutionException("Queue capacity exceeded");
-        Runnable[] newQ = queue = new Runnable[newSize];
+        Task[] newQ = queue = new Task[newSize];
 
         int b = base;
         int bf = b + oldSize;
@@ -580,9 +581,9 @@ public class StealingThread extends WorkerThread {
      *
      * @return the number of tasks drained
      */
-    final int drainTasksTo(Collection<? super Runnable> c) {
+    final int drainTasksTo(Collection<? super Task> c) {
         int n = 0;
-        Runnable t;
+        Task t;
         while (base != sp && (t = deqTask()) != null) {
             c.add(t);
             ++n;

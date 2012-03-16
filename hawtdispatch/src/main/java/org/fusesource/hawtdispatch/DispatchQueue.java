@@ -96,8 +96,29 @@ public interface DispatchQueue extends DispatchObject, Executor {
      *
      * @param runnable
      * The runnable to submit to the dispatch queue.
+     * @deprecated Use {@link #execute(Task)} instead.
      */
     void execute(Runnable runnable);
+
+    /**
+     * <p>
+     * Submits a task for asynchronous execution on a dispatch queue.
+     * </p><p>
+     * {@link #execute(Task)} is the fundamental mechanism for submitting
+     * runnable objects to a dispatch queue.
+     * </p><p>
+     * Calls to {@link #execute(Task)} always return immediately after the runnable has
+     * been submitted, and never wait for the runnable to be executed.
+     * </p><p>
+     * The target queue determines whether the runnable will be invoked serially or
+     * concurrently with respect to other runnables submitted to that same queue.
+     * Serial queues are processed concurrently with with respect to each other.
+     * </p>
+     *
+     * @param task
+     * The task to submit to the dispatch queue.
+     */
+    void execute(Task task);
 
     /**
      * <p>
@@ -108,8 +129,21 @@ public interface DispatchQueue extends DispatchObject, Executor {
      * the amount of time to delay before executing the runnable
      * @param unit the unit of time that the delay value is specified in
      * @param runnable
+     * @deprecated Use {@link #executeAfter(long, TimeUnit, Task)} instead.
      */
     public void executeAfter(long delay, TimeUnit unit, Runnable runnable);
+
+    /**
+     * <p>
+     * Schedule a task for execution on a given queue at a specified time.
+     * </p>
+     *
+     * @param delay
+     * the amount of time to delay before executing the runnable
+     * @param unit the unit of time that the delay value is specified in
+     * @param task
+     */
+    public void executeAfter(long delay, TimeUnit unit, Task task);
 
 //
 //  This is an API method that libdispatch supports, but even they don't recommend it's

@@ -31,20 +31,20 @@ import org.fusesource.hawtdispatch._
  */
 class TaskTracker(val name:String="unknown", var timeout: Long = 0) {
 
-  private[this] val tasks = new HashSet[Task]()
+  private[this] val tasks = new HashSet[TrackedTask]()
   private[this] var _callback:Runnable = null
   val queue = createQueue("tracker: "+name);
   var done = false
 
-  class Task(var name:Any) extends Runnable {
+  class TrackedTask(var name:Any) extends Task {
     def run = {
       remove(this)
     }
     override def toString = name.toString
   }
 
-  def task(name:Any="unknown"):Task = {
-    val rc = new Task(name)
+  def task(name:Any="unknown"):TrackedTask = {
+    val rc = new TrackedTask(name)
     queue {
       assert(_callback==null || !tasks.isEmpty)
       tasks.add(rc)
