@@ -17,6 +17,8 @@
 
 package org.fusesource.hawtdispatch.transport;
 
+import org.fusesource.hawtdispatch.Task;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -54,7 +56,7 @@ public class SslTransportServer extends TcpTransportServer {
         this.trustManagers = trustManagers;
     }
 
-    public void start(Runnable onCompleted) throws Exception {
+    public void start(Task onCompleted) throws Exception {
         if( keyManagers!=null ) {
             sslContext.init(keyManagers, trustManagers, null);
         } else {
