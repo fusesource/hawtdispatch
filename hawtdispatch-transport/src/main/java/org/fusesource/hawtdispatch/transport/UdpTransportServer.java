@@ -89,8 +89,8 @@ public class UdpTransportServer extends ServiceBase implements TransportServer {
                     }
                 };
                 channel = DatagramChannel.open();
-                transport.connected(channel);
                 channel.socket().bind(bindAddress);
+                transport.connected(channel);
                 listener.onAccept(transport);
             } catch (Exception e) {
                 listener.onAcceptError(e);
