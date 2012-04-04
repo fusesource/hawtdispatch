@@ -237,11 +237,11 @@ final public class HawtDispatcher implements Dispatcher {
 
     }
 
-    String assertMessage() {
+    String assertMessage(String label) {
         StringBuilder sb = new StringBuilder();
         sb.append("Dispatch queue '");
-        if( getLabel()!=null ) {
-            sb.append(getLabel());
+        if(label!=null ) {
+            sb.append(label);
         } else {
             sb.append("<no-label>");
         }

@@ -81,7 +81,7 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     }
 
     public void assertExecuting() {
-        assert isExecuting() : getDispatcher().assertMessage();
+        assert isExecuting() : getDispatcher().assertMessage(getLabel());
     }
 
     @Deprecated

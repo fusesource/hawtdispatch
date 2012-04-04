@@ -138,7 +138,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     }
 
     public void assertExecuting() {
-        assert isExecuting() : getDispatcher().assertMessage();
+        assert isExecuting() : getDispatcher().assertMessage(getLabel());
     }
 
 
