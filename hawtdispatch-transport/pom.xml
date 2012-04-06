@@ -25,12 +25,12 @@
   <parent>
     <groupId>org.fusesource.hawtdispatch</groupId>
     <artifactId>hawtdispatch-project</artifactId>
-    <version>1.10-SNAPSHOT</version>
+    <version>1.10</version>
   </parent>
     
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch-transport</artifactId>
-  <version>1.10-SNAPSHOT</version>
+  <version>1.10</version>
   <packaging>bundle</packaging>
 
   <description>HawtDispatch Transport: Transport abstractions for HawtDispatch</description>
@@ -47,7 +47,7 @@
     <dependency>
       <groupId>org.fusesource.hawtdispatch</groupId>
       <artifactId>hawtdispatch</artifactId>
-      <version>1.10-SNAPSHOT</version>
+      <version>1.10</version>
     </dependency>
     <dependency>
       <groupId>org.fusesource.hawtbuf</groupId>
