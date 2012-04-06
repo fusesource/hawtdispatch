@@ -1,6 +1,14 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+
+## [HawtDispatch 1.10](http://hawtdispatch.fusesource.org/blog/releases/release-1-10.html), released 2012-04-06
+
+* Fix assertion error message.
+* Switch to using 'Task' abstract base instead of the Runnable interface, in many cases it improves perf by 20% since virtual invocations are cheaper then interface invocation
+* Adding a UDP based transport.
+* Support configuring the client auth mode.
+
 ## [HawtDispatch 1.9](http://hawtdispatch.fusesource.org/blog/releases/release-1-9.html), released 2012-02-27
 
 * Fixes LOW priority global queue was being created with a high thread priority.
