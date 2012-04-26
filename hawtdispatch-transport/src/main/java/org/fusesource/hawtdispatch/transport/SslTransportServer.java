@@ -42,6 +42,7 @@ public class SslTransportServer extends TcpTransportServer {
     protected String protocol = "TLS";
     protected SSLContext sslContext;
     protected Executor blockingExecutor;
+    private String clientAuth = "want";
 
     public SslTransportServer(URI location) throws Exception {
         super(location);
@@ -68,6 +69,7 @@ public class SslTransportServer extends TcpTransportServer {
         SslTransport rc = new SslTransport();
         rc.setSSLContext(sslContext);
         rc.setBlockingExecutor(blockingExecutor);
+        rc.setClientAuth(clientAuth);
         return rc;
     }
 
@@ -91,6 +93,14 @@ public class SslTransportServer extends TcpTransportServer {
 
     public void setBlockingExecutor(Executor blockingExecutor) {
         this.blockingExecutor = blockingExecutor;
+    }
+
+    public String getClientAuth() {
+        return clientAuth;
+    }
+
+    public void setClientAuth(String clientAuth) {
+        this.clientAuth = clientAuth;
     }
 
 }
