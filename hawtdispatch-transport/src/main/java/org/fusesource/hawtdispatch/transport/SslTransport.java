@@ -409,6 +409,7 @@ public class SslTransport extends TcpTransport implements SecureTransport {
                 case FINISHED:
                 case NOT_HANDSHAKING:
                     drainOutboundSource.merge(1);
+                    drainInbound();
                     break;
 
                 default:

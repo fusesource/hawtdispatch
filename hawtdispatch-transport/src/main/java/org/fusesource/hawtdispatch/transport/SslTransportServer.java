@@ -34,9 +34,7 @@ import java.security.NoSuchAlgorithmException;
 public class SslTransportServer extends TcpTransportServer {
 
     public static SslTransportServer createTransportServer(URI uri) throws Exception {
-        SslTransportServer rc = new SslTransportServer(uri);
-        rc.setSSLContext(SSLContext.getInstance(SslTransport.protocol(uri.getScheme())));
-        return rc;
+        return new SslTransportServer(uri);
     }
 
     protected KeyManager[] keyManagers;
@@ -45,8 +43,9 @@ public class SslTransportServer extends TcpTransportServer {
     protected SSLContext sslContext;
     protected Executor blockingExecutor;
 
-    public SslTransportServer(URI location) throws UnknownHostException {
+    public SslTransportServer(URI location) throws Exception {
         super(location);
+        setSSLContext(SSLContext.getInstance(SslTransport.protocol(location.getScheme())));
     }
 
     public void setKeyManagers(KeyManager[] keyManagers) {
