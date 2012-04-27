@@ -362,6 +362,9 @@ public class TcpTransport extends ServiceBase implements Transport {
     protected void initializeCodec() throws Exception {
         codec.setReadableByteChannel(readChannel());
         codec.setWritableByteChannel(writeChannel());
+        if( codec instanceof TransportAware ) {
+            ((TransportAware)codec).setTransport(this);
+        }
     }
 
     public void connecting(URI remoteLocation, URI localLocation) throws IOException, Exception {

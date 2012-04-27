@@ -37,7 +37,7 @@ import java.util.LinkedList;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public abstract class AbstractProtocolCodec implements ProtocolCodec {
+public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportAware {
 
     protected int writeBufferSize = 1024 * 64;
     protected long writeCounter = 0L;
@@ -65,14 +65,31 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec {
     protected Action nextDecodeAction;
     protected boolean trim = true;
 
+    public void setTransport(Transport transport) {
+        if( transport instanceof TcpTransport) {
+            TcpTransport tcp = (TcpTransport) transport;
+            writeBufferSize = tcp.getSendBufferSize();
+            readBufferSize = tcp.getReceiveBufferSize();
+        } else if( transport instanceof UdpTransport) {
+            UdpTransport tcp = (UdpTransport) transport;
+            writeBufferSize = tcp.getSendBufferSize();
+            readBufferSize = tcp.getReceiveBufferSize();
+        } else {
+            try {
+                if (this.writeChannel instanceof SocketChannel) {
+                    writeBufferSize = ((SocketChannel) this.writeChannel).socket().getSendBufferSize();
+                    readBufferSize = ((SocketChannel) this.readChannel).socket().getReceiveBufferSize();
+                } else if (this.writeChannel instanceof SslTransport.SSLChannel) {
+                    writeBufferSize = ((SslTransport.SSLChannel) this.readChannel).socket().getSendBufferSize();
+                    readBufferSize = ((SslTransport.SSLChannel) this.writeChannel).socket().getReceiveBufferSize();
+                }
+            } catch (SocketException ignore) {
+            }
+        }
+    }
 
     public void setWritableByteChannel(WritableByteChannel channel) throws SocketException {
         this.writeChannel = (GatheringByteChannel) channel;
-        if (this.writeChannel instanceof SocketChannel) {
-            writeBufferSize = ((SocketChannel) this.writeChannel).socket().getSendBufferSize();
-        } else if (this.writeChannel instanceof SslTransport.SSLChannel) {
-            writeBufferSize = ((SslTransport.SSLChannel) this.writeChannel).socket().getSendBufferSize();
-        }
     }
 
     public int getReadBufferSize() {
@@ -201,11 +218,6 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec {
 
     public void setReadableByteChannel(ReadableByteChannel channel) throws SocketException {
         this.readChannel = channel;
-        if (this.readChannel instanceof SocketChannel) {
-            readBufferSize = ((SocketChannel) this.readChannel).socket().getReceiveBufferSize();
-        } else if (this.readChannel instanceof SslTransport.SSLChannel) {
-            writeBufferSize = ((SslTransport.SSLChannel) this.readChannel).socket().getReceiveBufferSize();
-        }
         if( nextDecodeAction==null ) {
             nextDecodeAction = initialDecodeAction();
         }
