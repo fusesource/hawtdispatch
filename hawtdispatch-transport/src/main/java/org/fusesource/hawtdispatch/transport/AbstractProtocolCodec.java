@@ -19,6 +19,8 @@ package org.fusesource.hawtdispatch.transport;
 
 import org.fusesource.hawtbuf.Buffer;
 import org.fusesource.hawtbuf.DataByteArrayOutputStream;
+import org.fusesource.hawtdispatch.util.BufferPool;
+import org.fusesource.hawtdispatch.util.BufferPools;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 /**
@@ -39,10 +42,14 @@ import java.util.LinkedList;
  */
 public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportAware {
 
+    protected BufferPools bufferPools;
+    protected BufferPool writeBufferPool;
+    protected BufferPool readBufferPool;
+
     protected int writeBufferSize = 1024 * 64;
     protected long writeCounter = 0L;
     protected GatheringByteChannel writeChannel = null;
-    protected DataByteArrayOutputStream nextWriteBuffer = new DataByteArrayOutputStream(writeBufferSize);
+    protected DataByteArrayOutputStream nextWriteBuffer;
     protected long lastWriteIoSize = 0;
 
     protected LinkedList<ByteBuffer> writeBuffer = new LinkedList<ByteBuffer>();
@@ -56,14 +63,13 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
     protected long readCounter = 0L;
     protected int readBufferSize = 1024 * 64;
     protected ReadableByteChannel readChannel = null;
-    protected ByteBuffer readBuffer = ByteBuffer.allocate(readBufferSize);
+    protected ByteBuffer readBuffer;
     protected ByteBuffer directReadBuffer = null;
 
     protected int readEnd;
     protected int readStart;
     protected int lastReadIoSize;
     protected Action nextDecodeAction;
-    protected boolean trim = true;
 
     public void setTransport(Transport transport) {
         if( transport instanceof TcpTransport) {
@@ -86,6 +92,10 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
             } catch (SocketException ignore) {
             }
         }
+        if( bufferPools!=null ) {
+            readBufferPool = bufferPools.getBufferPool(readBufferSize);
+            writeBufferPool = bufferPools.getBufferPool(writeBufferSize);
+        }
     }
 
     public void setWritableByteChannel(WritableByteChannel channel) throws SocketException {
@@ -105,7 +115,7 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
     }
 
     public boolean isEmpty() {
-        return writeBufferRemaining == 0 && nextWriteBuffer.size() == 0;
+        return writeBufferRemaining == 0 && (nextWriteBuffer==null || nextWriteBuffer.size() == 0);
     }
 
     public long getWriteCounter() {
@@ -123,8 +133,11 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
             return ProtocolCodec.BufferState.FULL;
         } else {
             boolean wasEmpty = isEmpty();
+            if( nextWriteBuffer == null ) {
+                nextWriteBuffer = allocateNextWriteBuffer();
+            }
             encode(value);
-            if (nextWriteBuffer.size() >= (writeBufferSize >> 1)) {
+            if (nextWriteBuffer.size() >= (writeBufferSize* 0.75)) {
                 flushNextWriteBuffer();
             }
             if (wasEmpty) {
@@ -132,6 +145,23 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
             } else {
                 return ProtocolCodec.BufferState.NOT_EMPTY;
             }
+        }
+    }
+
+    private DataByteArrayOutputStream allocateNextWriteBuffer() {
+        if( writeBufferPool !=null ) {
+            return new DataByteArrayOutputStream(writeBufferPool.checkout()) {
+                @Override
+                protected void resize(int newcount) {
+                    byte[] oldbuf = buf;
+                    super.resize(newcount);
+                    if( oldbuf.length == writeBufferPool.getBufferSize() ) {
+                        writeBufferPool.checkin(oldbuf);
+                    }
+                }
+            };
+        } else {
+            return new DataByteArrayOutputStream(writeBufferSize);
         }
     }
 
@@ -144,7 +174,7 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
             value.get(nextWriteBuffer.getData(), nextnextPospos, valuevalueLengthlength);
             nextWriteBuffer.position(nextnextPospos + valuevalueLengthlength);
         } else {
-            if (nextWriteBuffer.size() != 0) {
+            if (nextWriteBuffer!=null && nextWriteBuffer.size() != 0) {
                 flushNextWriteBuffer();
             }
             writeBuffer.add(value);
@@ -153,11 +183,11 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
     }
 
     protected void flushNextWriteBuffer() {
-        int nextnextSizesize = Math.min(Math.max(nextWriteBuffer.position(), 80), writeBufferSize);
+        DataByteArrayOutputStream next = allocateNextWriteBuffer();
         ByteBuffer bb = nextWriteBuffer.toBuffer().toByteBuffer();
         writeBuffer.add(bb);
         writeBufferRemaining += bb.remaining();
-        nextWriteBuffer = new DataByteArrayOutputStream(nextnextSizesize);
+        nextWriteBuffer = next;
     }
 
     public ProtocolCodec.BufferState flush() throws IOException {
@@ -189,7 +219,11 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
                     }
                 }
             } else {
-                if (nextWriteBuffer.size() == 0) {
+                if (nextWriteBuffer==null || nextWriteBuffer.size() == 0) {
+                    if( writeBufferPool!=null &&  nextWriteBuffer!=null ) {
+                        writeBufferPool.checkin(nextWriteBuffer.getData());
+                        nextWriteBuffer = null;
+                    }
                     return ProtocolCodec.BufferState.EMPTY;
                 } else {
                     flushNextWriteBuffer();
@@ -225,6 +259,7 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
 
     public void unread(byte[] buffer) {
         assert ((readCounter == 0));
+        readBuffer = ByteBuffer.allocate(buffer.length);
         readBuffer.put(buffer);
         readCounter += buffer.length;
     }
@@ -252,9 +287,9 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
                 }
                 command = nextDecodeAction.apply();
             } else {
-                if (readEnd == readBuffer.position()) {
+                if (readBuffer==null || readEnd == readBuffer.position()) {
 
-                    if (readBuffer.remaining() == 0) {
+                    if (readBuffer==null || readBuffer.remaining() == 0) {
                         int size = readEnd - readStart;
                         int newCapacity = 0;
                         if (readStart == 0) {
@@ -266,11 +301,26 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
                                 newCapacity = readBufferSize;
                             }
                         }
-                        byte[] newnewBufferbuffer = new byte[newCapacity];
+
+                        byte[] newBuffer;
                         if (size > 0) {
-                            System.arraycopy(readBuffer.array(), readStart, newnewBufferbuffer, 0, size);
+                            newBuffer = Arrays.copyOfRange(readBuffer.array(), readStart, readStart + newCapacity);
+                        } else {
+                            if( readBufferPool!=null) {
+                                if (newCapacity == readBufferPool.getBufferSize()) {
+                                    newBuffer = readBufferPool.checkout();
+                                } else {
+                                    newBuffer =  new byte[newCapacity];
+                                }
+                            } else {
+                                if (size > 0) {
+                                    newBuffer = Arrays.copyOfRange(readBuffer.array(), readStart, readStart + newCapacity);
+                                } else {
+                                    newBuffer =  new byte[newCapacity];
+                                }
+                            }
                         }
-                        readBuffer = ByteBuffer.wrap(newnewBufferbuffer);
+                        readBuffer = ByteBuffer.wrap(newBuffer);
                         readBuffer.position(size);
                         readStart = 0;
                         readEnd = size;
@@ -282,6 +332,15 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
                         readCounter += 1; // to compensate for that -1
                         throw new EOFException("Peer disconnected");
                     } else if (lastReadIoSize == 0) {
+                        if (readBufferPool != null && readStart == readEnd) {
+                            if (readEnd == 0 && readBuffer.array().length == readBufferPool.getBufferSize()) {
+                                readBufferPool.checkin(readBuffer.array());
+                            } else {
+                                readStart = 0;
+                                readEnd = 0;
+                            }
+                            readBuffer = null;
+                        }
                         return null;
                     }
                 }
@@ -373,6 +432,21 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
             directReadBuffer = null;
             buffer.flip();
             return true;
+        }
+    }
+
+    public BufferPools getBufferPools() {
+        return bufferPools;
+    }
+
+    public void setBufferPools(BufferPools bufferPools) {
+        this.bufferPools = bufferPools;
+        if( bufferPools!=null ) {
+            readBufferPool = bufferPools.getBufferPool(readBufferSize);
+            writeBufferPool = bufferPools.getBufferPool(writeBufferSize);
+        } else {
+            readBufferPool = null;
+            writeBufferPool = null;
         }
     }
 }
