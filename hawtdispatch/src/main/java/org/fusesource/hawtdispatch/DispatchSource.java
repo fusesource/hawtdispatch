@@ -51,7 +51,6 @@ public interface DispatchSource extends DispatchObject {
      *
      * @param handler
      * The cancellation handler runnable to submit to the source's target queue.
-     * @deprecated Use {@link #setCancelHandler(Task)} instead.
      */
     public void setCancelHandler(Runnable handler);
 
@@ -62,7 +61,6 @@ public interface DispatchSource extends DispatchObject {
      *
      * @param handler
      * The event handler runnable to submit to the source's target queue.
-     * @deprecated Use {@link #setEventHandler(Task)} instead.
      */
     public void setEventHandler(Runnable handler);
 

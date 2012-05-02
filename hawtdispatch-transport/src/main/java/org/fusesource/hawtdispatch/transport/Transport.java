@@ -36,7 +36,6 @@ public interface Transport {
      *
      * @param onComplete my be set to null if not interested in a callback.
      */
-    @Deprecated
     void start(Runnable onComplete);
 
     /**
@@ -44,7 +43,6 @@ public interface Transport {
      *
      * @param onComplete my be set to null if not interested in a callback.
      */
-    @Deprecated
     void stop(Runnable onComplete);
 
     /**

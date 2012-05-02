@@ -41,7 +41,6 @@ public class RunnableSupport {
         return NO_OP;
     }
 
-    @Deprecated
     public static Task runOnceAfter(final Runnable runnable, int count) {
         return runOnceAfter(new TaskWrapper(runnable), count);
     }
@@ -70,7 +69,6 @@ public class RunnableSupport {
         };
     }
     
-    @Deprecated
     public static Task runAfter(final Runnable runnable, int count) {
         return runAfter(new TaskWrapper(runnable), count);
     }
@@ -94,7 +92,6 @@ public class RunnableSupport {
         };
     }
     
-    @Deprecated
     public static Task runOnceAfter(final DispatchQueue queue, final Runnable runnable, int count) {
         return runOnceAfter(queue, new TaskWrapper(runnable), count);
     }
@@ -115,7 +112,6 @@ public class RunnableSupport {
         };
     }
     
-    @Deprecated
     public static Task runAfter(final DispatchQueue queue,  final Runnable runnable, int count) {
         return runAfter(queue, new TaskWrapper(runnable), count);
     }

@@ -96,7 +96,6 @@ public interface DispatchQueue extends DispatchObject, Executor {
      *
      * @param runnable
      * The runnable to submit to the dispatch queue.
-     * @deprecated Use {@link #execute(Task)} instead.
      */
     void execute(Runnable runnable);
 
@@ -129,7 +128,6 @@ public interface DispatchQueue extends DispatchObject, Executor {
      * the amount of time to delay before executing the runnable
      * @param unit the unit of time that the delay value is specified in
      * @param runnable
-     * @deprecated Use {@link #executeAfter(long, TimeUnit, Task)} instead.
      */
     public void executeAfter(long delay, TimeUnit unit, Runnable runnable);
 

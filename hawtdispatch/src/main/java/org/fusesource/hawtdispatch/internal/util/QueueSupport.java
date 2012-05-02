@@ -29,7 +29,6 @@ import org.fusesource.hawtdispatch.TaskWrapper;
  */
 public class QueueSupport {
 
-    @Deprecated
     static public void dispatchApply(DispatchQueue queue, int iterations, final Runnable runnable) throws InterruptedException {
         dispatchApply(queue, iterations, new TaskWrapper(runnable));
     }

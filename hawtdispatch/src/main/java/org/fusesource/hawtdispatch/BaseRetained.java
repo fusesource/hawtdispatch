@@ -50,7 +50,6 @@ public class BaseRetained implements Retained {
      * </p>
      *
      * @param disposer
-     * @deprecated Use {@link #setDisposer(Task)} instead.
      */
     final public void setDisposer(final Runnable disposer) {
         this.setDisposer(new TaskWrapper(disposer));

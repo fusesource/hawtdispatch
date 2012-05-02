@@ -177,7 +177,6 @@ package object hawtdispatch {
    */
   final class RichDispatchQueue(val actual: DispatchQueue) extends Proxy with RichExecutorTrait with RichDispatchObject {
     def self = actual
-    @Deprecated
     protected def execute(task:Runnable) = actual.execute(task)
     protected def execute(task:Task) = actual.execute(task)
 
