@@ -1,6 +1,13 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.11](http://hawtdispatch.fusesource.org/blog/releases/release-1-11.html), released 2012-05-02
+
+* Support buffer pooling in the abstract protocol codec.
+* Adding a TransportAware interface which codecs can implement to be injected with their associated codec.
+* Make it easy to configure the client auth mode on the ssl transport server.
+* Fixes SSL transport bug where inbound data was not delivered after SSL handshake completed.
+* Allow a SslTransportServer to be created just using the constructor.
 
 ## [HawtDispatch 1.10](http://hawtdispatch.fusesource.org/blog/releases/release-1-10.html), released 2012-04-06
 
