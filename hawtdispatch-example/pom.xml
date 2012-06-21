@@ -46,6 +46,16 @@
       <artifactId>hawtdispatch-scala</artifactId>
       <version>1.12-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>org.fusesource.hawtdispatch</groupId>
+      <artifactId>hawtdispatch-transport</artifactId>
+      <version>1.12-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>org.fusesource.hawtbuf</groupId>
+      <artifactId>hawtbuf</artifactId>
+      <version>${hawtbuf-version}</version>
+    </dependency>
 
     <dependency>
       <groupId>org.scala-lang</groupId>
