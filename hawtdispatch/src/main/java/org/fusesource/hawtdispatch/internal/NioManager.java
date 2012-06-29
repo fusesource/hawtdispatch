@@ -194,6 +194,8 @@ public class NioManager {
                 try {
                     if( selectCounter == wakeupCounter.get()) {
                         selectStrategy.select(timeout);
+                    } else {
+                        selector.selectNow();
                     }
                 } finally {
                     selecting=false;
