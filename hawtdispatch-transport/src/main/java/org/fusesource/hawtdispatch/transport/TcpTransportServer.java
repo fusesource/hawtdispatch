@@ -43,6 +43,7 @@ public class TcpTransportServer implements TransportServer {
     private DispatchQueue dispatchQueue;
     private DispatchSource acceptSource;
     private int receiveBufferSize = 64*1024;
+    private int sendBufferSize = 64*1204;
 
     public TcpTransportServer(URI location) throws UnknownHostException {
         bindScheme = location.getScheme();
@@ -91,6 +92,10 @@ public class TcpTransportServer implements TransportServer {
             channel.configureBlocking(false);
             try {
                 channel.socket().setReceiveBufferSize(receiveBufferSize);
+            } catch (SocketException ignore) {
+            }
+            try {
+                channel.socket().setReceiveBufferSize(sendBufferSize);
             } catch (SocketException ignore) {
             }
             channel.socket().bind(bindAddress, backlog);
@@ -182,6 +187,27 @@ public class TcpTransportServer implements TransportServer {
 
     public void setReceiveBufferSize(int receiveBufferSize) {
         this.receiveBufferSize = receiveBufferSize;
+        if( channel!=null ) {
+            try {
+                channel.socket().setReceiveBufferSize(receiveBufferSize);
+            } catch (SocketException ignore) {
+            }
+        }
     }
+
+    public int getSendBufferSize() {
+        return sendBufferSize;
+    }
+
+    public void setSendBufferSize(int sendBufferSize) {
+        this.sendBufferSize = sendBufferSize;
+        if( channel!=null ) {
+            try {
+                channel.socket().setReceiveBufferSize(sendBufferSize);
+            } catch (SocketException ignore) {
+            }
+        }
+    }
+
 
 }

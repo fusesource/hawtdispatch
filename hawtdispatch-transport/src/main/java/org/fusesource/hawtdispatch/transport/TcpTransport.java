@@ -781,6 +781,12 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     public void setReceiveBufferSize(int receiveBufferSize) {
         this.receiveBufferSize = receiveBufferSize;
+        if( channel!=null ) {
+            try {
+                channel.socket().setReceiveBufferSize(receiveBufferSize);
+            } catch (SocketException ignore) {
+            }
+        }
     }
 
     public int getSendBufferSize() {
@@ -789,6 +795,12 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     public void setSendBufferSize(int sendBufferSize) {
         this.sendBufferSize = sendBufferSize;
+        if( channel!=null ) {
+            try {
+                channel.socket().setReceiveBufferSize(sendBufferSize);
+            } catch (SocketException ignore) {
+            }
+        }
     }
 
     public boolean isKeepAlive() {
