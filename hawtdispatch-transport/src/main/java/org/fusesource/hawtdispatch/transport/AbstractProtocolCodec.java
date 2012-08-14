@@ -325,8 +325,9 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
                         readStart = 0;
                         readEnd = size;
                     }
-                    int p = readBuffer.position();
+
                     lastReadIoSize = readChannel.read(readBuffer);
+
                     readCounter += lastReadIoSize;
                     if (lastReadIoSize == -1) {
                         readCounter += 1; // to compensate for that -1
@@ -342,6 +343,13 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
                             readBuffer = null;
                         }
                         return null;
+                    }
+
+                    // if we did not read a full buffer.. then resize the buffer
+                    if( readBuffer.hasRemaining() ) {
+                        ByteBuffer perfectSized = ByteBuffer.wrap(Arrays.copyOfRange(readBuffer.array(), 0, readBuffer.position()));
+                        perfectSized.position(readBuffer.position());
+                        readBuffer = perfectSized;
                     }
                 }
                 command = nextDecodeAction.apply();
