@@ -287,43 +287,47 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
                 }
                 command = nextDecodeAction.apply();
             } else {
-                if (readBuffer==null || readEnd == readBuffer.position()) {
+                if (readBuffer==null || readEnd >= readBuffer.position()) {
+
+                    int readPos = 0;
+                    boolean candidateForCheckin = false;
+                    if( readBuffer!=null ) {
+                        readPos = readBuffer.position();
+                        candidateForCheckin = readBufferPool!=null && readStart == 0 && readBuffer.capacity() == readBufferPool.getBufferSize();
+                    }
 
                     if (readBuffer==null || readBuffer.remaining() == 0) {
-                        int size = readEnd - readStart;
-                        int newCapacity = 0;
-                        if (readStart == 0) {
-                            newCapacity = size + readBufferSize;
+
+
+                        int loadedSize = readPos - readStart;
+                        int neededSize = readEnd - readStart;
+
+                        int newSize = 0;
+                        if( neededSize > loadedSize ) {
+                            newSize =  Math.max(readBufferSize, neededSize);
                         } else {
-                            if (size > readBufferSize) {
-                                newCapacity = size + readBufferSize;
-                            } else {
-                                newCapacity = readBufferSize;
-                            }
+                            newSize = loadedSize+readBufferSize;
                         }
 
                         byte[] newBuffer;
-                        if (size > 0) {
-                            newBuffer = Arrays.copyOfRange(readBuffer.array(), readStart, readStart + newCapacity);
+                        if (loadedSize > 0) {
+                            newBuffer = Arrays.copyOfRange(readBuffer.array(), readStart, readStart + newSize);
                         } else {
-                            if( readBufferPool!=null) {
-                                if (newCapacity == readBufferPool.getBufferSize()) {
-                                    newBuffer = readBufferPool.checkout();
-                                } else {
-                                    newBuffer =  new byte[newCapacity];
-                                }
+                            if( readBufferPool!=null && newSize == readBufferPool.getBufferSize()) {
+                                newBuffer = readBufferPool.checkout();
                             } else {
-                                if (size > 0) {
-                                    newBuffer = Arrays.copyOfRange(readBuffer.array(), readStart, readStart + newCapacity);
-                                } else {
-                                    newBuffer =  new byte[newCapacity];
-                                }
+                                newBuffer =  new byte[newSize];
                             }
                         }
+
+                        if( candidateForCheckin ) {
+                            readBufferPool.checkin(readBuffer.array());
+                        }
+
                         readBuffer = ByteBuffer.wrap(newBuffer);
-                        readBuffer.position(size);
+                        readBuffer.position(loadedSize);
                         readStart = 0;
-                        readEnd = size;
+                        readEnd = neededSize;
                     }
 
                     lastReadIoSize = readChannel.read(readBuffer);
@@ -333,28 +337,30 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
                         readCounter += 1; // to compensate for that -1
                         throw new EOFException("Peer disconnected");
                     } else if (lastReadIoSize == 0) {
-                        if (readBufferPool != null && readStart == readEnd) {
-                            if (readEnd == 0 && readBuffer.array().length == readBufferPool.getBufferSize()) {
+                        if ( readStart == readBuffer.position() ) {
+                            if (candidateForCheckin) {
                                 readBufferPool.checkin(readBuffer.array());
-                            } else {
-                                readStart = 0;
-                                readEnd = 0;
                             }
+                            readStart = 0;
+                            readEnd = 0;
                             readBuffer = null;
                         }
                         return null;
                     }
 
                     // if we did not read a full buffer.. then resize the buffer
-                    if( readBuffer.hasRemaining() ) {
+                    if( readBuffer.hasRemaining() && readEnd <= readBuffer.position() ) {
                         ByteBuffer perfectSized = ByteBuffer.wrap(Arrays.copyOfRange(readBuffer.array(), 0, readBuffer.position()));
                         perfectSized.position(readBuffer.position());
+
+                        if( candidateForCheckin ) {
+                            readBufferPool.checkin(readBuffer.array());
+                        }
                         readBuffer = perfectSized;
                     }
                 }
                 command = nextDecodeAction.apply();
                 assert ((readStart <= readEnd));
-                assert ((readEnd <= readBuffer.position()));
             }
         }
         return command;
@@ -391,22 +397,23 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
     }
 
     protected Buffer readBytes(int length) {
-        if ((readBuffer.position() - readStart) < length) {
-            readEnd = readBuffer.position();
+        readEnd = readStart + length;
+        if (readBuffer.position() < readEnd) {
             return null;
         } else {
             int offset = readStart;
-            readEnd = offset + length;
             readStart = readEnd;
             return new Buffer(readBuffer.array(), offset, length);
         }
     }
 
     protected Buffer peekBytes(int length) {
-        if ((readBuffer.position() - readStart) < length) {
-            readEnd = readBuffer.position();
+        readEnd = readStart + length;
+        if (readBuffer.position() < readEnd) {
             return null;
         } else {
+            // rewind..
+            readEnd = readStart;
             return new Buffer(readBuffer.array(), readStart, length);
         }
     }
