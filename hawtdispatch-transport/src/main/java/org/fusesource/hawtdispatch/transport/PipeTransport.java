@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.util.LinkedList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -262,5 +263,11 @@ public class PipeTransport implements Transport {
     }
     public boolean isClosed() {
         return false;
+    }
+
+    public Executor getBlockingExecutor() {
+        return null;
+    }
+    public void setBlockingExecutor(Executor blockingExecutor) {
     }
 }

@@ -25,6 +25,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.WritableByteChannel;
 import java.util.LinkedList;
+import java.util.concurrent.Executor;
 
 /**
  * <p>
@@ -179,7 +180,7 @@ public class UdpTransport extends ServiceBase implements Transport {
 
     SocketAddress localAddress;
     SocketAddress remoteAddress = ANY_ADDRESS;
-
+    Executor blockingExecutor;
 
     private final Task CANCEL_HANDLER = new Task() {
         public void run() {
@@ -232,21 +233,56 @@ public class UdpTransport extends ServiceBase implements Transport {
         codec.setWritableByteChannel(writeChannel());
     }
 
-    public void connecting(URI remoteLocation, URI localLocation) throws IOException, Exception {
+    public void connecting(final URI remoteLocation, final URI localLocation) throws Exception {
         this.channel = DatagramChannel.open();
         initializeChannel();
         this.remoteLocation = remoteLocation;
         this.localLocation = localLocation;
+        socketState = new CONNECTED();
 
-        if (localLocation != null) {
-            InetSocketAddress localAddress = new InetSocketAddress(InetAddress.getByName(localLocation.getHost()), localLocation.getPort());
-            channel.socket().bind(localAddress);
-        }
+        // Resolving host names might block.. so do it on the blocking executor.
+        this.blockingExecutor.execute(new Runnable() {
+            public void run() {
+                try {
 
-        String host = resolveHostName(remoteLocation.getHost());
-        InetSocketAddress remoteAddress = new InetSocketAddress(host, remoteLocation.getPort());
-        channel.connect(remoteAddress);
-        this.socketState = new CONNECTED();
+                    final InetSocketAddress localAddress = (localLocation != null) ?
+                         new InetSocketAddress(InetAddress.getByName(localLocation.getHost()), localLocation.getPort())
+                         : null;
+
+                    String host = resolveHostName(remoteLocation.getHost());
+                    final InetSocketAddress remoteAddress = new InetSocketAddress(host, remoteLocation.getPort());
+
+                    // Done resolving.. switch back to the dispatch queue.
+                    dispatchQueue.execute(new Task() {
+                        @Override
+                        public void run() {
+                            try {
+                                if(localAddress!=null) {
+                                    channel.socket().bind(localAddress);
+                                }
+                                channel.connect(remoteAddress);
+                            } catch (IOException e) {
+                                try {
+                                    channel.close();
+                                } catch (IOException ignore) {
+                                }
+                                socketState = new CANCELED(true);
+                                listener.onTransportFailure(e);
+                            }
+                        }
+                    });
+
+                } catch (IOException e) {
+                    try {
+                        channel.close();
+                    } catch (IOException ignore) {
+                    }
+                    socketState = new CANCELED(true);
+                    listener.onTransportFailure(e);
+                }
+            }
+        });
+
     }
 
 
@@ -590,6 +626,14 @@ public class UdpTransport extends ServiceBase implements Transport {
 
     public void setSendBufferSize(int sendBufferSize) {
         this.sendBufferSize = sendBufferSize;
+    }
+
+    public Executor getBlockingExecutor() {
+        return blockingExecutor;
+    }
+
+    public void setBlockingExecutor(Executor blockingExecutor) {
+        this.blockingExecutor = blockingExecutor;
     }
 
 }

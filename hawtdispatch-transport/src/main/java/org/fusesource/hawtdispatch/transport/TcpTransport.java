@@ -27,6 +27,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.LinkedList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,6 +36,15 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class TcpTransport extends ServiceBase implements Transport {
+
+    static InetAddress localhost;
+    static public InetAddress getLocalHost() throws UnknownHostException {
+        // sloppy cache it..
+        if( localhost==null ) {
+            localhost = InetAddress.getLocalHost();
+        }
+        return localhost;
+    }
 
     abstract static class SocketState {
         void onStop(Task onCompleted) {
@@ -189,6 +199,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     protected RateLimitingChannel rateLimitingChannel;
     SocketAddress localAddress;
     SocketAddress remoteAddress;
+    protected Executor blockingExecutor;
 
     class RateLimitingChannel implements ReadableByteChannel, WritableByteChannel {
 
@@ -367,21 +378,56 @@ public class TcpTransport extends ServiceBase implements Transport {
         }
     }
 
-    public void connecting(URI remoteLocation, URI localLocation) throws IOException, Exception {
+    public void connecting(final URI remoteLocation, final URI localLocation) throws Exception {
         this.channel = SocketChannel.open();
         initializeChannel();
         this.remoteLocation = remoteLocation;
         this.localLocation = localLocation;
+        socketState = new CONNECTING();
 
-        if (localLocation != null) {
-            InetSocketAddress localAddress = new InetSocketAddress(InetAddress.getByName(localLocation.getHost()), localLocation.getPort());
-            channel.socket().bind(localAddress);
-        }
+        // Resolving host names might block.. so do it on the blocking executor.
+        this.blockingExecutor.execute(new Runnable() {
+            public void run() {
+                try {
 
-        String host = resolveHostName(remoteLocation.getHost());
-        InetSocketAddress remoteAddress = new InetSocketAddress(host, remoteLocation.getPort());
-        channel.connect(remoteAddress);
-        this.socketState = new CONNECTING();
+                    final InetSocketAddress localAddress = (localLocation != null) ?
+                         new InetSocketAddress(InetAddress.getByName(localLocation.getHost()), localLocation.getPort())
+                         : null;
+
+                    String host = resolveHostName(remoteLocation.getHost());
+                    final InetSocketAddress remoteAddress = new InetSocketAddress(host, remoteLocation.getPort());
+
+                    // Done resolving.. switch back to the dispatch queue.
+                    dispatchQueue.execute(new Task() {
+                        @Override
+                        public void run() {
+                            try {
+                                if(localAddress!=null) {
+                                    channel.socket().bind(localAddress);
+                                }
+                                channel.connect(remoteAddress);
+                            } catch (IOException e) {
+                                try {
+                                    channel.close();
+                                } catch (IOException ignore) {
+                                }
+                                socketState = new CANCELED(true);
+                                listener.onTransportFailure(e);
+                            }
+                        }
+                    });
+
+                } catch (IOException e) {
+                    try {
+                        channel.close();
+                    } catch (IOException ignore) {
+                    }
+                    socketState = new CANCELED(true);
+                    listener.onTransportFailure(e);
+                }
+            }
+        });
+
     }
 
 
@@ -451,7 +497,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     }
 
     protected String resolveHostName(String host) throws UnknownHostException {
-        String localName = InetAddress.getLocalHost().getHostName();
+        String localName = getLocalHost().getHostName();
         if (localName != null && isUseLocalHost()) {
             if (localName.equals(host)) {
                 return "localhost";
@@ -809,6 +855,14 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     public void setKeepAlive(boolean keepAlive) {
         this.keepAlive = keepAlive;
+    }
+
+    public Executor getBlockingExecutor() {
+        return blockingExecutor;
+    }
+
+    public void setBlockingExecutor(Executor blockingExecutor) {
+        this.blockingExecutor = blockingExecutor;
     }
 
 }

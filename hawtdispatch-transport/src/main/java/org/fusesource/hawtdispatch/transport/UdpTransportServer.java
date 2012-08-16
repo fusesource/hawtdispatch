@@ -21,6 +21,7 @@ import org.fusesource.hawtdispatch.Task;
 
 import java.net.*;
 import java.nio.channels.DatagramChannel;
+import java.util.concurrent.Executor;
 
 /**
  * <p>
@@ -36,6 +37,7 @@ public class UdpTransportServer extends ServiceBase implements TransportServer {
     private DatagramChannel channel;
     private TransportServerListener listener;
     private DispatchQueue dispatchQueue;
+    private Executor blockingExecutor;
 
     public UdpTransportServer(URI location) throws UnknownHostException {
         bindScheme = location.getScheme();
@@ -99,7 +101,10 @@ public class UdpTransportServer extends ServiceBase implements TransportServer {
     }
 
     protected UdpTransport createTransport() {
-        return new UdpTransport();
+        final UdpTransport transport = new UdpTransport();
+        transport.setBlockingExecutor(blockingExecutor);
+        transport.setDispatchQueue(dispatchQueue);
+        return transport;
     }
 
     @Override
@@ -132,4 +137,11 @@ public class UdpTransportServer extends ServiceBase implements TransportServer {
         return getBoundAddress();
     }
 
+    public Executor getBlockingExecutor() {
+        return blockingExecutor;
+    }
+
+    public void setBlockingExecutor(Executor blockingExecutor) {
+        this.blockingExecutor = blockingExecutor;
+    }
 }

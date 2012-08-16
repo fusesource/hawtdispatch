@@ -41,7 +41,6 @@ public class SslTransportServer extends TcpTransportServer {
     private TrustManager[] trustManagers;
     protected String protocol = "TLS";
     protected SSLContext sslContext;
-    protected Executor blockingExecutor;
     private String clientAuth = "want";
 
     public SslTransportServer(URI location) throws Exception {
@@ -67,8 +66,9 @@ public class SslTransportServer extends TcpTransportServer {
 
     protected TcpTransport createTransport() {
         SslTransport rc = new SslTransport();
-        rc.setSSLContext(sslContext);
+        rc.setDispatchQueue(dispatchQueue);
         rc.setBlockingExecutor(blockingExecutor);
+        rc.setSSLContext(sslContext);
         rc.setClientAuth(clientAuth);
         return rc;
     }
@@ -85,14 +85,6 @@ public class SslTransportServer extends TcpTransportServer {
 
     public void setSSLContext(SSLContext sslContext) {
         this.sslContext = sslContext;
-    }
-
-    public Executor getBlockingExecutor() {
-        return blockingExecutor;
-    }
-
-    public void setBlockingExecutor(Executor blockingExecutor) {
-        this.blockingExecutor = blockingExecutor;
     }
 
     public String getClientAuth() {

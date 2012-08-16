@@ -22,6 +22,7 @@ import org.fusesource.hawtdispatch.*;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.LinkedList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -147,5 +148,12 @@ public class PipeTransportServer implements TransportServer {
 
     public void setMarshal(boolean marshal) {
         this.marshal = marshal;
+    }
+
+    public Executor getBlockingExecutor() {
+        return null;
+    }
+
+    public void setBlockingExecutor(Executor blockingExecutor) {
     }
 }

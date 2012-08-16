@@ -18,6 +18,7 @@
 package org.fusesource.hawtdispatch.transport;
 
 import java.net.SocketAddress;
+import java.util.concurrent.Executor;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.Task;
@@ -87,5 +88,9 @@ public interface TransportServer {
      * resume accepting new transports
      */
     void resume();
+
+    public Executor getBlockingExecutor();
+
+    public void setBlockingExecutor(Executor blockingExecutor);
 
 }

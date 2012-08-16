@@ -80,7 +80,6 @@ public class SslTransport extends TcpTransport implements SecureTransport {
     private ByteBuffer readOverflowBuffer;
     private SSLChannel ssl_channel = new SSLChannel();
 
-    private Executor blockingExecutor;
 
     public void setSSLContext(SSLContext ctx) {
         this.sslContext = ctx;
@@ -428,14 +427,6 @@ public class SslTransport extends TcpTransport implements SecureTransport {
 
     public WritableByteChannel writeChannel() {
         return ssl_channel;
-    }
-
-    public Executor getBlockingExecutor() {
-        return blockingExecutor;
-    }
-
-    public void setBlockingExecutor(Executor blockingExecutor) {
-        this.blockingExecutor = blockingExecutor;
     }
 
     public String getClientAuth() {

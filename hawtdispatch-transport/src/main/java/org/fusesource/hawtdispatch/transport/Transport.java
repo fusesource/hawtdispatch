@@ -20,6 +20,7 @@ package org.fusesource.hawtdispatch.transport;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.util.concurrent.Executor;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.Task;
@@ -143,5 +144,8 @@ public interface Transport {
      * @param protocolCodec
      */
     void setProtocolCodec(ProtocolCodec protocolCodec) throws Exception;
+
+    public Executor getBlockingExecutor();
+    public void setBlockingExecutor(Executor blockingExecutor);
 
 }

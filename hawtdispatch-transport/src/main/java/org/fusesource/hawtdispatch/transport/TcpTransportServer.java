@@ -24,6 +24,7 @@ import java.net.*;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.Executor;
 
 /**
  * A TCP based implementation of {@link TransportServer}
@@ -33,17 +34,16 @@ import java.nio.channels.SocketChannel;
 
 public class TcpTransportServer implements TransportServer {
 
-    private final String bindScheme;
-    private final InetSocketAddress bindAddress;
-
-    private int backlog = 100;
-
-    private ServerSocketChannel channel;
-    private TransportServerListener listener;
-    private DispatchQueue dispatchQueue;
-    private DispatchSource acceptSource;
-    private int receiveBufferSize = 64*1024;
-    private int sendBufferSize = 64*1204;
+    protected final String bindScheme;
+    protected final InetSocketAddress bindAddress;
+    protected int backlog = 100;
+    protected ServerSocketChannel channel;
+    protected TransportServerListener listener;
+    protected DispatchQueue dispatchQueue;
+    protected DispatchSource acceptSource;
+    protected int receiveBufferSize = 64*1024;
+    protected int sendBufferSize = 64*1204;
+    protected Executor blockingExecutor;
 
     public TcpTransportServer(URI location) throws UnknownHostException {
         bindScheme = location.getScheme();
@@ -171,7 +171,10 @@ public class TcpTransportServer implements TransportServer {
     }
 
     protected TcpTransport createTransport() {
-        return new TcpTransport();
+        final TcpTransport rc = new TcpTransport();
+        rc.setBlockingExecutor(blockingExecutor);
+        rc.setDispatchQueue(dispatchQueue);
+        return rc;
     }
 
     /**
@@ -209,5 +212,12 @@ public class TcpTransportServer implements TransportServer {
         }
     }
 
+    public Executor getBlockingExecutor() {
+        return blockingExecutor;
+    }
+
+    public void setBlockingExecutor(Executor blockingExecutor) {
+        this.blockingExecutor = blockingExecutor;
+    }
 
 }
