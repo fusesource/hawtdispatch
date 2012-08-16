@@ -38,9 +38,10 @@ import java.util.concurrent.TimeUnit;
 public class TcpTransport extends ServiceBase implements Transport {
 
     static InetAddress localhost;
-    static public InetAddress getLocalHost() throws UnknownHostException {
-        // sloppy cache it..
+    synchronized static public InetAddress getLocalHost() throws UnknownHostException {
+        // cache it...
         if( localhost==null ) {
+            // this can be slow on some systems and we use repeatedly.
             localhost = InetAddress.getLocalHost();
         }
         return localhost;
