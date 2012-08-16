@@ -55,8 +55,22 @@ public class UdpTransport extends ServiceBase implements Transport {
 
     static class DISCONNECTED extends SocketState{}
 
-    class CONNECTED extends SocketState {
+    class CONNECTING extends SocketState{
+        void onStop(Task onCompleted) {
+            trace("CONNECTING.onStop");
+            CANCELING state = new CANCELING();
+            socketState = state;
+            state.onStop(onCompleted);
+        }
+        void onCanceled() {
+            trace("CONNECTING.onCanceled");
+            CANCELING state = new CANCELING();
+            socketState = state;
+            state.onCanceled();
+        }
+    }
 
+    class CONNECTED extends SocketState {
         public CONNECTED() {
             localAddress = channel.socket().getLocalSocketAddress();
             remoteAddress = channel.socket().getRemoteSocketAddress();
@@ -238,51 +252,7 @@ public class UdpTransport extends ServiceBase implements Transport {
         initializeChannel();
         this.remoteLocation = remoteLocation;
         this.localLocation = localLocation;
-        socketState = new CONNECTED();
-
-        // Resolving host names might block.. so do it on the blocking executor.
-        this.blockingExecutor.execute(new Runnable() {
-            public void run() {
-                try {
-
-                    final InetSocketAddress localAddress = (localLocation != null) ?
-                         new InetSocketAddress(InetAddress.getByName(localLocation.getHost()), localLocation.getPort())
-                         : null;
-
-                    String host = resolveHostName(remoteLocation.getHost());
-                    final InetSocketAddress remoteAddress = new InetSocketAddress(host, remoteLocation.getPort());
-
-                    // Done resolving.. switch back to the dispatch queue.
-                    dispatchQueue.execute(new Task() {
-                        @Override
-                        public void run() {
-                            try {
-                                if(localAddress!=null) {
-                                    channel.socket().bind(localAddress);
-                                }
-                                channel.connect(remoteAddress);
-                            } catch (IOException e) {
-                                try {
-                                    channel.close();
-                                } catch (IOException ignore) {
-                                }
-                                socketState = new CANCELED(true);
-                                listener.onTransportFailure(e);
-                            }
-                        }
-                    });
-
-                } catch (IOException e) {
-                    try {
-                        channel.close();
-                    } catch (IOException ignore) {
-                    }
-                    socketState = new CANCELED(true);
-                    listener.onTransportFailure(e);
-                }
-            }
-        });
-
+        socketState = new CONNECTING();
     }
 
 
@@ -300,7 +270,55 @@ public class UdpTransport extends ServiceBase implements Transport {
 
     public void _start(Task onCompleted) {
         try {
-            if (socketState.is(CONNECTED.class) ) {
+            if ( socketState.is(CONNECTING.class) ) {
+                // Resolving host names might block.. so do it on the blocking executor.
+                this.blockingExecutor.execute(new Runnable() {
+                    public void run() {
+                        // No need to complete if we have been canceled.
+                        if( ! socketState.is(CONNECTING.class) ) {
+                            return;
+                        }
+                        try {
+
+                            final InetSocketAddress localAddress = (localLocation != null) ?
+                                 new InetSocketAddress(InetAddress.getByName(localLocation.getHost()), localLocation.getPort())
+                                 : null;
+
+                            String host = resolveHostName(remoteLocation.getHost());
+                            final InetSocketAddress remoteAddress = new InetSocketAddress(host, remoteLocation.getPort());
+
+                            // Done resolving.. switch back to the dispatch queue.
+                            dispatchQueue.execute(new Task() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        if(localAddress!=null) {
+                                            channel.socket().bind(localAddress);
+                                        }
+                                        channel.connect(remoteAddress);
+                                    } catch (IOException e) {
+                                        try {
+                                            channel.close();
+                                        } catch (IOException ignore) {
+                                        }
+                                        socketState = new CANCELED(true);
+                                        listener.onTransportFailure(e);
+                                    }
+                                }
+                            });
+
+                        } catch (IOException e) {
+                            try {
+                                channel.close();
+                            } catch (IOException ignore) {
+                            }
+                            socketState = new CANCELED(true);
+                            listener.onTransportFailure(e);
+                        }
+                    }
+                });
+
+            } else if (socketState.is(CONNECTED.class) ) {
                 dispatchQueue.execute(new Task() {
                     public void run() {
                         try {

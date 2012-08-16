@@ -384,50 +384,6 @@ public class TcpTransport extends ServiceBase implements Transport {
         this.remoteLocation = remoteLocation;
         this.localLocation = localLocation;
         socketState = new CONNECTING();
-
-        // Resolving host names might block.. so do it on the blocking executor.
-        this.blockingExecutor.execute(new Runnable() {
-            public void run() {
-                try {
-
-                    final InetSocketAddress localAddress = (localLocation != null) ?
-                         new InetSocketAddress(InetAddress.getByName(localLocation.getHost()), localLocation.getPort())
-                         : null;
-
-                    String host = resolveHostName(remoteLocation.getHost());
-                    final InetSocketAddress remoteAddress = new InetSocketAddress(host, remoteLocation.getPort());
-
-                    // Done resolving.. switch back to the dispatch queue.
-                    dispatchQueue.execute(new Task() {
-                        @Override
-                        public void run() {
-                            try {
-                                if(localAddress!=null) {
-                                    channel.socket().bind(localAddress);
-                                }
-                                channel.connect(remoteAddress);
-                            } catch (IOException e) {
-                                try {
-                                    channel.close();
-                                } catch (IOException ignore) {
-                                }
-                                socketState = new CANCELED(true);
-                                listener.onTransportFailure(e);
-                            }
-                        }
-                    });
-
-                } catch (IOException e) {
-                    try {
-                        channel.close();
-                    } catch (IOException ignore) {
-                    }
-                    socketState = new CANCELED(true);
-                    listener.onTransportFailure(e);
-                }
-            }
-        });
-
     }
 
 
@@ -445,47 +401,96 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     public void _start(Task onCompleted) {
         try {
-            if (socketState.is(CONNECTING.class) ) {
-                trace("connecting...");
-                // this allows the connect to complete..
-                readSource = Dispatch.createSource(channel, SelectionKey.OP_CONNECT, dispatchQueue);
-                readSource.setEventHandler(new Task() {
+            if (socketState.is(CONNECTING.class)) {
+
+                // Resolving host names might block.. so do it on the blocking executor.
+                this.blockingExecutor.execute(new Runnable() {
                     public void run() {
-                        if (getServiceState() != STARTED) {
-                            return;
-                        }
                         try {
-                            trace("connected.");
-                            channel.finishConnect();
-                            readSource.setCancelHandler(null);
-                            readSource.cancel();
-                            readSource=null;
-                            socketState = new CONNECTED();
-                            onConnected();
+
+                            final InetSocketAddress localAddress = (localLocation != null) ?
+                                    new InetSocketAddress(InetAddress.getByName(localLocation.getHost()), localLocation.getPort())
+                                    : null;
+
+                            String host = resolveHostName(remoteLocation.getHost());
+                            final InetSocketAddress remoteAddress = new InetSocketAddress(host, remoteLocation.getPort());
+
+                            // Done resolving.. switch back to the dispatch queue.
+                            dispatchQueue.execute(new Task() {
+                                @Override
+                                public void run() {
+                                    // No need to complete if we have been canceled.
+                                    if( ! socketState.is(CONNECTING.class) ) {
+                                        return;
+                                    }
+                                    try {
+
+                                        if (localAddress != null) {
+                                            channel.socket().bind(localAddress);
+                                        }
+                                        trace("connecting...");
+                                        channel.connect(remoteAddress);
+
+                                        // this allows the connect to complete..
+                                        readSource = Dispatch.createSource(channel, SelectionKey.OP_CONNECT, dispatchQueue);
+                                        readSource.setEventHandler(new Task() {
+                                            public void run() {
+                                                if (getServiceState() != STARTED) {
+                                                    return;
+                                                }
+                                                try {
+                                                    trace("connected.");
+                                                    channel.finishConnect();
+                                                    readSource.setCancelHandler(null);
+                                                    readSource.cancel();
+                                                    readSource = null;
+                                                    socketState = new CONNECTED();
+                                                    onConnected();
+                                                } catch (IOException e) {
+                                                    onTransportFailure(e);
+                                                }
+                                            }
+                                        });
+                                        readSource.setCancelHandler(CANCEL_HANDLER);
+                                        readSource.resume();
+
+                                    } catch (IOException e) {
+                                        try {
+                                            channel.close();
+                                        } catch (IOException ignore) {
+                                        }
+                                        socketState = new CANCELED(true);
+                                        listener.onTransportFailure(e);
+                                    }
+                                }
+                            });
+
                         } catch (IOException e) {
-                            onTransportFailure(e);
+                            try {
+                                channel.close();
+                            } catch (IOException ignore) {
+                            }
+                            socketState = new CANCELED(true);
+                            listener.onTransportFailure(e);
                         }
                     }
                 });
-                readSource.setCancelHandler(CANCEL_HANDLER);
-                readSource.resume();
-
-            } else if (socketState.is(CONNECTED.class) ) {
+            } else if (socketState.is(CONNECTED.class)) {
                 dispatchQueue.execute(new Task() {
                     public void run() {
                         try {
                             trace("was connected.");
                             onConnected();
                         } catch (IOException e) {
-                             onTransportFailure(e);
+                            onTransportFailure(e);
                         }
                     }
                 });
             } else {
-                System.err.println("cannot be started.  socket state is: "+socketState);
+                System.err.println("cannot be started.  socket state is: " + socketState);
             }
         } finally {
-            if( onCompleted!=null ) {
+            if (onCompleted != null) {
                 onCompleted.run();
             }
         }
