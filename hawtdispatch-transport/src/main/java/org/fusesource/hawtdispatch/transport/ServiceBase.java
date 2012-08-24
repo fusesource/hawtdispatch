@@ -79,7 +79,6 @@ public abstract class ServiceBase {
 
     protected State _serviceState = CREATED;
 
-    @Deprecated
     final public void start(final Runnable onCompleted) {
         start(new TaskWrapper(onCompleted));
     }
@@ -114,7 +113,6 @@ public abstract class ServiceBase {
         });
     }
 
-    @Deprecated
     final public void stop(final Runnable onCompleted) {
         stop(new TaskWrapper(onCompleted));
     }

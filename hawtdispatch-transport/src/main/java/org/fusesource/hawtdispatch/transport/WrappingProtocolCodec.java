@@ -17,13 +17,14 @@
 package org.fusesource.hawtdispatch.transport;
 
 /**
- * <p>
- * </p>
- *
- * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
+ * Interface of protocol codecs that wrap other protocol codecs.
  */
-public interface TransportAware {
+public interface WrappingProtocolCodec extends ProtocolCodec {
 
-    public void setTransport(Transport transport);
+    /**
+     * @returns the next codec.
+     */
+    public ProtocolCodec getNext();
+    public void setNext(ProtocolCodec value);
 
 }

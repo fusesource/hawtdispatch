@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.LinkedList;
 
@@ -40,7 +39,7 @@ import java.util.LinkedList;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportAware {
+public abstract class AbstractProtocolCodec implements ProtocolCodec {
 
     protected BufferPools bufferPools;
     protected BufferPool writeBufferPool;
@@ -72,6 +71,11 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
     protected Action nextDecodeAction;
 
     public void setTransport(Transport transport) {
+        this.writeChannel = (GatheringByteChannel) transport.getWriteChannel();
+        this.readChannel = transport.getReadChannel();
+        if( nextDecodeAction==null ) {
+            nextDecodeAction = initialDecodeAction();
+        }
         if( transport instanceof TcpTransport) {
             TcpTransport tcp = (TcpTransport) transport;
             writeBufferSize = tcp.getSendBufferSize();
@@ -96,10 +100,6 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
             readBufferPool = bufferPools.getBufferPool(readBufferSize);
             writeBufferPool = bufferPools.getBufferPool(writeBufferSize);
         }
-    }
-
-    public void setWritableByteChannel(WritableByteChannel channel) throws SocketException {
-        this.writeChannel = (GatheringByteChannel) channel;
     }
 
     public int getReadBufferSize() {
@@ -249,13 +249,6 @@ public abstract class AbstractProtocolCodec implements ProtocolCodec, TransportA
 
     abstract protected Action initialDecodeAction();
 
-
-    public void setReadableByteChannel(ReadableByteChannel channel) throws SocketException {
-        this.readChannel = channel;
-        if( nextDecodeAction==null ) {
-            nextDecodeAction = initialDecodeAction();
-        }
-    }
 
     public void unread(byte[] buffer) {
         assert ((readCounter == 0));

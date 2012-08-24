@@ -20,6 +20,8 @@ package org.fusesource.hawtdispatch.transport;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.Executor;
 
 import org.fusesource.hawtdispatch.DispatchQueue;
@@ -124,6 +126,8 @@ public interface Transport {
      */
     SocketAddress getLocalAddress();
 
+    public void drainInbound();
+
     /**
      * @return true if the transport is closed/stopped.
      */
@@ -148,4 +152,6 @@ public interface Transport {
     public Executor getBlockingExecutor();
     public void setBlockingExecutor(Executor blockingExecutor);
 
+    ReadableByteChannel getReadChannel();
+    WritableByteChannel getWriteChannel();
 }

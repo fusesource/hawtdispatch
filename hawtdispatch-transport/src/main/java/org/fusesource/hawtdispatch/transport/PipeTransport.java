@@ -23,6 +23,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.net.URI;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -170,7 +172,7 @@ public class PipeTransport implements Transport {
         }
     }
 
-    private void drainInbound() {
+    public void drainInbound() {
         if( !full() ) {
             listener.onRefill();
         }
@@ -269,5 +271,13 @@ public class PipeTransport implements Transport {
         return null;
     }
     public void setBlockingExecutor(Executor blockingExecutor) {
+    }
+
+    public ReadableByteChannel getReadChannel() {
+        return null;
+    }
+
+    public WritableByteChannel getWriteChannel() {
+        return null;
     }
 }

@@ -29,16 +29,14 @@ import java.nio.channels.WritableByteChannel;
  */
 public interface ProtocolCodec {
 
+    public void setTransport(Transport transport);
+
     ///////////////////////////////////////////////////////////////////
     //
     // Methods related with reading from the channel
     //
     ///////////////////////////////////////////////////////////////////
 
-    /**
-     * @param channel
-     */
-    public void setReadableByteChannel(ReadableByteChannel channel) throws Exception;
 
     /**
      * Non-blocking channel based decoding.
@@ -80,8 +78,6 @@ public interface ProtocolCodec {
         FULL,
     }
 
-    public void setWritableByteChannel(WritableByteChannel channel) throws Exception;
-
     public int getReadBufferSize();
     public int getWriteBufferSize();
 
@@ -115,6 +111,5 @@ public interface ProtocolCodec {
      * @return The number of bytes read in the last write io performed.
      */
     public long getLastWriteSize();
-
 
 }

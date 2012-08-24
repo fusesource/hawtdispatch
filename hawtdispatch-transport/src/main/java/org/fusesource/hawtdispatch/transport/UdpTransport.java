@@ -243,8 +243,7 @@ public class UdpTransport extends ServiceBase implements Transport {
     }
 
     protected void initializeCodec() throws Exception {
-        codec.setReadableByteChannel(readChannel());
-        codec.setWritableByteChannel(writeChannel());
+        codec.setTransport(this);
     }
 
     public void connecting(final URI remoteLocation, final URI localLocation) throws Exception {
@@ -480,7 +479,7 @@ public class UdpTransport extends ServiceBase implements Transport {
         return true;
     }
 
-    protected void drainInbound() {
+    public void drainInbound() {
         if (!getServiceState().isStarted() || readSource.isSuspended()) {
             return;
         }
@@ -614,11 +613,11 @@ public class UdpTransport extends ServiceBase implements Transport {
         return channel;
     }
 
-    public ReadableByteChannel readChannel() {
+    public ReadableByteChannel getReadChannel() {
         return channel;
     }
 
-    public WritableByteChannel writeChannel() {
+    public WritableByteChannel getWriteChannel() {
         return channel;
     }
 

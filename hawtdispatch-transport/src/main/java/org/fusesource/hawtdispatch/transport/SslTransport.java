@@ -29,7 +29,6 @@ import java.nio.channels.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.concurrent.Executor;
 
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_UNWRAP;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_WRAP;
@@ -238,7 +237,7 @@ public class SslTransport extends TcpTransport implements SecureTransport {
     }
 
     @Override
-    protected void drainInbound() {
+    public void drainInbound() {
         if ( engine.getHandshakeStatus()!=NOT_HANDSHAKING ) {
             handshake();
         } else {
@@ -253,7 +252,7 @@ public class SslTransport extends TcpTransport implements SecureTransport {
     protected boolean transportFlush() throws IOException {
         while (true) {
             if(writeFlushing) {
-                int count = super.writeChannel().write(writeBuffer);
+                int count = super.getWriteChannel().write(writeBuffer);
                 if( !writeBuffer.hasRemaining() ) {
                     writeBuffer.clear();
                     writeFlushing = false;
@@ -316,7 +315,7 @@ public class SslTransport extends TcpTransport implements SecureTransport {
                     return rc;
                 }
             } else if( readUnderflow ) {
-                int count = super.readChannel().read(readBuffer);
+                int count = super.getReadChannel().read(readBuffer);
                 if( count == -1 ) {  // peer closed socket.
                     if (rc==0) {
                         return -1;
@@ -421,11 +420,11 @@ public class SslTransport extends TcpTransport implements SecureTransport {
     }
 
 
-    public ReadableByteChannel readChannel() {
+    public ReadableByteChannel getReadChannel() {
         return ssl_channel;
     }
 
-    public WritableByteChannel writeChannel() {
+    public WritableByteChannel getWriteChannel() {
         return ssl_channel;
     }
 

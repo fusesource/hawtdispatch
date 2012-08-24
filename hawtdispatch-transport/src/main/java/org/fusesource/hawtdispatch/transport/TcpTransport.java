@@ -372,11 +372,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     }
 
     protected void initializeCodec() throws Exception {
-        codec.setReadableByteChannel(readChannel());
-        codec.setWritableByteChannel(writeChannel());
-        if( codec instanceof TransportAware ) {
-            ((TransportAware)codec).setTransport(this);
-        }
+        codec.setTransport(this);
     }
 
     public void connecting(final URI remoteLocation, final URI localLocation) throws Exception {
@@ -649,7 +645,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         return true;
     }
 
-    protected void drainInbound() {
+    public void drainInbound() {
         if (!getServiceState().isStarted() || readSource.isSuspended()) {
             return;
         }
@@ -787,7 +783,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         return channel;
     }
 
-    public ReadableByteChannel readChannel() {
+    public ReadableByteChannel getReadChannel() {
         if(rateLimitingChannel!=null) {
             return rateLimitingChannel;
         } else {
@@ -795,7 +791,7 @@ public class TcpTransport extends ServiceBase implements Transport {
         }
     }
 
-    public WritableByteChannel writeChannel() {
+    public WritableByteChannel getWriteChannel() {
         if(rateLimitingChannel!=null) {
             return rateLimitingChannel;
         } else {
