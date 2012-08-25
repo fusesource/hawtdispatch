@@ -38,7 +38,7 @@ import static javax.net.ssl.SSLEngineResult.Status.BUFFER_OVERFLOW;
  * Implements the SSL protocol as a WrappingProtocolCodec.  Useful for when
  * you want to switch to the SSL protocol on a regular TCP Transport.
  */
-public class SSLProtocolCodec implements WrappingProtocolCodec {
+public class SSLProtocolCodec implements WrappingProtocolCodec, SecuredSession {
 
     private ReadableByteChannel readChannel;
     private WritableByteChannel writeChannel;

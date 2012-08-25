@@ -40,7 +40,7 @@ import static javax.net.ssl.SSLEngineResult.Status.BUFFER_OVERFLOW;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public class SslTransport extends TcpTransport implements SecureTransport {
+public class SslTransport extends TcpTransport implements SecuredSession {
 
 
     /**

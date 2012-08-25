@@ -24,7 +24,7 @@ import java.security.cert.X509Certificate;
  *
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
-public interface SecureTransport extends Transport {
+public interface SecuredSession {
 
     /**
      * Gets the X509Certificate associated withe the peer.
