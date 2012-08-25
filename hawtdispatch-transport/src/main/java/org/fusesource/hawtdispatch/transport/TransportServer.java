@@ -36,7 +36,6 @@ public interface TransportServer {
      * @param onComplete my be set to null if not interested in a callback.
      */
     void start(Task onComplete) throws Exception;
-    @Deprecated
     void start(Runnable onComplete) throws Exception;
 
     /**
@@ -45,7 +44,6 @@ public interface TransportServer {
      * @param onComplete my be set to null if not interested in a callback.
      */
     void stop(Task onComplete) throws Exception;
-    @Deprecated
     void stop(Runnable onComplete) throws Exception;
 
     /**
