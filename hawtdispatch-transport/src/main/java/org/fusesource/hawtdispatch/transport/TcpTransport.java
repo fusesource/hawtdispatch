@@ -136,7 +136,9 @@ public class TcpTransport extends ServiceBase implements Transport {
                 return;
             }
             try {
-                channel.close();
+                if( closeOnCancel ) {
+                    channel.close();
+                }
             } catch (IOException ignore) {
             }
             socketState = new CANCELED(dispose);
@@ -187,8 +189,9 @@ public class TcpTransport extends ServiceBase implements Transport {
     int maxWriteRate;
     int receiveBufferSize = 1024*64;
     int sendBufferSize = 1024*64;
-    boolean keepAlive = true;
+    boolean closeOnCancel = true;
 
+    boolean keepAlive = true;
 
     public static final int IPTOS_LOWCOST = 0x02;
     public static final int IPTOS_RELIABILITY = 0x04;
@@ -867,4 +870,11 @@ public class TcpTransport extends ServiceBase implements Transport {
         this.blockingExecutor = blockingExecutor;
     }
 
+    public boolean isCloseOnCancel() {
+        return closeOnCancel;
+    }
+
+    public void setCloseOnCancel(boolean closeOnCancel) {
+        this.closeOnCancel = closeOnCancel;
+    }
 }
