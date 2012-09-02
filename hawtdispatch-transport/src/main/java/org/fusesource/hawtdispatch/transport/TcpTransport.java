@@ -583,21 +583,20 @@ public class TcpTransport extends ServiceBase implements Transport {
 
 
     public boolean full() {
-        return codec==null || codec.full();
+        return codec==null ||
+               codec.full() ||
+               !socketState.is(CONNECTED.class) ||
+               getServiceState() != STARTED;
     }
 
     boolean rejectingOffers;
 
     public boolean offer(Object command) {
         dispatchQueue.assertExecuting();
+        if( full() ) {
+            return false;
+        }
         try {
-            if (!socketState.is(CONNECTED.class)) {
-                throw new IOException("Not connected.");
-            }
-            if (getServiceState() != STARTED) {
-                throw new IOException("Not running.");
-            }
-
             ProtocolCodec.BufferState rc = codec.write(command);
             rejectingOffers = codec.full();
             switch (rc ) {
@@ -605,13 +604,11 @@ public class TcpTransport extends ServiceBase implements Transport {
                     return false;
                 default:
                     drainOutboundSource.merge(1);
-                    return true;
             }
         } catch (IOException e) {
             onTransportFailure(e);
-            return false;
         }
-
+        return true;
     }
 
     boolean writeResumedForCodecFlush = false;
