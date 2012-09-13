@@ -29,7 +29,8 @@ public interface CustomDispatchSource<Event, MergedEvent> extends DispatchSource
 
     /**
      * <p>
-     * Returns pending data for the dispatch source.
+     * Returns pending data for the dispatch source.  Calling this method consumes
+     * the event and a subsequent call will return null.
      * </p><p>
      * This function is intended to be called from within the event handler runnable.
      * The result of calling this function outside of the event handler runnable is

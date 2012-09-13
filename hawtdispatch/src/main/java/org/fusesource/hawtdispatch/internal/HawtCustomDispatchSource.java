@@ -49,7 +49,9 @@ final public class HawtCustomDispatchSource<Event, MergedEvent> extends Abstract
     }
 
     public MergedEvent getData() {
-        return firedEvent.get();
+        final MergedEvent rc = firedEvent.get();
+        firedEvent.set(null);
+        return rc;
     }
 
     protected final ConcurrentLinkedQueue<MergedEvent> externalQueue = new ConcurrentLinkedQueue<MergedEvent>();
