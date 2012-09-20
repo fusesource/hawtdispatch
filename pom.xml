@@ -28,7 +28,7 @@
 
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch-project</artifactId>
-  <version>1.12</version>
+  <version>1.13-SNAPSHOT</version>
   <packaging>pom</packaging>
   
   <name>${project.artifactId}</name>
