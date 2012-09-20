@@ -1,6 +1,22 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.12](http://hawtdispatch.fusesource.org/blog/releases/release-1-12.html), released 2012-09-20
+
+* Custom dispatch sources will now return null after the event has been received to avoid accidentally double processing events.
+* Make sure we only return false from the offer method when the transport is also full()
+* Add a closeOnCancel option to disable closing the socket when the transport is stopped.
+* Rename the SecuredTransport interface to SecuredSession and now both the SSLProtocolCodec and SslTransport implement it.
+* You can now handle SSL/TLS encoding/decoding via a wrapping protocol codec.  ProtocolCodec and Transport interfaces needs a couple of adjustments to properly support the co
+* Better handling of getting the local host address.
+* Protocol codec decoding optimizations.
+* Move all the connect logic into the start method.
+* Do host name resolutions on a blocking executor to avoid stalling the hawtdispatch threads.
+* Resize the read buffer after reading from the channel if to avoid to avoid holding on to large buffers.
+* Support changing the socket send/recv buffer size on started transports and servers.
+* Do at least a non blocking select when we notice that another thread requested the NIO manager wakeup.  This should allow us to pickup any new IO events that have occurred 
+* Dropped the continuations example, added a SSL transport client example
+
 ## [HawtDispatch 1.11](http://hawtdispatch.fusesource.org/blog/releases/release-1-11.html), released 2012-05-02
 
 * Support buffer pooling in the abstract protocol codec.

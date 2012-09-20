@@ -34,10 +34,11 @@ object Website {
   val project_forums_url= "http://groups.google.com/group/hawtdispatch"
   val project_wiki_url= "http://wiki.github.com/fusesource/hawtdispatch"
   val project_logo= "/images/project-logo.png"
-  val project_version= "1.11"
-  val project_snapshot_version= "1.12-SNAPSHOT"
+  val project_version= "1.12"
+  val project_snapshot_version= "1.13-SNAPSHOT"
   val project_versions = List(
         project_version,
+        "1.11",
         "1.10",
         "1.9",
         "1.8",
