@@ -177,22 +177,48 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
-        <version>2.1.1</version>
-        <dependencies>
-          <dependency>
-          <groupId>org.apache.maven.wagon</groupId>
-          <artifactId>wagon-webdav-jackrabbit</artifactId>
-          <version>1.0-beta-6</version>
-          <exclusions>
-            <exclusion>
-              <groupId>commons-logging</groupId>
-              <artifactId>commons-logging</artifactId>
-            </exclusion>
-          </exclusions>
-         </dependency>
-        </dependencies>
+        <version>3.0</version>
+        <configuration>
+          <reportPlugins>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-javadoc-plugin</artifactId>
+              <version>2.7</version>
+              <configuration>
+        
+                <stylesheetfile>stylesheet.css</stylesheetfile>
+                <resourcesArtifacts>
+                  <resourcesArtifact>
+                    <groupId>org.fusesource.mvnplugins</groupId>
+                    <artifactId>fuse-javadoc-skin</artifactId>
+                    <version>1.9</version>
+                  </resourcesArtifact>
+                </resourcesArtifacts>
+
+                <docfilessubdirs>true</docfilessubdirs>
+                <useStandardDocletOptions>true</useStandardDocletOptions>
+                <charset>UTF-8</charset>
+                <docencoding>UTF-8</docencoding>
+                <breakiterator>true</breakiterator>
+                <version>true</version>
+                <author>true</author>
+                <keywords>true</keywords>
+          
+                <doctitle>${project.name} API Reference (${project.version})</doctitle>
+                <windowtitle>${project.name} API Reference (${project.version})</windowtitle>
+                <links>
+                  <link>http://java.sun.com/j2se/1.5.0/docs/api</link>
+                </links>
+                <encoding>UTF-8</encoding>
+                <locale>en_US</locale>
+                <linksource>true</linksource>
+                <excludePackageNames>*.internal</excludePackageNames>
+              </configuration>
+            </plugin>
+          </reportPlugins>
+        </configuration>
       </plugin>
-      
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -241,51 +267,6 @@
     </plugins>
   </build>
   
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-site-plugin</artifactId>
-        <version>2.1.1</version>
-        <configuration>
-          <generateSitemap>true</generateSitemap>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.2</version>
-        <reportSets>
-          <reportSet>
-            <reports>
-              <report>index</report>
-              <report>sumary</report>
-              <report>dependencies</report>
-              <report>mailing-list</report>
-              <report>issue-tracking</report>
-              <report>license</report>
-              <report>scm</report>
-            </reports>
-          </reportSet>
-        </reportSets>
-      </plugin>
-      
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-report-plugin</artifactId>
-        <version>2.4.3</version>
-      </plugin>
-      
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.7</version>
-      </plugin>
-
-    </plugins>
-  </reporting>
-  
-
   <profiles>
 
     <profile>
