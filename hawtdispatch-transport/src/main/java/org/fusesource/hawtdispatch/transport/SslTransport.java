@@ -191,7 +191,7 @@ public class SslTransport extends TcpTransport implements SecuredSession {
     @Override
     public void connecting(URI remoteLocation, URI localLocation) throws Exception {
         assert engine == null;
-        engine = sslContext.createSSLEngine();
+        engine = sslContext.createSSLEngine(remoteLocation.getHost(), remoteLocation.getPort());
         engine.setUseClientMode(true);
         super.connecting(remoteLocation, localLocation);
     }
