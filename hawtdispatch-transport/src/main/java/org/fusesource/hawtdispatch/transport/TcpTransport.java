@@ -573,7 +573,6 @@ public class TcpTransport extends ServiceBase implements Transport {
             writeSource.cancel();
             writeSource=null;
         }
-        this.codec = null;
     }
 
     public void onTransportFailure(IOException error) {
