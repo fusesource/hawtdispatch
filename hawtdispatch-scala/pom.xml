@@ -52,7 +52,7 @@
     <!-- Testing -->
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_2.9.0</artifactId>
+      <artifactId>scalatest_${scala-version}</artifactId>
       <version>${scalatest-version}</version>
       <scope>test</scope>
     </dependency>
@@ -91,9 +91,9 @@
       </plugin>
       
       <plugin>
-        <groupId>org.scala-tools</groupId>
-        <artifactId>maven-scala-plugin</artifactId>
-        <version>${scala-plugin-version}</version>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <goals>
@@ -141,9 +141,9 @@
   <reporting>
     <plugins>
       <plugin>
-        <groupId>org.scala-tools</groupId>
-        <artifactId>maven-scala-plugin</artifactId>
-        <version>${scala-plugin-version}</version>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.1.0</version>
         <configuration>
           <scalaVersion>${scala-version}</scalaVersion>
           <jvmArgs>
@@ -162,9 +162,9 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.scala-tools</groupId>
-            <artifactId>maven-scala-plugin</artifactId>
-            <version>${maven-scala-plugin-version}</version>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>3.1.0</version>
             <configuration>
               <args>
                 <arg>-deprecation</arg>
@@ -190,9 +190,9 @@
           
           <!-- Generate the Scala Docs so that they can be included in the javadoc artifact -->
           <plugin>
-            <groupId>org.scala-tools</groupId>
-            <artifactId>maven-scala-plugin</artifactId>
-            <version>${scala-plugin-version}</version>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>3.1.0</version>
             <executions>
               <execution>
                 <id>doc</id>

@@ -222,7 +222,7 @@ package object hawtdispatch {
             try {
               task
             } catch {
-              case e => e.printStackTrace
+              case e:Throwable => e.printStackTrace
             }
             if (!closed.get) {
               actual.executeAfter(time, unit, action)
