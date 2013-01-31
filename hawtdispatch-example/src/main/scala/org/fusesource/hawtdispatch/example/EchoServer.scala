@@ -33,7 +33,7 @@ import java.nio.channels.SocketChannel
  */
 object EchoServer {
 
-  override def main(args:Array[String]) {
+  def main(args:Array[String]) {
     val PORT = 4444
     run(PORT)
   }
