@@ -16,10 +16,7 @@
  */
 package org.fusesource.hawtdispatch.netty;
 
-import io.netty.channel.AbstractChannel;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -58,6 +55,18 @@ abstract class HawtAbstractChannel extends AbstractChannel {
     protected HawtAbstractChannel(Channel parent, Integer id, java.nio.channels.Channel ch) {
         super(parent, id);
         this.ch = ch;
+    }
+
+    HawtEventLoopGroup group;
+    public void register(HawtEventLoopGroup group) {
+        loop.parent = group;
+        loop.queue.setTargetQueue(group.queue);
+    }
+
+    HawtEventLoop loop = new HawtEventLoop();
+    @Override
+    public EventLoop eventLoop() {
+        return loop;
     }
 
     @Override

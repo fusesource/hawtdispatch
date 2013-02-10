@@ -25,9 +25,9 @@ import org.fusesource.hawtdispatch.DispatchQueue;
  * AIO {@link io.netty.channel.Channel} implementations.
  *
  */
-public class HawtEventLoopGroup extends DefaultEventExecutorGroup {
+public class HawtEventLoopGroup extends DefaultEventExecutorGroup implements EventLoopGroup {
 
-    DispatchQueue dispatchQueue;
+    DispatchQueue queue;
 
     /**
      *
@@ -40,14 +40,31 @@ public class HawtEventLoopGroup extends DefaultEventExecutorGroup {
      */
     public HawtEventLoopGroup(DispatchQueue queue) {
         super(1);
-        this.dispatchQueue = queue;
+        this.queue = queue;
     }
 
     public DispatchQueue getDispatchQueue() {
-        return dispatchQueue;
+        return this.queue;
     }
 
     public void setDispatchQueue(DispatchQueue dispatchQueue) {
-        this.dispatchQueue = dispatchQueue;
+        this.queue = dispatchQueue;
+    }
+
+    @Override
+    public EventLoop next() {
+        return null;
+    }
+
+    @Override
+    public ChannelFuture register(Channel channel) {
+        return register(channel, channel.newPromise());
+    }
+
+    @Override
+    public ChannelFuture register(Channel channel, ChannelPromise promise) {
+        ((HawtAbstractChannel)channel).register(this);
+        promise.setSuccess();
+        return promise;
     }
 }

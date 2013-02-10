@@ -56,14 +56,13 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
     }
 
     private final ServerSocketChannelConfig config;
-    private final DispatchQueue queue;
 
     /**
      * Create a new instance
      */
-    public HawtServerSocketChannel() {
+    public HawtServerSocketChannel() throws IOException {
         super(null, null, newSocket());
-        queue = createQueue();
+        javaChannel().configureBlocking(false);
         config = new DefaultServerSocketChannelConfig(this, javaChannel().socket());
     }
 
@@ -102,7 +101,7 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
     @Override
     protected void doBeginRead() {
         if( acceptSource==null ) {
-            acceptSource = createSource(javaChannel(), OP_READ, queue);
+            acceptSource = createSource(javaChannel(), OP_ACCEPT, loop.queue);
             acceptSource.setEventHandler(new Task(){
               public void run() {
                   HawtSocketChannel socket = null;

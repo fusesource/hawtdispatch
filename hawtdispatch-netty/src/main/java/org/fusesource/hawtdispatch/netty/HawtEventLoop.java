@@ -17,7 +17,9 @@
 package org.fusesource.hawtdispatch.netty;
 
 import io.netty.channel.*;
+import org.fusesource.hawtdispatch.Dispatch;
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.Dispatcher;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -29,7 +31,7 @@ import java.util.concurrent.*;
 final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
 
     EventLoopGroup parent;
-    DispatchQueue queue;
+    DispatchQueue queue = Dispatch.createQueue();
 
     @Override
     public EventLoopGroup parent() {
@@ -176,7 +178,7 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
 
     @Override
     public boolean inEventLoop(Thread thread) {
-        throw new UnsupportedOperationException();
+        return queue.isExecuting();
     }
 
     @Override
