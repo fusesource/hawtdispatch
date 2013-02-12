@@ -18,6 +18,7 @@ package org.fusesource.hawtdispatch.netty;
 
 import io.netty.channel.*;
 import org.fusesource.hawtdispatch.Dispatch;
+import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.DispatchSource;
 
 import java.net.ConnectException;
@@ -99,11 +100,15 @@ abstract class HawtAbstractChannel extends AbstractChannel {
 
     @Override
     protected AbstractUnsafe newUnsafe() {
-        return new HawtAbstractUnsafe();
+        return new HawtUnsafe();
     }
 
     protected final DispatchSource createSource(int op) {
-        return Dispatch.createSource(javaChannel(), op, ((HawtEventLoop) eventLoop()).queue());
+        return Dispatch.createSource(javaChannel(), op, getDispatchQueue());
+    }
+
+    public DispatchQueue getDispatchQueue() {
+        return ((HawtEventLoop) eventLoop()).queue();
     }
 
     /**
@@ -124,7 +129,9 @@ abstract class HawtAbstractChannel extends AbstractChannel {
         }
     }
 
-    final class HawtAbstractUnsafe extends AbstractUnsafe {
+
+
+    final class HawtUnsafe extends AbstractUnsafe {
 
         @Override
         public void connect(

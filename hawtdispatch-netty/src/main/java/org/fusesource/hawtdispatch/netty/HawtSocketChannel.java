@@ -190,7 +190,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                 connectSource.setEventHandler(new Task() {
                     @Override
                     public void run() {
-                        ((HawtAbstractUnsafe) unsafe()).finishConnect();
+                        ((HawtUnsafe) unsafe()).finishConnect();
                     }
                 });
                 // enable the delivery of the connect events.
