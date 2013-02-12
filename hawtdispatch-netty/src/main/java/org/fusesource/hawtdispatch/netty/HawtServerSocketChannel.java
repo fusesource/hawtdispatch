@@ -33,7 +33,7 @@ import java.net.SocketAddress;
 /**
  * {@link ServerSocketChannel} implementation which uses HawtDispatch.
  *
- * NIO2 is only supported on Java 7+.
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class HawtServerSocketChannel extends HawtAbstractChannel implements ServerSocketChannel {
 
@@ -104,12 +104,11 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
                 if (task != null) {
                     task.run();
                 }
-
+                // Create the source and register the handlers to it
                 acceptSource = createSource(OP_ACCEPT);
                 acceptSource.setEventHandler(new Task() {
                     @Override
                     public void run() {
-                        try {
                         HawtSocketChannel socket = null;
                         try {
                             socket = new HawtSocketChannel(HawtServerSocketChannel.this, null, javaChannel().accept());
@@ -121,11 +120,10 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
                         pipeline().inboundMessageBuffer().add(socket);
                         pipeline().fireInboundBufferUpdated();
                         pipeline().fireChannelReadSuspended();
+
+                        // suspend accepts if needed
                         if (!config().isAutoRead()) {
                             acceptSource.suspend();
-                        }
-                        } catch (Throwable t) {
-                            t.printStackTrace();
                         }
                     }
                 });

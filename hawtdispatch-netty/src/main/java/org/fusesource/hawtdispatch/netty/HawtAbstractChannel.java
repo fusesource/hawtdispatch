@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Abstract base class for {@link Channel} implementations that use
  * HawtDispatch.
+ *
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 abstract class HawtAbstractChannel extends AbstractChannel {
 
@@ -109,7 +111,7 @@ abstract class HawtAbstractChannel extends AbstractChannel {
     }
 
     protected final DispatchSource createSource(int op) {
-        return Dispatch.createSource(javaChannel(), op, ((HawtEventLoop) eventLoop()).queue);
+        return Dispatch.createSource(javaChannel(), op, ((HawtEventLoop) eventLoop()).queue());
     }
 
     /**
@@ -177,6 +179,9 @@ abstract class HawtAbstractChannel extends AbstractChannel {
             }
         }
 
+        /**
+         * Finish connect operation
+         */
         public void finishConnect() {
             assert eventLoop().inEventLoop();
             assert connectPromise != null;

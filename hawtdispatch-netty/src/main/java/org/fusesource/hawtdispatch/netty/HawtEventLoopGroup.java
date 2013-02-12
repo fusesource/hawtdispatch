@@ -59,6 +59,11 @@ public class HawtEventLoopGroup extends AbstractHawtEventLoopGroup {
         }
     };
 
+    /**
+     * Create a new instance
+     *
+     * @param queue the {@link DispatchQueue} from which the serial queues are created
+     */
     public HawtEventLoopGroup(DispatchQueue queue) {
         if (queue == null) {
             throw new NullPointerException("queue");

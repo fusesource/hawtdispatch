@@ -28,16 +28,31 @@ import java.util.concurrent.*;
 /**
  * {@link EventLoop} implementations which will
  * handle HawtDispatch based {@link Channel}s.
+ *
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
 
     private final EventLoopGroup parent;
-    final DispatchQueue queue;
     private volatile boolean shutdown;
+    private final DispatchQueue queue;
 
     HawtEventLoop(EventLoopGroup parent, DispatchQueue queue) {
+        if (parent == null) {
+            throw new NullPointerException("parent");
+        }
+        if (queue == null) {
+            throw new NullPointerException("queue");
+        }
         this.parent = parent;
         this.queue = queue;
+    }
+
+    /**
+     * Returns the backing {@link DispatchQueue}
+     */
+    DispatchQueue queue() {
+        return queue;
     }
 
     @Override

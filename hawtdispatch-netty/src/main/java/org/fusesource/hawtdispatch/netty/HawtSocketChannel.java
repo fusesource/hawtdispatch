@@ -37,6 +37,8 @@ import static java.nio.channels.SelectionKey.*;
 
 /**
  * {@link SocketChannel} implementation which uses HawtDispatch.
+ *
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class HawtSocketChannel extends HawtAbstractChannel implements SocketChannel {
 
@@ -148,12 +150,17 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
     public ChannelFuture shutdownOutput(final ChannelPromise promise) {
         EventLoop loop = eventLoop();
         if (loop.inEventLoop()) {
+            boolean success = false;
             try {
                 javaChannel().socket().shutdownOutput();
-                outputShutdown = true;
+                success = true;
                 promise.setSuccess();
             } catch (Throwable t) {
                 promise.setFailure(t);
+            } finally {
+                if (success) {
+                    outputShutdown = true;
+                }
             }
         } else {
             loop.execute(new Runnable() {
@@ -236,7 +243,6 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
         return false;
     }
 
-
     @Override
     protected void doFlushByteBuffer(ByteBuf buf) throws Exception {
         if (!buf.isReadable()) {
@@ -292,6 +298,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                 if (task != null) {
                     task.run();
                 }
+                // create the sources and set the event handlers
                 readSource = createSource(OP_READ);
                 readSource.setEventHandler(new Task() {
                     @Override
@@ -327,7 +334,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
         try {
             expandReadBuffer(byteBuf);
             loop:
-            for (; ; ) {
+            for (;;) {
 
                 int localReadAmount = byteBuf.writeBytes(javaChannel(), byteBuf.writableBytes());
                 if (localReadAmount > 0) {
