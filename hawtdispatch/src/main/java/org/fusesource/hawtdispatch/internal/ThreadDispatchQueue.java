@@ -159,4 +159,8 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     public Metrics metrics() {
         return metricsCollector.metrics();
     }
+
+    public WorkerThread getThread() {
+        return thread;
+    }
 }
