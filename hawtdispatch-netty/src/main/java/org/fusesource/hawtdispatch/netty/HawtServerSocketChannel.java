@@ -29,6 +29,7 @@ import static java.nio.channels.SelectionKey.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.channels.SocketChannel;
 
 /**
  * {@link ServerSocketChannel} implementation which uses HawtDispatch.
@@ -109,17 +110,28 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
                 acceptSource.setEventHandler(new Task() {
                     @Override
                     public void run() {
-                        HawtSocketChannel socket = null;
-                        try {
-                            socket = new HawtSocketChannel(HawtServerSocketChannel.this, null, javaChannel().accept());
-                        } catch (IOException e) {
-                            if (isOpen()) {
-                                logger.warn("Failed to create a new channel from an accepted socket.", e);
+                        boolean added = false;
+                        for (;;) {
+                            try {
+                                SocketChannel channel = javaChannel().accept();
+                                if (channel == null) {
+                                    break;
+                                }
+                                pipeline().inboundMessageBuffer().add(
+                                        new HawtSocketChannel(HawtServerSocketChannel.this, null, channel));
+                                added = true;
+
+                            } catch (IOException e) {
+                                if (isOpen()) {
+                                    logger.warn("Failed to create a new channel from an accepted socket.", e);
+                                }
+                                break;
                             }
                         }
-                        pipeline().inboundMessageBuffer().add(socket);
-                        pipeline().fireInboundBufferUpdated();
-                        pipeline().fireChannelReadSuspended();
+                        if (added) {
+                            pipeline().fireInboundBufferUpdated();
+                            pipeline().fireChannelReadSuspended();
+                        }
 
                         // suspend accepts if needed
                         if (!config().isAutoRead()) {
