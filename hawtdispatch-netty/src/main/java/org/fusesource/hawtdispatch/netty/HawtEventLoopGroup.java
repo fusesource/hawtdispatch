@@ -1,5 +1,4 @@
 /*
- * Copyright 2012 The Netty Project
  * Copyright 2013 Red Hat, Inc.
  *
  * The Netty Project licenses this file to you under the Apache License,
@@ -16,55 +15,80 @@
  */
 package org.fusesource.hawtdispatch.netty;
 
-import io.netty.channel.*;
-import org.fusesource.hawtdispatch.Dispatch;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventExecutor;
+import io.netty.channel.EventLoop;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import org.fusesource.hawtdispatch.DispatchQueue;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
- * {@link HawtEventLoopGroup} implementation which will handle
- * AIO {@link io.netty.channel.Channel} implementations.
+ * {@link AbstractHawtEventLoopGroup} which will create a new serial {@link DispatchQueue} for every registered
+ * {@link Channel}.
  *
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class HawtEventLoopGroup extends DefaultEventExecutorGroup implements EventLoopGroup {
+public class HawtEventLoopGroup extends AbstractHawtEventLoopGroup {
+    private final ChannelGroup group = new DefaultChannelGroup();
+    private final DispatchQueue queue;
+    private final AtomicInteger eventLoopId = new AtomicInteger();
 
-    DispatchQueue queue;
+    private final ChannelFutureListener closeListener = new ChannelFutureListener() {
+
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            group.remove(future.channel());
+        }
+    };
+
+    private final ChannelFutureListener registerListener = new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            if (future.isSuccess() && future.channel().isOpen()) {
+                group.add(future.channel());
+                future.channel().closeFuture().addListener(closeListener);
+            }
+        }
+    };
 
     /**
+     * Create a new instance
      *
-     */
-    public HawtEventLoopGroup() {
-        this(Dispatch.getGlobalQueue());
-    }
-
-    /**
+     * @param queue the {@link DispatchQueue} from which the serial queues are created
      */
     public HawtEventLoopGroup(DispatchQueue queue) {
-        super(1);
+        if (queue == null) {
+            throw new NullPointerException("queue");
+        }
         this.queue = queue;
-    }
-
-    public DispatchQueue getDispatchQueue() {
-        return this.queue;
-    }
-
-    public void setDispatchQueue(DispatchQueue dispatchQueue) {
-        this.queue = dispatchQueue;
-    }
-
-    @Override
-    public EventLoop next() {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture register(Channel channel) {
-        return register(channel, channel.newPromise());
     }
 
     @Override
     public ChannelFuture register(Channel channel, ChannelPromise promise) {
-        ((HawtAbstractChannel)channel).register(this);
-        promise.setSuccess();
-        return promise;
+        ChannelFuture future =  super.register(channel, promise);
+        future.addListener(registerListener);
+        return future;
+    }
+
+    @Override
+    protected  Set<EventExecutor> children() {
+        Set<EventExecutor> executors = new HashSet<EventExecutor>(group.size());
+        for (Channel channel: group) {
+            executors.add(channel.eventLoop());
+        }
+        return executors;
+    }
+
+    @Override
+    public EventLoop next() {
+        return new HawtEventLoop(this, queue.createQueue(HawtEventLoopGroup.class.getSimpleName() + '-' + eventLoopId.incrementAndGet()));
     }
 }

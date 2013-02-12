@@ -18,20 +18,42 @@ package org.fusesource.hawtdispatch.netty;
 
 import io.netty.channel.*;
 import org.fusesource.hawtdispatch.Dispatch;
+import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
-import org.fusesource.hawtdispatch.Dispatcher;
+import org.fusesource.hawtdispatch.internal.ThreadDispatchQueue;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * {@link io.netty.channel.EventLoop} implementations which will
- * handle HawtDispatch based {@link io.netty.channel.Channel}s.
+ * {@link EventLoop} implementations which will
+ * handle HawtDispatch based {@link Channel}s.
+ *
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
 
-    EventLoopGroup parent;
-    DispatchQueue queue = Dispatch.createQueue();
+    private final EventLoopGroup parent;
+    private volatile boolean shutdown;
+    private final DispatchQueue queue;
+
+    HawtEventLoop(EventLoopGroup parent, DispatchQueue queue) {
+        if (parent == null) {
+            throw new NullPointerException("parent");
+        }
+        if (queue == null) {
+            throw new NullPointerException("queue");
+        }
+        this.parent = parent;
+        this.queue = queue;
+    }
+
+    /**
+     * Returns the backing {@link DispatchQueue}
+     */
+    DispatchQueue queue() {
+        return queue;
+    }
 
     @Override
     public EventLoopGroup parent() {
@@ -48,7 +70,6 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
         return this;
     }
 
-    boolean  shutdown = false;
     @Override
     public void shutdown() {
         shutdown = true;
@@ -75,6 +96,7 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
         return shutdown;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> vCallable, long delay, TimeUnit timeUnit) {
         return new ScheduledFutureTask(vCallable, timeUnit.toNanos(delay)).schedule();
@@ -95,10 +117,10 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
         throw new UnsupportedOperationException();
     }
 
-    private class ScheduledFutureTask<V> extends FutureTask<V> implements ScheduledFuture<V> {
+    private final class ScheduledFutureTask<V> extends FutureTask<V> implements ScheduledFuture<V> {
 
         private long deadlineNanos;
-        private long periodNanos;
+        private final long periodNanos;
 
         ScheduledFutureTask(Runnable runnable,long nanoTime) {
             super(runnable, null);
@@ -164,12 +186,11 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
             }
         }
 
-        public ScheduledFuture<V> schedule() {
+        ScheduledFuture<V> schedule() {
             queue.executeAfter(delayNanos(), TimeUnit.NANOSECONDS, this);
             return this;
         }
     }
-
 
     @Override
     public void execute(Runnable runnable) {
@@ -178,17 +199,42 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
 
     @Override
     public boolean inEventLoop(Thread thread) {
-        return queue.isExecuting();
+        for (DispatchQueue queue: Dispatch.getThreadQueues(DispatchPriority.DEFAULT)) {
+            if (thread == ((ThreadDispatchQueue) queue).getThread()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public ChannelFuture register(Channel channel) {
-        throw new UnsupportedOperationException();
+        if (channel == null) {
+            throw new NullPointerException("channel");
+        }
+        return register(channel, channel.newPromise());
     }
 
     @Override
-    public ChannelFuture register(Channel channel, ChannelPromise promise) {
-        throw new UnsupportedOperationException();
+    public ChannelFuture register(final Channel channel, final ChannelPromise promise) {
+        if (isShutdown()) {
+            channel.unsafe().closeForcibly();
+            promise.setFailure(new EventLoopException("cannot register a channel to a shut down loop"));
+            return promise;
+        }
+
+        if (inEventLoop()) {
+            channel.unsafe().register(this, promise);
+        } else {
+            execute(new Runnable() {
+                @Override
+                public void run() {
+                    channel.unsafe().register(HawtEventLoop.this, promise);
+                }
+            });
+        }
+
+        return promise;
     }
 
 }
