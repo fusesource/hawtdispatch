@@ -23,24 +23,22 @@ import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.channel.socket.DefaultSocketChannelConfig;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.logging.InternalLogger;
-import io.netty.logging.InternalLoggerFactory;
-import org.fusesource.hawtdispatch.Dispatch;
-import org.fusesource.hawtdispatch.DispatchQueue;
+import io.netty.util.internal.InternalLogger;
+import io.netty.util.internal.InternalLoggerFactory;
 import org.fusesource.hawtdispatch.DispatchSource;
 import org.fusesource.hawtdispatch.Task;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.concurrent.TimeUnit;
 
 import static java.nio.channels.SelectionKey.*;
-import static org.fusesource.hawtdispatch.Dispatch.createQueue;
 
 
 /**
- * {@link io.netty.channel.socket.SocketChannel} implementation which uses HawtDispatch.
+ * {@link SocketChannel} implementation which uses HawtDispatch.
+ *
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class HawtSocketChannel extends HawtAbstractChannel implements SocketChannel {
 
@@ -50,14 +48,8 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
     private final DefaultSocketChannelConfig config;
     private volatile boolean inputShutdown;
     private volatile boolean outputShutdown;
-
-    private boolean readInProgress;
-    private boolean inDoBeginRead;
-    private boolean readAgain;
-    private boolean writeInProgress;
-    private boolean inDoFlushByteBuffer;
-
-    private final DispatchQueue queue;
+    private DispatchSource readSource;
+    private DispatchSource writeSource;
 
     private static java.nio.channels.SocketChannel newSocket() {
         try {
@@ -84,7 +76,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
     /**
      * Create a new instance
      *
-     * @param parent the {@link io.netty.channel.Channel} which created this instance or {@code null} if it was created by the user
+     * @param parent the {@link Channel} which created this instance or {@code null} if it was created by the user
      * @param id     the id to use for this instance or {@code null} if a new one should be generated
      * @param socket the {@link java.nio.channels.SocketChannel} which will be used
      */
@@ -105,7 +97,6 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
             throw new ChannelException("Failed to enter non-blocking mode.", e);
         }
         config = new DefaultSocketChannelConfig(this, socket.socket());
-        queue = createQueue();
     }
 
     @Override
@@ -159,12 +150,17 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
     public ChannelFuture shutdownOutput(final ChannelPromise promise) {
         EventLoop loop = eventLoop();
         if (loop.inEventLoop()) {
+            boolean success = false;
             try {
                 javaChannel().socket().shutdownOutput();
-                outputShutdown = true;
+                success = true;
                 promise.setSuccess();
             } catch (Throwable t) {
                 promise.setFailure(t);
+            } finally {
+                if (success) {
+                    outputShutdown = true;
+                }
             }
         } else {
             loop.execute(new Runnable() {
@@ -177,72 +173,36 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
         return promise;
     }
 
-
-    protected DispatchSource createSource(int OP) {
-        return Dispatch.createSource(javaChannel(), OP, queue);
-    }
-
-
     @Override
-    protected void doConnect(SocketAddress remoteAddress, SocketAddress localAddress, final ChannelPromise promise) {
-        assert promise != null;
-
+    protected boolean doConnect(SocketAddress remoteAddress, SocketAddress localAddress) throws Exception {
         if (localAddress != null) {
-            try {
-                javaChannel().socket().bind(localAddress);
-            } catch (IOException e) {
-                promise.setFailure(e);
-                return;
-            }
+            javaChannel().socket().bind(localAddress);
         }
 
-        // Hook into the CONNECT event..
-        final DispatchSource connectSource = createSource(OP_CONNECT);
+        boolean success = false;
+        try {
+            boolean connected = javaChannel().connect(remoteAddress);
+            if (!connected) {
+                // Hook into the CONNECT event..
+                final DispatchSource connectSource = createSource(OP_CONNECT);
 
-        // Executed when the event source is canceled.
-        connectSource.setCancelHandler(new Task() {
-            public void run() {
-                if (!promise.isDone()) {
-                    promise.setFailure(new IOException("Event connectSource canceled."));
-                }
-            }
-        });
-
-        // This gets triggered when the socket is connected..
-        connectSource.setEventHandler(new Task() {
-            public void run() {
-                if (!promise.isDone() && javaChannel().isConnected()) {
-                    try {
-                        boolean wasActive = isActive();
-                        promise.setSuccess();
-                        if (!wasActive && isActive()) {
-                            pipeline().fireChannelActive();
-                        }
-                    } catch (Throwable t) {
-                        promise.setFailure(t);
-                        pipeline().fireExceptionCaught(t);
-                    } finally {
-                        connectSource.cancel();
+                // This gets triggered when the socket is connected..
+                connectSource.setEventHandler(new Task() {
+                    @Override
+                    public void run() {
+                        ((HawtAbstractUnsafe) unsafe()).finishConnect();
                     }
-                }
+                });
+                // enable the delivery of the connect events.
+                connectSource.resume();
             }
-        });
-
-        // Lets fail if we don't connect after a timeout.
-        queue.executeAfter(config().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS, new Task() {
-            @Override
-            public void run() {
-                if (!promise.isDone()) {
-                    IOException t = new IOException("Connect timeout");
-                    promise.setFailure(t);
-                    pipeline().fireExceptionCaught(t);
-                    connectSource.cancel();
-                }
+            success = true;
+            return connected;
+        } finally {
+            if (!success) {
+                doClose();
             }
-        });
-
-        // enable the delivery of the connect events.
-        connectSource.resume();
+        }
     }
 
     @Override
@@ -273,6 +233,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
 
     @Override
     protected void doClose() throws Exception {
+        super.doClose();
         javaChannel().close();
         inputShutdown = true;
         outputShutdown = true;
@@ -283,10 +244,9 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
         return false;
     }
 
-
     @Override
     protected void doFlushByteBuffer(ByteBuf buf) throws Exception {
-        if (!buf.readable()) {
+        if (!buf.isReadable()) {
             // Reset reader/writerIndex to 0 if the buffer is empty.
             buf.clear();
             return;
@@ -297,7 +257,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
             if (localFlushedAmount > 0) {
                 break;
             }
-            if (!buf.readable()) {
+            if (!buf.isReadable()) {
                 // Reset reader/writerIndex to 0 if the buffer is empty.
                 buf.clear();
                 break;
@@ -305,17 +265,14 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
         }
     }
 
-    DispatchSource writeSource;
-
     protected int doWriteBytes(ByteBuf buf, boolean lastSpin) throws Exception {
         final int expectedWrittenBytes = buf.readableBytes();
         final int writtenBytes = buf.readBytes(javaChannel(), expectedWrittenBytes);
 
         if (writtenBytes >= expectedWrittenBytes) {
             // Wrote the outbound buffer completely - clear OP_WRITE.
-            if (writeSource != null) {
-                writeSource.suspend();
-            }
+            writeSource.suspend();
+
         } else {
             // Wrote something or nothing.
             // a) If wrote something, the caller will not retry.
@@ -326,39 +283,54 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
             //    2) If 'lastSpin' is true, the caller will not retry.
             //       - Set OP_WRITE so that the event loop calls flushForcibly() later.
             if (writtenBytes > 0 || lastSpin) {
-                // Lazily create the write source..
-                if (writeSource == null) {
-                    writeSource = createSource(OP_WRITE);
-                    writeSource.setEventHandler(new Task() {
-                        @Override
-                        public void run() {
-                            unsafe().flushNow();
-                        }
-                    });
-                }
                 writeSource.resume();
-
             }
         }
 
         return writtenBytes;
     }
 
-    DispatchSource readSource;
+    @Override
+    protected Runnable doRegister() throws Exception {
+        final Runnable task = super.doRegister();
+        return new Runnable() {
+            @Override
+            public void run() {
+                if (task != null) {
+                    task.run();
+                }
+                // create the sources and set the event handlers
+                readSource = createSource(OP_READ);
+                readSource.setEventHandler(new Task() {
+                    @Override
+                    public void run() {
+                        onReadReady();
+                    }
+                });
+                writeSource = createSource(OP_WRITE);
+                writeSource.setEventHandler(new Task() {
+                    @Override
+                    public void run() {
+                        unsafe().flushNow();
+                    }
+                });
+                closeFuture().addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture future) throws Exception {
+                        readSource.cancel();
+                        writeSource.cancel();
+                    }
+                });
+            }
+        };
+    }
 
     @Override
     protected void doBeginRead() throws Exception {
-        if (readSource == null) {
-            readSource = createSource(OP_READ);
-            readSource.setEventHandler(new Task() {
-                @Override
-                public void run() {
-                    onReadReady();
-                }
-            });
+        assert readSource != null;
+        if (readSource.isSuspended() && !readSource.isCanceled()) {
+            readSource.resume();
         }
-        readSource.resume();
-
     }
 
     private void onReadReady() {
@@ -370,7 +342,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
         try {
             expandReadBuffer(byteBuf);
             loop:
-            for (; ; ) {
+            for (;;) {
 
                 int localReadAmount = byteBuf.writeBytes(javaChannel(), byteBuf.writableBytes());
                 if (localReadAmount > 0) {
@@ -392,7 +364,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                         if (read) {
                             read = false;
                             pipeline.fireInboundBufferUpdated();
-                            if (!byteBuf.writable()) {
+                            if (!byteBuf.isWritable()) {
                                 throw new IllegalStateException(
                                         "an inbound handler whose buffer is full must consume at " +
                                                 "least one byte.");
@@ -410,7 +382,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                 closed = true;
             } else if (!closed) {
                 firedInboundBufferSuspended = true;
-                pipeline.fireInboundBufferSuspended();
+                pipeline.fireChannelReadSuspended();
             }
             pipeline().fireExceptionCaught(t);
         } finally {
@@ -428,10 +400,19 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                     }
                 }
             } else if (!firedInboundBufferSuspended) {
-                pipeline.fireInboundBufferSuspended();
+                pipeline.fireChannelReadSuspended();
+            }
+
+            if (!config().isAutoRead()) {
+                readSource.suspend();
             }
         }
     }
 
-
+    @Override
+    protected void doFinishConnect() throws Exception {
+        if (!javaChannel().finishConnect()) {
+            throw new Error();
+        }
+    }
 }

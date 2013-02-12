@@ -20,8 +20,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import org.fusesource.hawtdispatch.Dispatch;
+import org.fusesource.hawtdispatch.netty.HawtEventLoopGroup;
+import org.fusesource.hawtdispatch.netty.HawtSocketChannel;
 
 import java.net.InetSocketAddress;
 
@@ -47,8 +48,8 @@ public class EchoClient {
         // Configure the client.
         Bootstrap b = new Bootstrap();
         try {
-            b.group(new NioEventLoopGroup())
-             .channel(NioSocketChannel.class)
+            b.group(new HawtEventLoopGroup(Dispatch.getGlobalQueue()))
+             .channel(HawtSocketChannel.class)
              .option(ChannelOption.TCP_NODELAY, true)
              .remoteAddress(new InetSocketAddress(host, port))
              .handler(new ChannelInitializer<SocketChannel>() {
@@ -81,7 +82,7 @@ public class EchoClient {
 
         // Parse options.
         final String host = args[0];
-        final int port = Integer.parseInt(args[1]);
+        final int port =  Integer.parseInt(args[1]);
         final int firstMessageSize;
         if (args.length == 3) {
             firstMessageSize = Integer.parseInt(args[2]);

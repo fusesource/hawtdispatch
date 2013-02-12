@@ -20,6 +20,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
+import org.fusesource.hawtdispatch.Dispatch;
 import org.fusesource.hawtdispatch.netty.HawtEventLoopGroup;
 import org.fusesource.hawtdispatch.netty.HawtServerSocketChannel;
 
@@ -40,7 +41,7 @@ public class EchoServer {
         // Configure the server.
         ServerBootstrap b = new ServerBootstrap();
         try {
-            b.group(new HawtEventLoopGroup(), new HawtEventLoopGroup())
+            b.group(new HawtEventLoopGroup(Dispatch.getGlobalQueue()), new HawtEventLoopGroup(Dispatch.getGlobalQueue()))
              .channel(HawtServerSocketChannel.class)
              .option(ChannelOption.SO_BACKLOG, 100)
              .localAddress(new InetSocketAddress(port))
