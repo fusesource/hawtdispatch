@@ -23,8 +23,8 @@ import io.netty.channel.socket.ChannelInputShutdownEvent;
 import io.netty.channel.socket.DefaultSocketChannelConfig;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.logging.InternalLogger;
-import io.netty.logging.InternalLoggerFactory;
+import io.netty.util.internal.InternalLogger;
+import io.netty.util.internal.InternalLoggerFactory;
 import org.fusesource.hawtdispatch.Dispatch;
 import org.fusesource.hawtdispatch.DispatchQueue;
 import org.fusesource.hawtdispatch.DispatchSource;
@@ -410,7 +410,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                 closed = true;
             } else if (!closed) {
                 firedInboundBufferSuspended = true;
-                pipeline.fireInboundBufferSuspended();
+                pipeline.fireChannelReadSuspended();
             }
             pipeline().fireExceptionCaught(t);
         } finally {
@@ -428,7 +428,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                     }
                 }
             } else if (!firedInboundBufferSuspended) {
-                pipeline.fireInboundBufferSuspended();
+                pipeline.fireChannelReadSuspended();
             }
         }
     }

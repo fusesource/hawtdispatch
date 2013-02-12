@@ -23,8 +23,8 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.DefaultServerSocketChannelConfig;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.ServerSocketChannelConfig;
-import io.netty.logging.InternalLogger;
-import io.netty.logging.InternalLoggerFactory;
+import io.netty.util.internal.InternalLogger;
+import io.netty.util.internal.InternalLoggerFactory;
 import org.fusesource.hawtdispatch.*;
 import static org.fusesource.hawtdispatch.Dispatch.*;
 import static java.nio.channels.SelectionKey.*;
@@ -114,7 +114,7 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
                   }
                   pipeline().inboundMessageBuffer().add(socket);
                   pipeline().fireInboundBufferUpdated();
-                  pipeline().fireInboundBufferSuspended();
+                  pipeline().fireChannelReadSuspended();
               }
             });
             acceptSource.setCancelHandler(new Task(){
