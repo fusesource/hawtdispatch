@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class HawtEventLoopGroup implements EventLoopGroup {
 
-    public static final int DEFAULT_POOL_SIZE = Runtime.getRuntime().availableProcessors() * 2;
     private static final AtomicInteger poolId = new AtomicInteger();
 
     private final EventLoop[] children;

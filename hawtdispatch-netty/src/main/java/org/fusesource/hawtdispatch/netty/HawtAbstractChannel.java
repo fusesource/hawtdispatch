@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 abstract class HawtAbstractChannel extends AbstractChannel {
 
     protected volatile SelectableChannel ch;
+
     /**
      * The future of the current connection attempt.  If not null, subsequent
      * connection attempts will fail.
@@ -54,7 +55,7 @@ abstract class HawtAbstractChannel extends AbstractChannel {
      * @param ch
      *        the {@link SocketChannel} which will handle the IO or {@code null} if not created yet.
      */
-    protected HawtAbstractChannel(Channel parent, Integer id, java.nio.channels.SelectableChannel ch) {
+    protected HawtAbstractChannel(Channel parent, Integer id, SelectableChannel ch) {
         super(parent, id);
         this.ch = ch;
     }
@@ -82,7 +83,7 @@ abstract class HawtAbstractChannel extends AbstractChannel {
      * Return the underlying {@link SocketChannel}. Be aware this should only be called after it was set as
      * otherwise it will throw an {@link IllegalStateException}.
      */
-    protected java.nio.channels.SelectableChannel javaChannel() {
+    protected SelectableChannel javaChannel() {
         if (ch == null) {
             throw new IllegalStateException("Try to access Channel before eventLoop was registered");
         }
@@ -117,13 +118,12 @@ abstract class HawtAbstractChannel extends AbstractChannel {
     protected abstract boolean doConnect(SocketAddress remoteAddress,
             SocketAddress localAddress) throws Exception;
 
-
     /**
      * Finish the connect
      */
     protected abstract void doFinishConnect() throws Exception;
 
-    class HawtAbstractUnsafe extends AbstractUnsafe {
+    final class HawtAbstractUnsafe extends AbstractUnsafe {
 
         @Override
         public void connect(
@@ -132,7 +132,6 @@ abstract class HawtAbstractChannel extends AbstractChannel {
                 if (!ensureOpen(promise)) {
                     return;
                 }
-
                 try {
                     if (connectPromise != null) {
                         throw new IllegalStateException("connection attempt already made");
