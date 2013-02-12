@@ -106,8 +106,6 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
                 }
 
                 acceptSource = createSource(OP_ACCEPT);
-                // TODO: Find out why this not work
-                //acceptSource.suspend();
                 acceptSource.setEventHandler(new Task() {
                     @Override
                     public void run() {

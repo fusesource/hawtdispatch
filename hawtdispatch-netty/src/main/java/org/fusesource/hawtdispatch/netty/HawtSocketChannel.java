@@ -293,8 +293,6 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                     task.run();
                 }
                 readSource = createSource(OP_READ);
-                // TODO: Find out why this not work
-                //readSource.suspend();
                 readSource.setEventHandler(new Task() {
                     @Override
                     public void run() {
@@ -302,7 +300,6 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                     }
                 });
                 writeSource = createSource(OP_WRITE);
-                writeSource.suspend();
                 writeSource.setEventHandler(new Task() {
                     @Override
                     public void run() {
