@@ -78,6 +78,7 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
         return shutdown;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> vCallable, long delay, TimeUnit timeUnit) {
         return new ScheduledFutureTask(vCallable, timeUnit.toNanos(delay)).schedule();
@@ -172,7 +173,6 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
             return this;
         }
     }
-
 
     @Override
     public void execute(Runnable runnable) {
