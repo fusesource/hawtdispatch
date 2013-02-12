@@ -48,7 +48,7 @@ public class EchoClient {
         // Configure the client.
         Bootstrap b = new Bootstrap();
         try {
-            b.group(new HawtEventLoopGroup(2, Dispatch.getGlobalQueue()))
+            b.group(new HawtEventLoopGroup(Dispatch.getGlobalQueue()))
              .channel(HawtSocketChannel.class)
              .option(ChannelOption.TCP_NODELAY, true)
              .remoteAddress(new InetSocketAddress(host, port))

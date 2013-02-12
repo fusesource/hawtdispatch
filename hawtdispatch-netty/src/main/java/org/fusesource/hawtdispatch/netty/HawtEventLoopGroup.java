@@ -1,5 +1,4 @@
 /*
- * Copyright 2012 The Netty Project
  * Copyright 2013 Red Hat, Inc.
  *
  * The Netty Project licenses this file to you under the Apache License,
@@ -16,111 +15,75 @@
  */
 package org.fusesource.hawtdispatch.netty;
 
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventExecutor;
+import io.netty.channel.EventLoop;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import org.fusesource.hawtdispatch.DispatchQueue;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * {@link HawtEventLoopGroup} implementation which will handle
- * AIO {@link Channel} implementations.
+ * {@link AbstractHawtEventLoopGroup} which will create a new serial {@link DispatchQueue} for every registered
+ * {@link Channel}.
  *
+ * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class HawtEventLoopGroup implements EventLoopGroup {
+public class HawtEventLoopGroup extends AbstractHawtEventLoopGroup {
+    private final ChannelGroup group = new DefaultChannelGroup();
+    private final DispatchQueue queue;
+    private final AtomicInteger eventLoopId = new AtomicInteger();
 
-    private static final AtomicInteger poolId = new AtomicInteger();
+    private final ChannelFutureListener closeListener = new ChannelFutureListener() {
 
-    private final EventLoop[] children;
-    private final AtomicInteger childIndex = new AtomicInteger();
-
-    public HawtEventLoopGroup(int nThreads, DispatchQueue queue) {
-        children = new EventLoop[nThreads];
-        for (int i = 0; i < nThreads; i++) {
-            children[i] = new HawtEventLoop(this, queue.createQueue(poolId.get() + "-" + i));
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            group.remove(future.channel());
         }
-    }
+    };
 
-    public HawtEventLoopGroup(DispatchQueue[] queues) {
-        children = new EventLoop[queues.length];
-        for (int i = 0; i < queues.length; i++) {
-            children[i] = new HawtEventLoop(this, queues[i]);
+    private final ChannelFutureListener registerListener = new ChannelFutureListener() {
+        @Override
+        public void operationComplete(ChannelFuture future) throws Exception {
+            if (future.isSuccess() && future.channel().isOpen()) {
+                group.add(future.channel());
+                future.channel().closeFuture().addListener(closeListener);
+            }
         }
-    }
+    };
 
-    @Override
-    public EventLoop next() {
-        return children[Math.abs(childIndex.getAndIncrement() % children.length)];
-    }
-
-    @Override
-    public ChannelFuture register(Channel channel) {
-        return next().register(channel);
+    public HawtEventLoopGroup(DispatchQueue queue) {
+        if (queue == null) {
+            throw new NullPointerException("queue");
+        }
+        this.queue = queue;
     }
 
     @Override
     public ChannelFuture register(Channel channel, ChannelPromise promise) {
-        return next().register(channel, promise);
-    }
-
-    /**
-     * Return a safe-copy of all of the children of this group.
-     */
-    protected Set<EventExecutor> children() {
-        Set<EventExecutor> children = Collections.newSetFromMap(new LinkedHashMap<EventExecutor, Boolean>());
-        Collections.addAll(children, this.children);
-        return children;
+        ChannelFuture future =  super.register(channel, promise);
+        future.addListener(registerListener);
+        return future;
     }
 
     @Override
-    public void shutdown() {
-        if (isShutdown()) {
-            return;
+    protected  Set<EventExecutor> children() {
+        Set<EventExecutor> executors = new HashSet<EventExecutor>(group.size());
+        for (Channel channel: group) {
+            executors.add(channel.eventLoop());
         }
-
-        for (EventExecutor l: children) {
-            l.shutdown();
-        }
+        return executors;
     }
 
     @Override
-    public boolean isShutdown() {
-        for (EventExecutor l: children) {
-            if (!l.isShutdown()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public boolean isTerminated() {
-        for (EventExecutor l: children) {
-            if (!l.isTerminated()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit)
-            throws InterruptedException {
-        long deadline = System.nanoTime() + unit.toNanos(timeout);
-        loop: for (EventExecutor l: children) {
-            for (;;) {
-                long timeLeft = deadline - System.nanoTime();
-                if (timeLeft <= 0) {
-                    break loop;
-                }
-                if (l.awaitTermination(timeLeft, TimeUnit.NANOSECONDS)) {
-                    break;
-                }
-            }
-        }
-        return isTerminated();
+    public EventLoop next() {
+        return new HawtEventLoop(this, queue.createQueue(HawtEventLoopGroup.class.getSimpleName() + '-' + eventLoopId.incrementAndGet()));
     }
 }
