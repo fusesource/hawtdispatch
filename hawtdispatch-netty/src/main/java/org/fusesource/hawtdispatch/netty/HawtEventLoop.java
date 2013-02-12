@@ -124,7 +124,7 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
 
         ScheduledFutureTask(Runnable runnable,long nanoTime) {
             super(runnable, null);
-            deadlineNanos = nanoTime;
+            deadlineNanos = System.nanoTime()+nanoTime;
             periodNanos = 0;
         }
 
