@@ -233,6 +233,7 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
 
     @Override
     protected void doClose() throws Exception {
+        super.doClose();
         javaChannel().close();
         inputShutdown = true;
         outputShutdown = true;
@@ -311,6 +312,13 @@ public class HawtSocketChannel extends HawtAbstractChannel implements SocketChan
                     @Override
                     public void run() {
                         unsafe().flushNow();
+                    }
+                });
+                closeFuture().addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture future) throws Exception {
+                        readSource.cancel();
+                        writeSource.cancel();
                     }
                 });
             }

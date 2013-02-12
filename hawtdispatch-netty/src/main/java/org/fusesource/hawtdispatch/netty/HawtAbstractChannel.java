@@ -62,14 +62,6 @@ abstract class HawtAbstractChannel extends AbstractChannel {
         this.ch = ch;
     }
 
-    /*
-    HawtEventLoopGroup group;
-    public void register(HawtEventLoopGroup group) {
-        loop.parent = group;
-        loop.queue.setTargetQueue(group.queue);
-    }
-    */
-
     @Override
     public InetSocketAddress localAddress() {
         return (InetSocketAddress) super.localAddress();
@@ -124,6 +116,13 @@ abstract class HawtAbstractChannel extends AbstractChannel {
      * Finish the connect
      */
     protected abstract void doFinishConnect() throws Exception;
+
+    @Override
+    protected void doClose() throws Exception {
+        if (connectTimeoutFuture != null) {
+            connectTimeoutFuture.cancel(false);
+        }
+    }
 
     final class HawtAbstractUnsafe extends AbstractUnsafe {
 
@@ -193,7 +192,7 @@ abstract class HawtAbstractChannel extends AbstractChannel {
                     pipeline().fireChannelActive();
                 }
             } catch (Throwable t) {
-                connectPromise.setFailure(t);
+                connectPromise.tryFailure(t);
                 closeIfClosed();
             } finally {
                 connectTimeoutFuture.cancel(false);

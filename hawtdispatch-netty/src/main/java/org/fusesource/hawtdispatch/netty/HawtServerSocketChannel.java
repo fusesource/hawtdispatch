@@ -18,6 +18,8 @@ package org.fusesource.hawtdispatch.netty;
 
 import io.netty.buffer.BufType;
 import io.netty.channel.ChannelException;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelMetadata;
 import io.netty.channel.socket.DefaultServerSocketChannelConfig;
 import io.netty.channel.socket.ServerSocketChannel;
@@ -42,7 +44,6 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
     private static final InternalLogger logger =
             InternalLoggerFactory.getInstance(HawtServerSocketChannel.class);
 
-    private boolean closed;
     private DispatchSource acceptSource;
 
     private static java.nio.channels.ServerSocketChannel newSocket() {
@@ -139,12 +140,10 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
                         }
                     }
                 });
-                acceptSource.setCancelHandler(new Task(){
+                closeFuture().addListener(new ChannelFutureListener() {
                     @Override
-                    public void run() {
-                        if (isOpen()) {
-                            close(unsafe().voidFuture());
-                        }
+                    public void operationComplete(ChannelFuture future) throws Exception {
+                        acceptSource.cancel();
                     }
                 });
             }
@@ -161,10 +160,8 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
 
     @Override
     protected void doClose() throws Exception {
-        if (!closed) {
-            closed = true;
-            acceptSource.cancel();
-        }
+        super.doClose();
+        javaChannel().close();
     }
 
     @Override
