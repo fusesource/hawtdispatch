@@ -17,29 +17,31 @@
 package org.fusesource.hawtdispatch.netty;
 
 import io.netty.channel.*;
+import org.fusesource.hawtdispatch.Dispatch;
+import org.fusesource.hawtdispatch.DispatchSource;
 
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Abstract base class for {@link io.netty.channel.Channel} implementations that use
+ * Abstract base class for {@link Channel} implementations that use
  * HawtDispatch.
  */
 abstract class HawtAbstractChannel extends AbstractChannel {
 
-    protected volatile java.nio.channels.Channel ch;
-
+    protected volatile SelectableChannel ch;
     /**
      * The future of the current connection attempt.  If not null, subsequent
      * connection attempts will fail.
      */
-    protected ScheduledFuture<?> connectTimeoutFuture;
+    private ChannelPromise connectPromise;
+    private ScheduledFuture<?> connectTimeoutFuture;
     private ConnectException connectTimeoutException;
-
     /**
      * Creates a new instance.
      *
@@ -52,22 +54,18 @@ abstract class HawtAbstractChannel extends AbstractChannel {
      * @param ch
      *        the {@link SocketChannel} which will handle the IO or {@code null} if not created yet.
      */
-    protected HawtAbstractChannel(Channel parent, Integer id, java.nio.channels.Channel ch) {
+    protected HawtAbstractChannel(Channel parent, Integer id, java.nio.channels.SelectableChannel ch) {
         super(parent, id);
         this.ch = ch;
     }
 
+    /*
     HawtEventLoopGroup group;
     public void register(HawtEventLoopGroup group) {
         loop.parent = group;
         loop.queue.setTargetQueue(group.queue);
     }
-
-    HawtEventLoop loop = new HawtEventLoop();
-    @Override
-    public EventLoop eventLoop() {
-        return loop;
-    }
+    */
 
     @Override
     public InetSocketAddress localAddress() {
@@ -79,11 +77,12 @@ abstract class HawtAbstractChannel extends AbstractChannel {
         return (InetSocketAddress) super.remoteAddress();
     }
 
+
     /**
      * Return the underlying {@link SocketChannel}. Be aware this should only be called after it was set as
      * otherwise it will throw an {@link IllegalStateException}.
      */
-    protected java.nio.channels.Channel javaChannel() {
+    protected java.nio.channels.SelectableChannel javaChannel() {
         if (ch == null) {
             throw new IllegalStateException("Try to access Channel before eventLoop was registered");
         }
@@ -108,16 +107,94 @@ abstract class HawtAbstractChannel extends AbstractChannel {
         return new HawtAbstractUnsafe();
     }
 
+    protected final DispatchSource createSource(int op) {
+        return Dispatch.createSource(javaChannel(), op, ((HawtEventLoop) eventLoop()).queue);
+    }
+
     /**
      * Connect to the remote peer using the given localAddress if one is specified or {@code null} otherwise.
      */
-    protected abstract void doConnect(SocketAddress remoteAddress,
-            SocketAddress localAddress, ChannelPromise connectPromise);
+    protected abstract boolean doConnect(SocketAddress remoteAddress,
+            SocketAddress localAddress) throws Exception;
+
+
+    /**
+     * Finish the connect
+     */
+    protected abstract void doFinishConnect() throws Exception;
 
     class HawtAbstractUnsafe extends AbstractUnsafe {
+
         @Override
-        public void connect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-            doConnect(remoteAddress, localAddress, promise);
+        public void connect(
+                final SocketAddress remoteAddress, final SocketAddress localAddress, final ChannelPromise promise) {
+            if (eventLoop().inEventLoop()) {
+                if (!ensureOpen(promise)) {
+                    return;
+                }
+
+                try {
+                    if (connectPromise != null) {
+                        throw new IllegalStateException("connection attempt already made");
+                    }
+
+                    boolean wasActive = isActive();
+                    if (doConnect(remoteAddress, localAddress)) {
+                        promise.setSuccess();
+                        if (!wasActive && isActive()) {
+                            pipeline().fireChannelActive();
+                        }
+                    } else {
+                        connectPromise = promise;
+
+                        // Schedule connect timeout.
+                        int connectTimeoutMillis = config().getConnectTimeoutMillis();
+                        if (connectTimeoutMillis > 0) {
+                            connectTimeoutFuture = eventLoop().schedule(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (connectTimeoutException == null) {
+                                        connectTimeoutException = new ConnectException("connection timed out");
+                                    }
+                                    ChannelPromise connectPromise = HawtAbstractChannel.this.connectPromise;
+                                    if (connectPromise != null && connectPromise.tryFailure(connectTimeoutException)) {
+                                        close(voidFuture());
+                                    }
+                                }
+                            }, connectTimeoutMillis, TimeUnit.MILLISECONDS);
+                        }
+                    }
+                } catch (Throwable t) {
+                    promise.setFailure(t);
+                    closeIfClosed();
+                }
+            } else {
+                eventLoop().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        connect(remoteAddress, localAddress, promise);
+                    }
+                });
+            }
+        }
+
+        public void finishConnect() {
+            assert eventLoop().inEventLoop();
+            assert connectPromise != null;
+            try {
+                boolean wasActive = isActive();
+                doFinishConnect();
+                connectPromise.setSuccess();
+                if (!wasActive && isActive()) {
+                    pipeline().fireChannelActive();
+                }
+            } catch (Throwable t) {
+                connectPromise.setFailure(t);
+                closeIfClosed();
+            } finally {
+                connectTimeoutFuture.cancel(false);
+                connectPromise = null;
+            }
         }
     }
 }

@@ -17,54 +17,111 @@
 package org.fusesource.hawtdispatch.netty;
 
 import io.netty.channel.*;
-import org.fusesource.hawtdispatch.Dispatch;
 import org.fusesource.hawtdispatch.DispatchQueue;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * {@link HawtEventLoopGroup} implementation which will handle
- * AIO {@link io.netty.channel.Channel} implementations.
+ * AIO {@link Channel} implementations.
  *
  */
-public class HawtEventLoopGroup extends DefaultEventExecutorGroup implements EventLoopGroup {
+public class HawtEventLoopGroup implements EventLoopGroup {
 
-    DispatchQueue queue;
+    public static final int DEFAULT_POOL_SIZE = Runtime.getRuntime().availableProcessors() * 2;
+    private static final AtomicInteger poolId = new AtomicInteger();
 
-    /**
-     *
-     */
-    public HawtEventLoopGroup() {
-        this(Dispatch.getGlobalQueue());
+    private final EventLoop[] children;
+    private final AtomicInteger childIndex = new AtomicInteger();
+
+    public HawtEventLoopGroup(int nThreads, DispatchQueue queue) {
+        children = new EventLoop[nThreads];
+        for (int i = 0; i < nThreads; i++) {
+            children[i] = new HawtEventLoop(this, queue.createQueue(poolId.get() + "-" + i));
+        }
     }
 
-    /**
-     */
-    public HawtEventLoopGroup(DispatchQueue queue) {
-        super(1);
-        this.queue = queue;
-    }
-
-    public DispatchQueue getDispatchQueue() {
-        return this.queue;
-    }
-
-    public void setDispatchQueue(DispatchQueue dispatchQueue) {
-        this.queue = dispatchQueue;
+    public HawtEventLoopGroup(DispatchQueue[] queues) {
+        children = new EventLoop[queues.length];
+        for (int i = 0; i < queues.length; i++) {
+            children[i] = new HawtEventLoop(this, queues[i]);
+        }
     }
 
     @Override
     public EventLoop next() {
-        return null;
+        return children[Math.abs(childIndex.getAndIncrement() % children.length)];
     }
 
     @Override
     public ChannelFuture register(Channel channel) {
-        return register(channel, channel.newPromise());
+        return next().register(channel);
     }
 
     @Override
     public ChannelFuture register(Channel channel, ChannelPromise promise) {
-        ((HawtAbstractChannel)channel).register(this);
-        promise.setSuccess();
-        return promise;
+        return next().register(channel, promise);
+    }
+
+    /**
+     * Return a safe-copy of all of the children of this group.
+     */
+    protected Set<EventExecutor> children() {
+        Set<EventExecutor> children = Collections.newSetFromMap(new LinkedHashMap<EventExecutor, Boolean>());
+        Collections.addAll(children, this.children);
+        return children;
+    }
+
+    @Override
+    public void shutdown() {
+        if (isShutdown()) {
+            return;
+        }
+
+        for (EventExecutor l: children) {
+            l.shutdown();
+        }
+    }
+
+    @Override
+    public boolean isShutdown() {
+        for (EventExecutor l: children) {
+            if (!l.isShutdown()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isTerminated() {
+        for (EventExecutor l: children) {
+            if (!l.isTerminated()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean awaitTermination(long timeout, TimeUnit unit)
+            throws InterruptedException {
+        long deadline = System.nanoTime() + unit.toNanos(timeout);
+        loop: for (EventExecutor l: children) {
+            for (;;) {
+                long timeLeft = deadline - System.nanoTime();
+                if (timeLeft <= 0) {
+                    break loop;
+                }
+                if (l.awaitTermination(timeLeft, TimeUnit.NANOSECONDS)) {
+                    break;
+                }
+            }
+        }
+        return isTerminated();
     }
 }

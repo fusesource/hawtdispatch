@@ -19,22 +19,19 @@ package org.fusesource.hawtdispatch.netty;
 import io.netty.buffer.BufType;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelMetadata;
-import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.DefaultServerSocketChannelConfig;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.ServerSocketChannelConfig;
 import io.netty.util.internal.InternalLogger;
 import io.netty.util.internal.InternalLoggerFactory;
 import org.fusesource.hawtdispatch.*;
-import static org.fusesource.hawtdispatch.Dispatch.*;
 import static java.nio.channels.SelectionKey.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.nio.channels.AsynchronousCloseException;
 
 /**
- * {@link io.netty.channel.socket.ServerSocketChannel} implementation which uses HawtDispatch.
+ * {@link ServerSocketChannel} implementation which uses HawtDispatch.
  *
  * NIO2 is only supported on Java 7+.
  */
@@ -45,6 +42,7 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
             InternalLoggerFactory.getInstance(HawtServerSocketChannel.class);
 
     private boolean closed;
+    private DispatchSource acceptSource;
 
     private static java.nio.channels.ServerSocketChannel newSocket() {
         try {
@@ -96,39 +94,60 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
         javaChannel().socket().bind(localAddress, config.getBacklog());
     }
 
-    DispatchSource acceptSource;
+    @Override
+    protected Runnable doRegister() throws Exception {
+        final Runnable task = super.doRegister();
+
+        return new Runnable() {
+            @Override
+            public void run() {
+                if (task != null) {
+                    task.run();
+                }
+
+                acceptSource = createSource(OP_ACCEPT);
+                // TODO: Find out why this not work
+                //acceptSource.suspend();
+                acceptSource.setEventHandler(new Task() {
+                    @Override
+                    public void run() {
+                        try {
+                        HawtSocketChannel socket = null;
+                        try {
+                            socket = new HawtSocketChannel(HawtServerSocketChannel.this, null, javaChannel().accept());
+                        } catch (IOException e) {
+                            if (isOpen()) {
+                                logger.warn("Failed to create a new channel from an accepted socket.", e);
+                            }
+                        }
+                        pipeline().inboundMessageBuffer().add(socket);
+                        pipeline().fireInboundBufferUpdated();
+                        pipeline().fireChannelReadSuspended();
+                        if (!config().isAutoRead()) {
+                            acceptSource.suspend();
+                        }
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                        }
+                    }
+                });
+                acceptSource.setCancelHandler(new Task(){
+                    @Override
+                    public void run() {
+                        if (isOpen()) {
+                            close(unsafe().voidFuture());
+                        }
+                    }
+                });
+            }
+        };
+
+    }
 
     @Override
     protected void doBeginRead() {
-        if( acceptSource==null ) {
-            acceptSource = createSource(javaChannel(), OP_ACCEPT, loop.queue);
-            acceptSource.setEventHandler(new Task(){
-              public void run() {
-                  HawtSocketChannel socket = null;
-                  try {
-                      socket = new HawtSocketChannel(HawtServerSocketChannel.this, null, javaChannel().accept());
-                  } catch (IOException e) {
-                      if (isOpen()) {
-                          logger.warn("Failed to create a new channel from an accepted socket.", e);
-                      }
-                  }
-                  pipeline().inboundMessageBuffer().add(socket);
-                  pipeline().fireInboundBufferUpdated();
-                  pipeline().fireChannelReadSuspended();
-              }
-            });
-            acceptSource.setCancelHandler(new Task(){
-                @Override
-                public void run() {
-                    pipeline().fireChannelUnregistered();
-                    try {
-                        javaChannel().close();
-                    } catch (IOException e) {
-                    }
-                }
-            });
+        if (acceptSource.isSuspended() && !acceptSource.isCanceled()) {
             acceptSource.resume();
-            pipeline().fireChannelRegistered();
         }
     }
 
@@ -146,11 +165,15 @@ public class HawtServerSocketChannel extends HawtAbstractChannel implements Serv
     }
 
     @Override
-    protected void doConnect(
-            SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
-        promise.setFailure(new UnsupportedOperationException());
+    protected boolean doConnect(
+            SocketAddress remoteAddress, SocketAddress localAddress) throws Exception {
+        throw new UnsupportedOperationException();
     }
 
+    @Override
+    protected void doFinishConnect() throws Exception {
+        throw new UnsupportedOperationException();
+    }
     @Override
     protected void doDisconnect() throws Exception {
         throw new UnsupportedOperationException();
