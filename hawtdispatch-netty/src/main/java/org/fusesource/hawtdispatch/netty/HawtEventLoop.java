@@ -17,7 +17,10 @@
 package org.fusesource.hawtdispatch.netty;
 
 import io.netty.channel.*;
+import org.fusesource.hawtdispatch.Dispatch;
+import org.fusesource.hawtdispatch.DispatchPriority;
 import org.fusesource.hawtdispatch.DispatchQueue;
+import org.fusesource.hawtdispatch.internal.ThreadDispatchQueue;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -181,7 +184,12 @@ final class HawtEventLoop extends AbstractExecutorService implements EventLoop {
 
     @Override
     public boolean inEventLoop(Thread thread) {
-        return queue.isExecuting();
+        for (DispatchQueue queue: Dispatch.getThreadQueues(DispatchPriority.DEFAULT)) {
+            if (thread == ((ThreadDispatchQueue) queue).getThread()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
