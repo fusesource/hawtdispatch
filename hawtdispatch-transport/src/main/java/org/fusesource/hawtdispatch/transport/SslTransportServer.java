@@ -23,8 +23,6 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.net.URI;
-import java.net.UnknownHostException;
-import java.util.concurrent.Executor;
 import java.security.NoSuchAlgorithmException;
 
 /**
@@ -42,6 +40,7 @@ public class SslTransportServer extends TcpTransportServer {
     protected String protocol = "TLS";
     protected SSLContext sslContext;
     private String clientAuth = "want";
+    private String disabledCypherSuites = null;
 
     public SslTransportServer(URI location) throws Exception {
         super(location);
@@ -70,6 +69,7 @@ public class SslTransportServer extends TcpTransportServer {
         rc.setBlockingExecutor(blockingExecutor);
         rc.setSSLContext(sslContext);
         rc.setClientAuth(clientAuth);
+        rc.setDisabledCypherSuites(disabledCypherSuites);
         return rc;
     }
 
@@ -95,4 +95,11 @@ public class SslTransportServer extends TcpTransportServer {
         this.clientAuth = clientAuth;
     }
 
+    public String getDisabledCypherSuites() {
+        return disabledCypherSuites;
+    }
+
+    public void setDisabledCypherSuites(String disabledCypherSuites) {
+        this.disabledCypherSuites = disabledCypherSuites;
+    }
 }

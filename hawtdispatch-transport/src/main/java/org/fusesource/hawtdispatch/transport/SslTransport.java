@@ -30,9 +30,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_UNWRAP;
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NEED_WRAP;
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING;
+import static javax.net.ssl.SSLEngineResult.HandshakeStatus.*;
 import static javax.net.ssl.SSLEngineResult.Status.BUFFER_OVERFLOW;
 
 /**
@@ -41,7 +39,6 @@ import static javax.net.ssl.SSLEngineResult.Status.BUFFER_OVERFLOW;
  * @author <a href="http://hiramchirino.com">Hiram Chirino</a>
  */
 public class SslTransport extends TcpTransport implements SecuredSession {
-
 
     /**
      * Maps uri schemes to a protocol algorithm names.
@@ -66,6 +63,7 @@ public class SslTransport extends TcpTransport implements SecuredSession {
     };
 
     private ClientAuth clientAuth = ClientAuth.WANT;
+    private String disabledCypherSuites = null;
 
     private SSLContext sslContext;
     private SSLEngine engine;
@@ -208,6 +206,28 @@ public class SslTransport extends TcpTransport implements SecuredSession {
             }
 
         }
+
+        if( disabledCypherSuites!=null ) {
+            ArrayList<String> disabledList = new ArrayList<String>();
+            for( String x : disabledCypherSuites.split(",") ) {
+                disabledList.add(x.trim());
+            }
+            ArrayList<String> enabled = new ArrayList<String>();
+            for (String suite : engine.getSupportedCipherSuites()) {
+                boolean add = true;
+                for (String disabled : disabledList) {
+                    if( suite.contains(disabled) ) {
+                        add = false;
+                        break;
+                    }
+                }
+                if( add ) {
+                    enabled.add(suite);
+                }
+            }
+            engine.setEnabledCipherSuites(enabled.toArray(new String[enabled.size()]));
+        }
+
         super.connected(channel);
     }
 
@@ -434,6 +454,14 @@ public class SslTransport extends TcpTransport implements SecuredSession {
 
     public void setClientAuth(String clientAuth) {
         this.clientAuth = ClientAuth.valueOf(clientAuth.toUpperCase());
+    }
+
+    public String getDisabledCypherSuites() {
+        return disabledCypherSuites;
+    }
+
+    public void setDisabledCypherSuites(String disabledCypherSuites) {
+        this.disabledCypherSuites = disabledCypherSuites;
     }
 }
 
