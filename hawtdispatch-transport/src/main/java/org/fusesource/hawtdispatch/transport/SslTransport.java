@@ -31,7 +31,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.*;
-import static javax.net.ssl.SSLEngineResult.Status.BUFFER_OVERFLOW;
+import static javax.net.ssl.SSLEngineResult.Status.*;
 
 /**
  * An SSL Transport for secure communications.
@@ -303,7 +303,7 @@ public class SslTransport extends TcpTransport implements SecuredSession {
             SSLEngineResult result = engine.wrap(plain, writeBuffer);
             assert result.getStatus()!= BUFFER_OVERFLOW;
             rc += result.bytesConsumed();
-            if( !transportFlush() ) {
+            if( !transportFlush() || result.getStatus() == CLOSED) {
                 break;
             }
         }
