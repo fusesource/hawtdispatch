@@ -25,12 +25,12 @@
   <parent>
     <groupId>org.fusesource.hawtdispatch</groupId>
     <artifactId>hawtdispatch-project</artifactId>
-    <version>1.14</version>
+    <version>1.15-SNAPSHOT</version>
   </parent>
     
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch</artifactId>
-  <version>1.14</version>
+  <version>1.15-SNAPSHOT</version>
   <packaging>bundle</packaging>
 
   <description>HawtDispatch: The libdispatch style API for Java</description>
