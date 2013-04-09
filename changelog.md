@@ -1,6 +1,18 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.14](http://hawtdispatch.fusesource.org/blog/releases/release-1-14.html), released 2013-04-19
+
+* Fixes bug where you could end up in a CPU spin when the SSL session closed.
+* Added a disabledCypherSuites property to the SSL transports to support disabling some of the supported cypher suites.
+* Add a getThread() method to the ThreadDispatchQueue class.
+
+## [HawtDispatch 1.13](http://hawtdispatch.fusesource.org/blog/releases/release-1-13.html), released 2012-12-23
+
+* Upgrade to scala 2.10
+* Avoid possible NPE.
+* Setup the client SSL transports so that the internal session reuse strategy can be used.
+
 ## [HawtDispatch 1.12](http://hawtdispatch.fusesource.org/blog/releases/release-1-12.html), released 2012-09-20
 
 * Custom dispatch sources will now return null after the event has been received to avoid accidentally double processing events.
