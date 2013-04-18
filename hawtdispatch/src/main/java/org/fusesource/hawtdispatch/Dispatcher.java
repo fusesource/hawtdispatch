@@ -172,6 +172,11 @@ public interface Dispatcher {
     public void profile(boolean enabled);
 
     /**
+     * @return true is profiling is enabled.
+     */
+    public boolean profile();
+
+    /**
      * Used to get profiling metrics for all the queues
      * currently being profiled.
      *

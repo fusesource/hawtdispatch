@@ -38,6 +38,7 @@ public class DispatcherConfig {
     private int threads = Integer.getInteger("hawtdispatch.threads", Runtime.getRuntime().availableProcessors());
     private boolean profile = Boolean.getBoolean("hawtdispatch.profile");
     private int drains = Integer.getInteger("hawtdispatch.drains", 1000);
+    private boolean jmx = "true".equals(System.getProperty("hawtdispatch.jmx", "true").toLowerCase());
 
     public static Dispatcher create(String name, int threads) {
         DispatcherConfig config = new DispatcherConfig();
@@ -80,5 +81,13 @@ public class DispatcherConfig {
 
     public void setDrains(int drains) {
         this.drains = drains;
+    }
+
+    public boolean isJmx() {
+        return jmx;
+    }
+
+    public void setJmx(boolean jmx) {
+        this.jmx = jmx;
     }
 }

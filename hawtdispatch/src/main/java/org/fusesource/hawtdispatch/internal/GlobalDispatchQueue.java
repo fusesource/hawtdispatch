@@ -34,7 +34,6 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
     volatile String label;
     private final DispatchPriority priority;
     final WorkerPool workers;
-    private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
 
     public GlobalDispatchQueue(HawtDispatcher dispatcher, DispatchPriority priority, int threads) {
         this.dispatcher = dispatcher;
@@ -98,7 +97,7 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         if( dispatcher.shutdownState.get() > 1 ) {
             throw new ShutdownException();
         }
-        workers.execute(metricsCollector.track(task));
+        workers.execute(task);
     }
 
     public void executeAfter(long delay, TimeUnit unit, Task task) {
@@ -168,16 +167,16 @@ final public class GlobalDispatchQueue implements HawtDispatchQueue {
         return rc;
     }
 
-    public void profile(boolean on) {
-        if( on ) {
-            metricsCollector = new ActiveMetricsCollector(this);
-        } else {
-            metricsCollector = InactiveMetricsCollector.INSTANCE;
-        }
+    public void profile(boolean profile) {
     }
 
+    public boolean profile() {
+        return false;
+    }
+
+
     public Metrics metrics() {
-        return metricsCollector.metrics();
+        return null;
     }
 
 }

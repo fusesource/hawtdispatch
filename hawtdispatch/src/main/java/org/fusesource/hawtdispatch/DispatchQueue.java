@@ -227,6 +227,11 @@ public interface DispatchQueue extends DispatchObject, Executor {
     void profile(boolean on);
 
     /**
+     * @return true is profiling is enabled.
+     */
+    boolean profile();
+
+    /**
      * Returns the usage metrics of this queue.  Only returns a value
      * if the queue has profiling enabled.
      *

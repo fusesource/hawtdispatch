@@ -18,6 +18,7 @@
 package org.fusesource.hawtdispatch.internal;
 
 import org.fusesource.hawtdispatch.*;
+import org.fusesource.hawtdispatch.jmx.JmxService;
 
 import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ final public class HawtDispatcher implements Dispatcher {
     private final int threads;
     private volatile boolean profile;
     final int drains;
+    final boolean jmx;
     final AtomicInteger shutdownState = new AtomicInteger(0);
 
     volatile Thread.UncaughtExceptionHandler uncaughtExceptionHandler=null;
@@ -58,6 +60,11 @@ final public class HawtDispatcher implements Dispatcher {
         this.label = config.getLabel();
         this.profile = config.isProfile();
         this.drains = config.getDrains();
+        this.jmx = config.isJmx();
+
+        if( this.jmx ) {
+            JmxService.register(this);
+        }
 
         DEFAULT_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.DEFAULT, config.getThreads());
         DEFAULT_QUEUE.start();
@@ -101,6 +108,11 @@ final public class HawtDispatcher implements Dispatcher {
             }, DEFAULT_QUEUE);
 
         }
+
+        if( this.jmx ) {
+            JmxService.unregister(this);
+        }
+
     }
 
     private void sleep(long time) {
@@ -212,13 +224,10 @@ final public class HawtDispatcher implements Dispatcher {
 
     public void profile(boolean on) {
         profile = on;
-        synchronized (queues) {
-            for( HawtDispatchQueue queue : new ArrayList<HawtDispatchQueue>(queues.keySet()) ) {
-                if( queue!=null ) {
-                    queue.profile(on);
-                }
-            }
-        }
+    }
+
+    public boolean profile() {
+        return profile;
     }
 
     public List<Metrics> metrics() {

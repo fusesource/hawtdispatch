@@ -35,7 +35,6 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     final ConcurrentLinkedQueue<Task> sharedTasks = new ConcurrentLinkedQueue<Task>();
     final WorkerThread thread;
     final GlobalDispatchQueue globalQueue;
-    private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
     private final LinkedList<Task> sourceQueue= new LinkedList<Task>();
 
     public ThreadDispatchQueue(GlobalDispatchQueue globalQueue, WorkerThread thread) {
@@ -80,8 +79,7 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     }
 
     public void execute(Task task) {
-        task = metricsCollector.track(task);
-        // We don't have to take the synchronization hit 
+        // We don't have to take the synchronization hit
         if( Thread.currentThread()!=thread ) {
             sharedTasks.add(task);
             thread.unpark();
@@ -149,15 +147,14 @@ final public class ThreadDispatchQueue implements HawtDispatchQueue {
     }
 
     public void profile(boolean on) {
-        if( on ) {
-            metricsCollector = new ActiveMetricsCollector(this);
-        } else {
-            metricsCollector = InactiveMetricsCollector.INSTANCE;
-        }
+    }
+
+    public boolean profile() {
+        return false;
     }
 
     public Metrics metrics() {
-        return metricsCollector.metrics();
+        return null;
     }
 
     public WorkerThread getThread() {

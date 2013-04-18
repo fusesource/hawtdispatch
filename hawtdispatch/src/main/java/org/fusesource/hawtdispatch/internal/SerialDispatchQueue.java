@@ -41,6 +41,7 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     private final LinkedList<Task> sourceQueue= new LinkedList<Task>();
     private final ThreadLocal<Boolean> executing = new ThreadLocal<Boolean>();
     private MetricsCollector metricsCollector = InactiveMetricsCollector.INSTANCE;
+    private boolean profile=false;
 
     public SerialDispatchQueue(String label) {
         this.label = label;
@@ -76,6 +77,9 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     }
 
     public void run() {
+
+        checkCollector();
+
         HawtDispatchQueue original = HawtDispatcher.CURRENT_QUEUE.get();
         HawtDispatcher.CURRENT_QUEUE.set(this);
         executing.set(Boolean.TRUE);
@@ -186,16 +190,26 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
         return null;
     }
 
-    public void profile(boolean on) {
-        if( !on && metricsCollector==InactiveMetricsCollector.INSTANCE )
-            return;
+    public void profile(boolean profile) {
+        this.profile = profile;
+        checkCollector();
+    }
 
-        if( on ) {
-            metricsCollector = new ActiveMetricsCollector(this);
-            getDispatcher().track(this);
+    public boolean profile() {
+        return this.profile;
+    }
+
+    private void checkCollector() {
+        if( profile() || getDispatcher().profile() ) {
+            if(  metricsCollector == InactiveMetricsCollector.INSTANCE ) {
+                metricsCollector = new ActiveMetricsCollector(this);
+                getDispatcher().track(this);
+            }
         } else {
-//            getDispatcher().untrack(this);
-            metricsCollector = InactiveMetricsCollector.INSTANCE;
+            if(  metricsCollector != InactiveMetricsCollector.INSTANCE ) {
+                metricsCollector = InactiveMetricsCollector.INSTANCE;
+                getDispatcher().untrack(this);
+            }
         }
     }
 
@@ -206,8 +220,6 @@ public class SerialDispatchQueue extends AbstractDispatchObject implements HawtD
     private int drains() {
         return getDispatcher().drains;
     }
-
-
 
     @Override
     public String toString() {
