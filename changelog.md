@@ -1,7 +1,12 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
-## [HawtDispatch 1.14](http://hawtdispatch.fusesource.org/blog/releases/release-1-14.html), released 2013-04-19
+## [HawtDispatch 1.15](http://hawtdispatch.fusesource.org/blog/releases/release-1-15.html), released 2013-04-19
+
+* Also include info about how long the metric was monitored for.
+* Expose dispatch queue profiling data via JMX.
+
+## [HawtDispatch 1.14](http://hawtdispatch.fusesource.org/blog/releases/release-1-14.html), released 2013-04-09
 
 * Fixes bug where you could end up in a CPU spin when the SSL session closed.
 * Added a disabledCypherSuites property to the SSL transports to support disabling some of the supported cypher suites.
