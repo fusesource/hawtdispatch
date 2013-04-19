@@ -38,6 +38,7 @@ final public class ActiveMetricsCollector extends MetricsCollector {
     private final AtomicLong dequeued = new AtomicLong();
     private final AtomicLong total_run_time = new AtomicLong();
     private final AtomicLong total_wait_time = new AtomicLong();
+    private final AtomicLong reset_at = new AtomicLong(System.nanoTime());
 
     public ActiveMetricsCollector(DispatchQueue queue) {
         this.queue = queue;
@@ -79,12 +80,15 @@ final public class ActiveMetricsCollector extends MetricsCollector {
     }
     
     public Metrics metrics() {
+        long now = System.nanoTime();
+        long start = reset_at.getAndSet(now);
         long enq = enqueued.getAndSet(0);
         long deq = dequeued.getAndSet(0);
         if( enq==0 && deq==0 ) {
             return null;
         }
         Metrics rc = new Metrics();
+        rc.durationNS = start - now;
         rc.queue = queue;
         rc.enqueued = enq;
         rc.dequeued = deq;

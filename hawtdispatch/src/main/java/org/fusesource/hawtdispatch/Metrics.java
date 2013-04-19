@@ -26,6 +26,11 @@ package org.fusesource.hawtdispatch;
 public class Metrics {
 
     /**
+     * How long the metrics gathered
+     */
+    public long durationNS;
+
+    /**
      * The dispatch queue associated with the metrics collected.
      */
     public DispatchQueue queue;
