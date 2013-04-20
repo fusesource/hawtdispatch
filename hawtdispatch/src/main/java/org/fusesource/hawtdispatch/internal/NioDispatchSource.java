@@ -56,8 +56,15 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
     // These fields are only accessed by the ioManager's thread.
     public static class KeyState {
         int readyOps;
-        SelectionKey key;
-        NioAttachment attachment;
+        final NioAttachment attachment;
+
+        public SelectionKey key() {
+            return attachment.key();
+        }
+
+        public KeyState(NioAttachment attachment) {
+            this.attachment = attachment;
+        }
 
         @Override
         public String toString() {
@@ -109,9 +116,9 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
 
             WorkerThread[] threads = dispatcher.DEFAULT_QUEUE.workers.getThreads();
             WorkerThread min = threads[0];
-            int minSize = min.getNioManager().getSelector().keys().size();
+            int minSize = min.getNioManager().getRegisteredKeyCount();
             for( int i=1; i < threads.length; i++) {
-                int s = threads[i].getNioManager().getSelector().keys().size();
+                int s = threads[i].getNioManager().getRegisteredKeyCount();
                 if( s < minSize ) {
                     minSize = s;
                     min = threads[i];
@@ -148,6 +155,10 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
     }
 
+    private NioManager getCurrentNioManager() {
+        return WorkerThread.currentWorkerThread().getNioManager();
+    }
+
     private void key_cancel() {
         // Deregister...
         KeyState state = keyState.get();
@@ -156,23 +167,10 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
         debug("canceling source");
         state.attachment.sources.remove(this);
-
         if( state.attachment.sources.isEmpty() ) {
             debug("canceling key.");
-            // This will make sure that the key is removed
-            // from the ioManager.
-            state.key.cancel();
-
-            // Running a select to remove the canceled key.
-            Selector selector =  WorkerThread.currentWorkerThread().getNioManager().getSelector();
-            try {
-                selector.selectNow();
-            } catch (CancelledKeyException ignore) {
-            } catch (IOException e) {
-                debug(e, "Error canceling");
-            }
+            getCurrentNioManager().cancel(state.key());
         }
-        debug("Canceled selector on "+WorkerThread.currentWorkerThread().getDispatchQueue().getLabel() );
         keyState.remove();
     }
 
@@ -180,27 +178,12 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         queue.execute(new Task(){
             public void run() {
                 assert keyState.get()==null;
-
                 if(DEBUG) debug("Registering interest %s", opsToString(interestOps));
-                Selector selector = WorkerThread.currentWorkerThread().getNioManager().getSelector();
                 try {
-                    KeyState state = new KeyState();
-                    state.key = channel.keyFor(selector);
-                    if( state.key==null ) {
-                        state.key = channel.register(selector, interestOps);
-                        state.attachment = new NioAttachment();
-                        state.key.attach(state.attachment);
-                    } else {
-                        state.attachment = (NioAttachment)state.key.attachment();
-                    }
-                    state.attachment.sources.add(NioDispatchSource.this);
-                    keyState.set(state);
-                    try {
-                        // the key could be canceled by now..
-                        state.key.interestOps(state.key.interestOps()|interestOps);
-                    } catch (CancelledKeyException e) {
-                        state.attachment.cancel(state.key);
-                    }
+                    NioAttachment attachment = getCurrentNioManager().register(channel, interestOps);
+                    attachment.sources.add(NioDispatchSource.this);
+                    keyState.set(new KeyState(attachment));
+
                 } catch (ClosedChannelException e) {
                     debug(e, "could not register with selector");
                 }
@@ -244,8 +227,9 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                     return;
                 }
 
-                if( state.key.isValid() ) {
-                    state.key.interestOps(state.key.interestOps()|interestOps);
+                SelectionKey key = state.key();
+                if( key.isValid() ) {
+                    key.interestOps(key.interestOps() | interestOps);
                 }
             }
         }
@@ -333,15 +317,18 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
         }
         if( queue.getQueueType()==THREAD_QUEUE && queue!=selectorQueue ) {
             DispatchQueue previous = selectorQueue;
-            debug("Switching to "+queue.getLabel());
-            register_on(queue);
+            final DispatchQueue newQueue = queue;
+            debug("Switching to " + newQueue.getLabel());
             selectorQueue = queue;
             if( previous!=null ) {
                 previous.execute(new Task(){
                     public void run() {
                         key_cancel();
+                        register_on(newQueue);
                     }
                 });
+            } else {
+                register_on(newQueue);
             }
         }
     }

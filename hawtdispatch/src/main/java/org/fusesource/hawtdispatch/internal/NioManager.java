@@ -18,11 +18,8 @@
 package org.fusesource.hawtdispatch.internal;
 
 import java.io.IOException;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
+import java.nio.channels.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -123,23 +120,15 @@ public class NioManager {
                 if( key.isValid() ) {
                     try {
                         SelectionKey nextKey = key.channel().register(nextSelector, key.interestOps());
-
-                        // Associate the new key with source objects.
+                        attachment.key = nextKey;
                         nextKey.attach(attachment);
-                        for( NioDispatchSource source: attachment.sources ) {
-                            NioDispatchSource.KeyState state = source.keyState.get();
-                            if( state!=null ) {
-                                state.key = nextKey;
-                            }
-                        }
-
                     } catch (IOException e ) {
                         // channel could have closed out
-                        attachment.cancel(key);
+                        cancel(key);
                     }
                 } else {
                     // perhaps key was canceled.
-                    attachment.cancel(key);
+                    cancel(key);
                 }
             }
             // Close out the old selector and set it to the new one.
@@ -152,15 +141,12 @@ public class NioManager {
     private Selector selector;
     final protected AtomicInteger wakeupCounter = new AtomicInteger();
     volatile protected int selectCounter;
+    private final AtomicInteger registeredKeys = new AtomicInteger();
 
     volatile protected boolean selecting;
 
     public NioManager() throws IOException {
         this.selector = Selector.open();
-    }
-
-    Selector getSelector() {
-        return selector;
     }
 
     /**
@@ -230,10 +216,10 @@ public class NioManager {
                         key.interestOps(key.interestOps() & ~key.readyOps());
                         ((NioAttachment) key.attachment()).selected(key);
                     } catch (CancelledKeyException e) {
-                        ((NioAttachment) key.attachment()).cancel(key);
+                        cancel(key);
                     }
                 } else {
-                    ((NioAttachment) key.attachment()).cancel(key);
+                    cancel(key);
                 }
             }
         }
@@ -261,5 +247,43 @@ public class NioManager {
             }
         }
     }
+
+    public NioAttachment register(SelectableChannel channel, int interestOps) throws ClosedChannelException {
+
+        SelectionKey key = channel.keyFor(selector);
+        if( key==null ) {
+            key = channel.register(selector, interestOps);
+            registeredKeys.incrementAndGet();
+            key.attach(new NioAttachment(key));
+        }
+        try {
+            // the key could be canceled by now..
+            key.interestOps(key.interestOps()|interestOps);
+            return (NioAttachment)key.attachment();
+        } catch (CancelledKeyException e) {
+            cancel(key);
+            throw e;
+        }
+    }
+
+    public int getRegisteredKeyCount() {
+        return registeredKeys.get();
+    }
+
+    public void cancel(SelectionKey key) {
+        NioAttachment attachment = (NioAttachment) key.attachment();
+        if( attachment!=null ) {
+            key.attach(null);
+            attachment.cancel();
+            key.cancel();
+            try {
+                // To make sure the key is canceled out now.
+                selector.selectNow();
+            } catch (Exception ignore) {
+            }
+            registeredKeys.decrementAndGet();
+        }
+    }
+
 
 }

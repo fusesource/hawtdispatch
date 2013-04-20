@@ -27,6 +27,15 @@ import java.util.ArrayList;
 final class NioAttachment {
     
     final ArrayList<NioDispatchSource> sources = new ArrayList<NioDispatchSource>(2);
+    SelectionKey key;
+
+    public NioAttachment(SelectionKey key) {
+        this.key = key;
+    }
+
+    public SelectionKey key() {
+        return key;
+    }
 
     public void selected(SelectionKey key) {
         int readyOps = key.readyOps();
@@ -38,14 +47,12 @@ final class NioAttachment {
         }
     }
 
-    public void cancel(SelectionKey key) {
+    public void cancel() {
         for(NioDispatchSource source: new ArrayList<NioDispatchSource>(sources)) {
             sources.remove(source);
             if( source.canceled.compareAndSet(false, true) ) {
                 source.internal_cancel();
             }
         }
-        key.attach(null);
-        key.cancel();        
     }
 }

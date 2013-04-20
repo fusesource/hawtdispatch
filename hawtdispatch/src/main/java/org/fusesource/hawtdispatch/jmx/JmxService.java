@@ -109,7 +109,7 @@ public class JmxService {
     static {
         CompositeTypeFactory factory = new CompositeTypeFactory();
         factory.addItem("label", "The queue label", SimpleType.STRING);
-        factory.addItem("duration", "The length of time spent gathering metrics", SimpleType.DOUBLE);
+        factory.addItem("duration", "The length of time spent gathering metricsN", SimpleType.DOUBLE);
 
         factory.addItem("enqueued", "The number of tasks enqueued", SimpleType.LONG);
         factory.addItem("enqueueTimeMean", "The mean amount of time an enqueued tasks waited before it was executed", SimpleType.DOUBLE);
