@@ -148,19 +148,13 @@ public class JmxService {
         }
     }
 
-    static public void register(HawtDispatcher dispatcher) {
-        try {
-            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            server.registerMBean(new JmxDispatcher(dispatcher), objectName(dispatcher));
-        } catch (Exception ignore) {
-        }
+    static public void register(HawtDispatcher dispatcher) throws Exception {
+        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+        server.registerMBean(new JmxDispatcher(dispatcher), objectName(dispatcher));
     }
 
-    static public void unregister(HawtDispatcher dispatcher) {
-        try {
-            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            server.unregisterMBean(new ObjectName(DISPATCHER_OBJECT_NAME));
-        } catch (Exception ignore) {
-        }
+    static public void unregister(HawtDispatcher dispatcher) throws Exception {
+        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+        server.unregisterMBean(new ObjectName(DISPATCHER_OBJECT_NAME));
     }
 }

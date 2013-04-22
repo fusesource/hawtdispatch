@@ -63,7 +63,10 @@ final public class HawtDispatcher implements Dispatcher {
         this.jmx = config.isJmx();
 
         if( this.jmx ) {
-            JmxService.register(this);
+            try {
+                JmxService.register(this);
+            } catch (Throwable ignore) {
+            }
         }
 
         DEFAULT_QUEUE = new GlobalDispatchQueue(this, DispatchPriority.DEFAULT, config.getThreads());
@@ -110,7 +113,10 @@ final public class HawtDispatcher implements Dispatcher {
         }
 
         if( this.jmx ) {
-            JmxService.unregister(this);
+            try {
+                JmxService.unregister(this);
+            } catch (Throwable ignore) {
+            }
         }
 
     }
