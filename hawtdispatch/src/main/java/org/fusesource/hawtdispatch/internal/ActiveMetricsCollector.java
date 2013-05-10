@@ -88,7 +88,7 @@ final public class ActiveMetricsCollector extends MetricsCollector {
             return null;
         }
         Metrics rc = new Metrics();
-        rc.durationNS = start - now;
+        rc.durationNS = now-start;
         rc.queue = queue;
         rc.enqueued = enq;
         rc.dequeued = deq;
