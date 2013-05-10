@@ -1,6 +1,12 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.16](http://hawtdispatch.fusesource.org/blog/releases/release-1-16.html), released 2013-05-10
+
+* Fixing invalid the metric duration value.
+* Do a better job ignoring errors when JMX is not supported by the platform. (Android etc.)
+* Fixes issue #9: HawtDispatch does not work on Android 4.0 
+
 ## [HawtDispatch 1.15](http://hawtdispatch.fusesource.org/blog/releases/release-1-15.html), released 2013-04-19
 
 * Also include info about how long the metric was monitored for.
