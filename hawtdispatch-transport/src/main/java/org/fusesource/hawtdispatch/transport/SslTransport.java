@@ -426,8 +426,6 @@ public class SslTransport extends TcpTransport implements SecuredSession {
 
                 case FINISHED:
                 case NOT_HANDSHAKING:
-                    drainOutboundSource.merge(1);
-                    drainInbound();
                     break;
 
                 default:
@@ -436,6 +434,11 @@ public class SslTransport extends TcpTransport implements SecuredSession {
             }
         } catch (IOException e ) {
             onTransportFailure(e);
+        } finally {
+            if( engine.getHandshakeStatus() == NOT_HANDSHAKING ) {
+                drainOutboundSource.merge(1);
+                super.drainInbound();
+            }
         }
     }
 
