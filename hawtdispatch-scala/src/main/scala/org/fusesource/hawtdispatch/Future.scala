@@ -21,6 +21,7 @@ import java.util.concurrent.{TimeUnit}
 import scala.collection.mutable.ListBuffer
 
 trait Future[R] extends ( ()=>R ) {
+  def get():R
   def await():R
   def await(time:Long, unit:TimeUnit):Option[R]
 
@@ -57,6 +58,10 @@ trait SettableFuture[T,R] extends (T => Unit) with Future[R] {
     }
     callback.foreach(_(_result.get))
 
+  }
+
+  def get():R = {
+    _result.get
   }
 
   def await():R = {
