@@ -1,6 +1,11 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.17](http://hawtdispatch.fusesource.org/blog/releases/release-1-17.html),  released 2013-05-18
+
+* Add a get method to Future objects.
+* Fixing bug where SSL transports were not getting past the SSL handshake (on linux).
+
 ## [HawtDispatch 1.16](http://hawtdispatch.fusesource.org/blog/releases/release-1-16.html), released 2013-05-10
 
 * Fixing invalid the metric duration value.
