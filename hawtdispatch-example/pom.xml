@@ -24,12 +24,12 @@
   <parent>
     <groupId>org.fusesource.hawtdispatch</groupId>
     <artifactId>hawtdispatch-project</artifactId>
-    <version>1.17</version>
+    <version>1.18-SNAPSHOT</version>
   </parent>
 
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch-example</artifactId>
-  <version>1.17</version>
+  <version>1.18-SNAPSHOT</version>
 
   <description>HawtDispatch: Examples</description>
 
@@ -44,12 +44,12 @@
     <dependency>
       <groupId>org.fusesource.hawtdispatch</groupId>
       <artifactId>hawtdispatch-scala</artifactId>
-      <version>1.17</version>
+      <version>1.18-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.fusesource.hawtdispatch</groupId>
       <artifactId>hawtdispatch-transport</artifactId>
-      <version>1.17</version>
+      <version>1.18-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.fusesource.hawtbuf</groupId>
