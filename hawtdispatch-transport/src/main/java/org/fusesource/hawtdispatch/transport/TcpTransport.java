@@ -454,13 +454,16 @@ public class TcpTransport extends ServiceBase implements Transport {
                                         readSource.setCancelHandler(CANCEL_HANDLER);
                                         readSource.resume();
 
-                                    } catch (IOException e) {
+                                    } catch (Exception e) {
                                         try {
                                             channel.close();
-                                        } catch (IOException ignore) {
+                                        } catch (Exception ignore) {
                                         }
                                         socketState = new CANCELED(true);
-                                        listener.onTransportFailure(e);
+                                        if (! (e instanceof IOException)) {
+                                            e = new IOException(e);
+                                        }
+                                        listener.onTransportFailure((IOException)e);
                                     }
                                 }
                             });
