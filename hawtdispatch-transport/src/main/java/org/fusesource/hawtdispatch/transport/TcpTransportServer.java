@@ -42,7 +42,7 @@ public class TcpTransportServer implements TransportServer {
     protected DispatchQueue dispatchQueue;
     protected DispatchSource acceptSource;
     protected int receiveBufferSize = 64*1024;
-    protected int sendBufferSize = 64*1204;
+    protected int sendBufferSize = 64*1024;
     protected Executor blockingExecutor;
 
     public TcpTransportServer(URI location) throws UnknownHostException {
