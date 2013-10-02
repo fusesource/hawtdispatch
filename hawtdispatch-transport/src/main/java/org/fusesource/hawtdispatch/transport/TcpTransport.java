@@ -465,13 +465,18 @@ public class TcpTransport extends ServiceBase implements Transport {
                                 }
                             });
 
-                        } catch (IOException e) {
-                            try {
-                                channel.close();
-                            } catch (IOException ignore) {
-                            }
-                            socketState = new CANCELED(true);
-                            listener.onTransportFailure(e);
+                        } catch (final IOException e) {
+                            // we're in blockingExecutor thread context here
+                            dispatchQueue.execute(new Task() {
+                                public void run() {
+                                    try {
+                                        channel.close();
+                                    } catch (IOException ignore) {
+                                    }
+                                    socketState = new CANCELED(true);
+                                    listener.onTransportFailure(e);
+                                }
+                            });
                         }
                     }
                 });
