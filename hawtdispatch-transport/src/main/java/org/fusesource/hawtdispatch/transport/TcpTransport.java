@@ -507,9 +507,9 @@ public class TcpTransport extends ServiceBase implements Transport {
     }
 
     protected String resolveHostName(String host) throws UnknownHostException {
-        String localName = getLocalHost().getHostName();
-        if (localName != null && isUseLocalHost()) {
-            if (localName.equals(host)) {
+        if (isUseLocalHost()) {
+            String localName = getLocalHost().getHostName();
+            if (localName != null && localName.equals(host)) {
                 return "localhost";
             }
         }
