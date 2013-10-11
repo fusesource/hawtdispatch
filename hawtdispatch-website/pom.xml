@@ -25,12 +25,12 @@
   <parent>
     <groupId>org.fusesource.hawtdispatch</groupId>
     <artifactId>hawtdispatch-project</artifactId>
-    <version>1.18-SNAPSHOT</version>
+    <version>1.18</version>
   </parent>
 
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch-website</artifactId>
-  <version>1.18-SNAPSHOT</version>
+  <version>1.18</version>
   <packaging>pom</packaging>
 
   <description>The HawtDispatch Website</description>
