@@ -1,6 +1,12 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.18](http://hawtdispatch.fusesource.org/blog/releases/release-1-18.html),  released 2013-10-11
+
+* Do not even invoke getLocalHost() if not necessary
+* propagate name resolution exceptions in the correct thread context
+* Fixes issue #11 : Typo in TcpTransportServer
+
 ## [HawtDispatch 1.17](http://hawtdispatch.fusesource.org/blog/releases/release-1-17.html),  released 2013-05-18
 
 * Add a get method to Future objects.
