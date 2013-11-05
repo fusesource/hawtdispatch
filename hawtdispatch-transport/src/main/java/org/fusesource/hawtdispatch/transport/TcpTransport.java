@@ -18,14 +18,12 @@
 package org.fusesource.hawtdispatch.transport;
 
 import org.fusesource.hawtdispatch.*;
+import org.fusesource.hawtdispatch.internal.BaseSuspendable;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.WritableByteChannel;
+import java.nio.channels.*;
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -205,11 +203,11 @@ public class TcpTransport extends ServiceBase implements Transport {
     SocketAddress remoteAddress;
     protected Executor blockingExecutor;
 
-    class RateLimitingChannel implements ReadableByteChannel, WritableByteChannel {
+    class RateLimitingChannel implements ScatteringByteChannel, GatheringByteChannel {
 
         int read_allowance = maxReadRate;
         boolean read_suspended = false;
-        int read_resume_counter = 0;
+//        int read_resume_counter = 0;
         int write_allowance = maxWriteRate;
         boolean write_suspended = false;
 
@@ -224,9 +222,6 @@ public class TcpTransport extends ServiceBase implements Transport {
                 if( read_suspended ) {
                     read_suspended = false;
                     resumeRead();
-                    for( int i=0; i < read_resume_counter ; i++ ) {
-                        resumeRead();
-                    }
                 }
             }
         }
@@ -235,28 +230,27 @@ public class TcpTransport extends ServiceBase implements Transport {
             if( maxReadRate ==0 ) {
                 return channel.read(dst);
             } else {
-                int remaining = dst.remaining();
-                if( read_allowance ==0 || remaining ==0 ) {
-                    return 0;
-                }
-
-                int reduction = 0;
-                if( remaining > read_allowance) {
-                    reduction = remaining - read_allowance;
-                    dst.limit(dst.limit() - reduction);
-                }
                 int rc=0;
+                int reduction = 0;
                 try {
+                    int remaining = dst.remaining();
+                    if( read_allowance ==0 || remaining ==0 ) {
+                        return 0;
+                    }
+                    if( remaining > read_allowance) {
+                        reduction = remaining - read_allowance;
+                        dst.limit(dst.limit() - reduction);
+                    }
                     rc = channel.read(dst);
                     read_allowance -= rc;
                 } finally {
+                    if( read_allowance<=0 && !read_suspended ) {
+                        // we need to suspend the read now until we get
+                        // a new allowance..
+                        readSource.suspend();
+                        read_suspended = true;
+                    }
                     if( reduction!=0 ) {
-                        if( dst.remaining() == 0 ) {
-                            // we need to suspend the read now until we get
-                            // a new allowance..
-                            readSource.suspend();
-                            read_suspended = true;
-                        }
                         dst.limit(dst.limit() + reduction);
                     }
                 }
@@ -306,11 +300,53 @@ public class TcpTransport extends ServiceBase implements Transport {
         }
 
         public void resumeRead() {
-            if( read_suspended ) {
-                read_resume_counter += 1;
-            } else {
+//            if( read_suspended ) {
+//                read_resume_counter += 1;
+//            } else {
                 _resumeRead();
+//            }
+        }
+
+        public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+            if(offset+length > dsts.length || length<0 || offset<0) {
+                throw new IndexOutOfBoundsException();
             }
+            long rc=0;
+            for (int i = 0; i < length; i++) {
+                ByteBuffer dst = dsts[offset+i];
+                if(dst.hasRemaining()) {
+                    rc += read(dst);
+                }
+                if( dst.hasRemaining() ) {
+                    return rc;
+                }
+            }
+            return rc;
+        }
+
+        public long read(ByteBuffer[] dsts) throws IOException {
+            return read(dsts, 0, dsts.length);
+        }
+
+        public long write(ByteBuffer[] srcs, int offset, int length) throws IOException {
+            if(offset+length > srcs.length || length<0 || offset<0) {
+                throw new IndexOutOfBoundsException();
+            }
+            long rc=0;
+            for (int i = 0; i < length; i++) {
+                ByteBuffer src = srcs[offset+i];
+                if(src.hasRemaining()) {
+                    rc += write(src);
+                }
+                if( src.hasRemaining() ) {
+                    return rc;
+                }
+            }
+            return rc;
+        }
+
+        public long write(ByteBuffer[] srcs) throws IOException {
+            return write(srcs, 0, srcs.length);
         }
 
     }
@@ -376,6 +412,12 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     protected void initializeCodec() throws Exception {
         codec.setTransport(this);
+    }
+
+    private void initRateLimitingChannel() {
+        if( (maxReadRate !=0 || maxWriteRate !=0) && rateLimitingChannel==null ) {
+            rateLimitingChannel = new RateLimitingChannel();
+        }
     }
 
     public void connecting(final URI remoteLocation, final URI localLocation) throws Exception {
@@ -492,7 +534,7 @@ public class TcpTransport extends ServiceBase implements Transport {
                     }
                 });
             } else {
-                System.err.println("cannot be started.  socket state is: " + socketState);
+                trace("cannot be started.  socket state is: " + socketState);
             }
         } finally {
             if (onCompleted != null) {
@@ -549,8 +591,8 @@ public class TcpTransport extends ServiceBase implements Transport {
             }
         });
 
-        if( maxReadRate !=0 || maxWriteRate !=0 ) {
-            rateLimitingChannel = new RateLimitingChannel();
+        initRateLimitingChannel();
+        if( rateLimitingChannel!=null ) {
             schedualRateAllowanceReset();
         }
         listener.onTransportConnected();
@@ -788,6 +830,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     }
 
     public ReadableByteChannel getReadChannel() {
+        initRateLimitingChannel();
         if(rateLimitingChannel!=null) {
             return rateLimitingChannel;
         } else {
@@ -796,6 +839,7 @@ public class TcpTransport extends ServiceBase implements Transport {
     }
 
     public WritableByteChannel getWriteChannel() {
+        initRateLimitingChannel();
         if(rateLimitingChannel!=null) {
             return rateLimitingChannel;
         } else {
