@@ -81,7 +81,7 @@ public class NioManager {
         @Override
         public int select(long timeout) throws IOException {
 
-            if( selector.keys().isEmpty() || ( timeout > 0 || timeout < 100) ) {
+            if( selector.keys().isEmpty() || ( timeout > 0 && timeout < 100) ) {
                 // we can't detect spin in this case
                 return super.select(timeout);
             } else {
