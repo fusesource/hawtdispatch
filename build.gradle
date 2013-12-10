@@ -1,0 +1,46 @@
+subprojects {
+	apply plugin: 'java'
+
+	repositories {
+		mavenCentral()
+	}
+
+	dependencies {
+		compile 'asm:asm-tree:3.1', 'org.osgi:org.osgi.core:4.2.0', 'org.osgi:org.osgi.compendium:4.2.0', 'log4j:log4j:1.2.14', 'org.fusesource.hawtbuf:hawtbuf:1.9'
+
+		testCompile 'junit:junit:4.7'
+	}
+
+	tasks.withType(Compile) {
+		options.encoding = 'UTF-8'
+		options.warnings = false
+	}
+}
+
+project(':hawtdispatch-example') {
+	dependencies {
+		compile project(':hawtdispatch-scala'), project(':hawtdispatch-transport'), 'org.scala-lang:scala-library:2.10.0', 'org.scala-lang:scala-compiler:2.10.0'
+
+		testCompile 'org.scalatest:scalatest_2.10.0:2.10.0'
+	}
+}
+
+project(':hawtdispatch-netty') {
+	dependencies {
+		compile 'io.netty:netty-transport:4.0.0.Beta1', project(':hawtdispatch')
+	}
+}
+
+project(':hawtdispatch-scala')  {
+	dependencies {
+		compile 'iorg.scala-lang:scala-library:2.10.0', project(':hawtdispatch')
+
+		testCompile 'org.scalatest:scalatest_2.10.0:2.10.0'
+	}
+}
+
+project(':hawtdispatch-transport') {
+	dependencies {
+		compile project(':hawtdispatch')
+	}
+}
