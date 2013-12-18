@@ -64,7 +64,8 @@ public class SslTransport extends TcpTransport implements SecuredSession {
 
     private ClientAuth clientAuth = ClientAuth.WANT;
     private String disabledCypherSuites = null;
-
+    private String[] enabledCipherSuites = null;
+    
     private SSLContext sslContext;
     private SSLEngine engine;
 
@@ -206,8 +207,10 @@ public class SslTransport extends TcpTransport implements SecuredSession {
             }
 
         }
-
-        if( disabledCypherSuites!=null ) {
+            
+        if (enabledCipherSuites != null) {
+            engine.setEnabledCipherSuites(enabledCipherSuites);
+        } else if( disabledCypherSuites!=null ) {
             ArrayList<String> disabledList = new ArrayList<String>();
             for( String x : disabledCypherSuites.split(",") ) {
                 disabledList.add(x.trim());
@@ -463,8 +466,16 @@ public class SslTransport extends TcpTransport implements SecuredSession {
         return disabledCypherSuites;
     }
 
+    public String[] getEnabledCypherSuites() {
+        return enabledCipherSuites;
+    }
+
     public void setDisabledCypherSuites(String disabledCypherSuites) {
         this.disabledCypherSuites = disabledCypherSuites;
+    }
+    
+    public void setEnabledCypherSuites(String[] enabledCypherSuites) {
+        this.enabledCipherSuites = enabledCypherSuites;
     }
 }
 
