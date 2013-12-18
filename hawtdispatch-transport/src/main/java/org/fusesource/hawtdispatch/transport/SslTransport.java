@@ -64,7 +64,7 @@ public class SslTransport extends TcpTransport implements SecuredSession {
 
     private ClientAuth clientAuth = ClientAuth.WANT;
     private String disabledCypherSuites = null;
-    private String[] enabledCipherSuites = null;
+    private String enabledCipherSuites = null;
     
     private SSLContext sslContext;
     private SSLEngine engine;
@@ -207,16 +207,17 @@ public class SslTransport extends TcpTransport implements SecuredSession {
             }
 
         }
-            
+
         if (enabledCipherSuites != null) {
-            engine.setEnabledCipherSuites(enabledCipherSuites);
-        } else if( disabledCypherSuites!=null ) {
-            ArrayList<String> disabledList = new ArrayList<String>();
-            for( String x : disabledCypherSuites.split(",") ) {
-                disabledList.add(x.trim());
-            }
+            engine.setEnabledCipherSuites(splitOnCommas(enabledCipherSuites));
+        } else {
+            engine.setEnabledCipherSuites(engine.getSupportedCipherSuites());
+        }
+
+        if( disabledCypherSuites!=null ) {
+            String[] disabledList = splitOnCommas(disabledCypherSuites);
             ArrayList<String> enabled = new ArrayList<String>();
-            for (String suite : engine.getSupportedCipherSuites()) {
+            for (String suite : engine.getEnabledCipherSuites()) {
                 boolean add = true;
                 for (String disabled : disabledList) {
                     if( suite.contains(disabled) ) {
@@ -232,6 +233,14 @@ public class SslTransport extends TcpTransport implements SecuredSession {
         }
 
         super.connected(channel);
+    }
+
+    private String[] splitOnCommas(String value) {
+        ArrayList<String> rc = new ArrayList<String>();
+        for( String x : value.split(",") ) {
+            rc.add(x.trim());
+        }
+        return rc.toArray(new String[rc.size()]);
     }
 
     @Override
@@ -466,7 +475,7 @@ public class SslTransport extends TcpTransport implements SecuredSession {
         return disabledCypherSuites;
     }
 
-    public String[] getEnabledCypherSuites() {
+    public String getEnabledCypherSuites() {
         return enabledCipherSuites;
     }
 
@@ -474,7 +483,7 @@ public class SslTransport extends TcpTransport implements SecuredSession {
         this.disabledCypherSuites = disabledCypherSuites;
     }
     
-    public void setEnabledCypherSuites(String[] enabledCypherSuites) {
+    public void setEnabledCypherSuites(String enabledCypherSuites) {
         this.enabledCipherSuites = enabledCypherSuites;
     }
 }
