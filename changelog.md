@@ -1,6 +1,13 @@
 # ![HawtDispatch](http://hawtdispatch.fusesource.org/images/project-logo.png)
 =============================================================================
 
+## [HawtDispatch 1.19](http://hawtdispatch.fusesource.org/blog/releases/release-1-19.html),  released 2014-01-23
+
+* You can now configure the what cypher suites are enabled on a SSLTransport via the enabledCypherSuites property
+* add gradle build script
+* Fix range check on timeout, as it always evaluated to true
+* Fixing bugs where the read/write rate limiting features of the tcp transport might not take effect.
+
 ## [HawtDispatch 1.18](http://hawtdispatch.fusesource.org/blog/releases/release-1-18.html),  released 2013-10-11
 
 * Do not even invoke getLocalHost() if not necessary
