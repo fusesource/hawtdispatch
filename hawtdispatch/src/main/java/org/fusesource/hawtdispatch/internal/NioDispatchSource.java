@@ -228,8 +228,10 @@ final public class NioDispatchSource extends AbstractDispatchObject implements D
                 }
 
                 SelectionKey key = state.key();
-                if( key.isValid() ) {
+                try {
                     key.interestOps(key.interestOps() | interestOps);
+                } catch(CancelledKeyException e) {
+                    internal_cancel();
                 }
             }
         }
