@@ -627,7 +627,7 @@ public class TcpTransport extends ServiceBase implements Transport {
 
     public void onTransportFailure(IOException error) {
         listener.onTransportFailure(error);
-        socketState.onCanceled();
+        // socketState.onCanceled();
     }
 
 
