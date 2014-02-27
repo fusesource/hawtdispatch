@@ -471,7 +471,11 @@ public class TcpTransport extends ServiceBase implements Transport {
                                             channel.socket().bind(localAddress);
                                         }
                                         trace("connecting...");
-                                        channel.connect(remoteAddress);
+                                        if (channel.connect(remoteAddress)) {
+                                            socketState = new CONNECTED();
+                                            onConnected();
+                                            return;
+                                        }
 
                                         // this allows the connect to complete..
                                         readSource = Dispatch.createSource(channel, SelectionKey.OP_CONNECT, dispatchQueue);
