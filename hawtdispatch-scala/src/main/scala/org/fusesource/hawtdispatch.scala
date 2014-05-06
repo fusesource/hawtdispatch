@@ -19,7 +19,6 @@ package org.fusesource
 
 import org.fusesource.hawtdispatch._
 import java.nio.channels.SelectableChannel
-import scala.util.continuations._
 import java.util.concurrent.{ExecutorService, CountDownLatch, Executor, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 import java.io.Closeable
@@ -126,32 +125,6 @@ package object hawtdispatch {
       }
       rc
     }
-
-    /**
-     * Executes the supplied function on this executor.  If not called from a
-     * runnable being exectued in a Dispatch Queue, then is call blocks
-     * until continuation is executed.  Otherwise, the continuation is
-     * resumed on the original calling dispatch queue once supplied function
-     * completes.
-     */
-    def ![T](func: =>T): T @suspendable = shift { k: (T=>Unit) =>
-      val original = getCurrentQueue
-      if( original==null ) {
-        k(sync(func))
-      } else {
-        apply {
-          val result = func
-          original.apply {
-            k(result)
-          }
-        }
-      }
-    }
-
-    /**
-     * Same as {@link #future(=>T)} except that the partial function is wrapped in a {@link reset} block.
-     */
-    def !![T](func: =>T @suspendable):Future[T] = reset_future { func }
 
   }
 
@@ -358,15 +331,4 @@ package object hawtdispatch {
     }
   }
 
-  /**
-   * resets a CPS block, and returns it's result in a future.
-   */
-  def reset_future[T](func: =>T @suspendable):Future[T] = {
-    val rc = Future[T]()
-    reset {
-      val r = func
-      rc(r)
-    }
-    rc
-  }
 }

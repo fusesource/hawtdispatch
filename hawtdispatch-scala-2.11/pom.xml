@@ -28,38 +28,23 @@
   </parent>
 
   <groupId>org.fusesource.hawtdispatch</groupId>
-  <artifactId>hawtdispatch-example</artifactId>
+  <artifactId>hawtdispatch-scala-2.11</artifactId>
   <version>1.21-SNAPSHOT</version>
+  <packaging>bundle</packaging>
 
-  <description>HawtDispatch: Examples</description>
+  <description>HawtDispatch: The libdispatch style API for Scala</description>
 
   <properties>
-    <scala-version>2.10.0</scala-version>
-    <scalatest-version>1.8</scalatest-version>
+    <scala-version>2.11.0</scala-version>
+    <scalatest-version>2.1.5</scalatest-version>
   </properties>
 
   <dependencies>
     
     <dependency>
-      <groupId>org.fusesource.hawtbuf</groupId>
-      <artifactId>hawtbuf</artifactId>
-      <version>1.1</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.fusesource.hawtdispatch</groupId>
-      <artifactId>hawtdispatch-scala</artifactId>
+      <artifactId>hawtdispatch</artifactId>
       <version>1.21-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.fusesource.hawtdispatch</groupId>
-      <artifactId>hawtdispatch-transport</artifactId>
-      <version>1.21-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>org.fusesource.hawtbuf</groupId>
-      <artifactId>hawtbuf</artifactId>
-      <version>${hawtbuf-version}</version>
     </dependency>
 
     <dependency>
@@ -68,17 +53,11 @@
       <version>${scala-version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.scala-lang</groupId>
-      <artifactId>scala-compiler</artifactId>
-      <version>${scala-version}</version>
-      <scope>provided</scope>
-    </dependency>
 
     <!-- Testing -->
     <dependency>
       <groupId>org.scalatest</groupId>
-      <artifactId>scalatest_${scala-version}</artifactId>
+      <artifactId>scalatest_2.11</artifactId>
       <version>${scalatest-version}</version>
       <scope>test</scope>
     </dependency>
@@ -98,11 +77,36 @@
 
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src/main/scala</sourceDirectory>
-    <testSourceDirectory>src/test/scala</testSourceDirectory>
+    
+    <sourceDirectory>../hawtdispatch-scala/src/main/scala</sourceDirectory>
+    <resources>
+      <resource>
+        <directory>../hawtdispatch-scala/src/main/resources</directory>
+      </resource>
+    </resources>
 
+    <testSourceDirectory>../hawtdispatch-scala/src/test/scala</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>../hawtdispatch-scala/src/test/resources</directory>
+      </testResource>
+    </testResources>
+        
     <plugins>
-
+      
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <inherited>true</inherited>
+        <configuration>
+          <instructions>
+            <Fragment-Host>${project.groupId}.hawtdispatch</Fragment-Host>
+            <Export-Package>{local-packages};version=${project.version};-noimport:=true;-split-package:=first</Export-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+      
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
@@ -123,19 +127,10 @@
           <args>
             <!-- <arg>-optimise</arg> -->
             <arg>-deprecation</arg>
-            <arg>-P:continuations:enable</arg>
           </args>
           <scalaVersion>${scala-version}</scalaVersion>
-          <compilerPlugins>
-            <compilerPlugin>
-              <groupId>org.scala-lang.plugins</groupId>
-              <artifactId>continuations</artifactId>
-              <version>${scala-version}</version>
-            </compilerPlugin>
-          </compilerPlugins>
         </configuration>
       </plugin>
-
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.4.3</version>
@@ -151,7 +146,23 @@
 
     </plugins>
   </build>
-
+  
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <scalaVersion>${scala-version}</scalaVersion>
+          <jvmArgs>
+            <jvmArg>-Xmx850M</jvmArg>
+          </jvmArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+  
   <profiles>
 
     <!-- helper for the IDEA scala integration, enable this profile in IDEA -->
@@ -166,21 +177,39 @@
             <configuration>
               <args>
                 <arg>-deprecation</arg>
-                <arg>-P:continuations:enable</arg>
               </args>
-              <compilerPlugins>
-                <compilerPlugin>
-                  <groupId>org.scala-lang.plugins</groupId>
-                  <artifactId>continuations</artifactId>
-                  <version>${scala-version}</version>
-                </compilerPlugin>
-              </compilerPlugins>
             </configuration>
           </plugin>
         </plugins>
       </build>
     </profile>
 
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          
+          <!-- Generate the Scala Docs so that they can be included in the javadoc artifact -->
+          <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <version>3.1.0</version>
+            <executions>
+              <execution>
+                <id>doc</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>doc</goal>
+                </goals>
+                <configuration>
+                  <reportOutputDirectory>${project.build.directory}</reportOutputDirectory>
+                  <outputDirectory>apidocs</outputDirectory>
+                </configuration>                
+              </execution>
+            </executions>
+          </plugin>
+        </plugins> 
+      </build>
+    </profile>
   </profiles>
-
 </project>

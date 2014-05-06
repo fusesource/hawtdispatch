@@ -42,8 +42,6 @@
     
     <junit-version>4.7</junit-version>
     <log4j-version>1.2.14</log4j-version>
-    <scala-version>2.10.0</scala-version>
-    <scalatest-version>1.8</scalatest-version>
     <hawtbuf-version>1.9</hawtbuf-version>
   </properties>
 
@@ -354,6 +352,7 @@
     <module>hawtdispatch-transport</module>
     <!-- <module>hawtdispatch-netty</module> -->
     <module>hawtdispatch-scala</module>
+    <module>hawtdispatch-scala-2.11</module>
     <module>hawtdispatch-example</module>
     <module>hawtdispatch-website</module>
   </modules>
