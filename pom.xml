@@ -28,7 +28,7 @@
 
   <groupId>org.fusesource.hawtdispatch</groupId>
   <artifactId>hawtdispatch-project</artifactId>
-  <version>1.21-SNAPSHOT</version>
+  <version>1.21</version>
   <packaging>pom</packaging>
   
   <name>${project.artifactId}</name>
@@ -86,6 +86,7 @@
     <connection>scm:git:git://forge.fusesource.com/${forge-project-id}.git</connection>
     <developerConnection>scm:git:ssh://git@forge.fusesource.com/${forge-project-id}.git</developerConnection>
     <url>http://github.com/fusesource/hawtdispatch/tree/master</url>
+    <tag>hawtdispatch-project-1.21</tag>
   </scm>
 
   <distributionManagement>
