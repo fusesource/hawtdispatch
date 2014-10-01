@@ -184,4 +184,8 @@ public interface Dispatcher {
      */
     public List<Metrics> metrics();
 
+    /**
+     * Request that all dispatcher queues and workers be shut down gracefully.
+     */
+    public void shutdown();
 }
