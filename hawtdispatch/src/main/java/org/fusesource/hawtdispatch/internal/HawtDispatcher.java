@@ -131,6 +131,7 @@ final public class HawtDispatcher implements Dispatcher {
     public void restart() {
         if( shutdownState.compareAndSet(3, 0) ) {
             timerThread = new TimerThread(this);
+            timerThread.start();
             DEFAULT_QUEUE.start();
             if( LOW_QUEUE!=null ) {
                 LOW_QUEUE.start();

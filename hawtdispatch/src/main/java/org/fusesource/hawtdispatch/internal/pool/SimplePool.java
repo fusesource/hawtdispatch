@@ -60,6 +60,7 @@ public class SimplePool implements WorkerPool {
     }
 
     public void start() {
+        shutdown = false;
         for (int i=0; i < threads.length; i++) {
             threads[i] = createWorker(i);
             threads[i].start();
