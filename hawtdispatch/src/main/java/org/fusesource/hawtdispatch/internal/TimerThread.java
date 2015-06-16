@@ -133,7 +133,7 @@ final public class TimerThread extends Thread {
                                 r.target.execute(r.task);
                             }
                             if( request.task !=null ) {
-                                timerHeap.execute(request);
+                                request.task.run();
                             }
                             return;
                         }

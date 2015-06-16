@@ -184,4 +184,13 @@ public interface Dispatcher {
      */
     public List<Metrics> metrics();
 
+    /**
+     * Shutdown this dispatcher instance.
+     */
+    public void shutdown();
+
+    /**
+     * Restart this dispatcher instance.
+     */
+    public void restart();
 }
