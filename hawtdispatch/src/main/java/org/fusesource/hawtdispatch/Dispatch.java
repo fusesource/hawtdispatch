@@ -255,6 +255,20 @@ public class Dispatch {
     }
 
     /**
+     * Shutdown default dispatcher instance.
+     */
+    public static void shutdown() {
+        DISPATCHER.shutdown();
+    }
+
+    /**
+     * Restart default dispatcher instance.
+     */
+    public static void restart() {
+        DISPATCHER.restart();
+    }
+
+    /**
      * A Runnable task that does nothing.
      */
     public static final Task NOOP = new Task() {

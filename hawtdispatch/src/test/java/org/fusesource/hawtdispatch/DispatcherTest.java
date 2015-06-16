@@ -67,7 +67,45 @@ public class DispatcherTest {
         });
         counter.await(1000, TimeUnit.MILLISECONDS);
         if (counter.getCount() != 0) {
-            Assert.fail("A task was not executed via global queue after shutdown&restart");
+            Assert.fail("A task was not executed via global queue after HawtDispatcher shutdown&restart");
+        }
+    }
+
+    @Test
+    public void testDefaultDispatcherShutdown() throws InterruptedException {
+        int threadCount = Thread.currentThread().getThreadGroup().activeCount();
+        Thread[] before = new Thread[threadCount];
+        Thread.currentThread().getThreadGroup().enumerate(before);
+        Dispatch.getGlobalQueue();
+
+        System.out.println("Shutting down default dispatcher...");
+        Dispatch.shutdown();
+        Thread.sleep(1000);
+
+        threadCount = Thread.currentThread().getThreadGroup().activeCount();
+        Thread[] after = new Thread[threadCount];
+        Thread.currentThread().getThreadGroup().enumerate(after);
+        List<Thread> afterList = new ArrayList<Thread>(Arrays.asList(after));
+        for (Thread t : before) {
+            afterList.remove(t);
+        }
+        if (!afterList.isEmpty()) {
+            Assert.fail("Detected thread leak after Dispatch.shutdown() - remaining threads: " + afterList.toString());
+        }
+
+        System.out.println("Restarting default dispatcher...");
+        Dispatch.restart();
+        final DispatchQueue queue = Dispatch.getGlobalQueue();
+        final CountDownLatch counter = new CountDownLatch(1);
+        queue.execute(new Task() {
+            @Override
+            public void run() {
+                counter.countDown();
+            }
+        });
+        counter.await(1000, TimeUnit.MILLISECONDS);
+        if (counter.getCount() != 0) {
+            Assert.fail("A task was not executed via global queue after default dispatcher shutdown&restart");
         }
     }
 }
