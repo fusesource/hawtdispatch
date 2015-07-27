@@ -40,10 +40,12 @@ public class HeartBeatMonitor {
     Task onKeepAlive = Dispatch.NOOP;
     Task onDead = Dispatch.NOOP;
 
-    short session = 0;
+    volatile short session = 0;
 
     boolean readSuspendedInterval;
     short readSuspendCount;
+
+    Object lock = new Object();
 
     public void suspendRead() {
         readSuspendCount++;
@@ -58,8 +60,10 @@ public class HeartBeatMonitor {
         if (this.session == session) {
             transport.getDispatchQueue().executeAfter(interval, TimeUnit.MILLISECONDS, new Task() {
                 public void run() {
-                    if (HeartBeatMonitor.this.session == session) {
-                        func.run();
+                    synchronized (lock) {
+                        if (HeartBeatMonitor.this.session == session) {
+                            func.run();
+                        }
                     }
                 }
             });
@@ -141,7 +145,9 @@ public class HeartBeatMonitor {
     }
 
     public void stop() {
-        session++;
+        synchronized (lock) {
+            session++;
+        }
     }
 
 
