@@ -1,0 +1,617 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd"> 
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  Architecture
+-->
+<html lang="en">
+  <head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+    <meta content="The libdispatch style API for Java and Scala" name="description"/>
+    <meta content="dispatch,executor,java,scala,libdispatch,gcd,actor,thread,pool" name="keywords"/>
+    <meta content="HawtDispatch" name="author"/>
+    <link type="text/css" rel="stylesheet" href="styles/impact/css/pygmentize.css"/>
+    <link type="text/css" rel="stylesheet" href="styles/impact/css/site.css"/>
+    <title>HawtDispatch</title>
+  </head>
+  <body>
+    <div id="navigation">
+      <div class="wrapper">
+<ul>
+<li><a href="index.html">HawtDispatch 1.16</a></li>
+<li><a href="download.html">Download</a></li>
+<li><a href="community/source.html">Source</a></li>
+<li><a href="community/index.html">Community</a></li>
+<li><a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/index.html">API</a></li>
+</ul>        <div></div>
+      </div>
+    </div>
+    <div id="overview">
+      <div class="wrapper">
+        <div class="logo">
+          <img src="images/project-logo.png" alt="HawtDispatch logo"/>
+        </div>
+        <div class="message">
+<h1>HawtDispatch</h1>
+The libdispatch style API for Java and Scala
+
+          <div></div>
+        </div>
+      </div>
+    </div>
+    <div id="content">
+      <div class="wrapper">
+<p><div class="toc"><ul style="list-style:none;">
+  <li><a href="#Overview">Overview</a></li>
+  <li><a href="#Features">Features</a></li>
+  <li><a href="#The_DispatchQueue">The DispatchQueue</a></li>
+  <li><ul style="list-style:none;">
+    <li><a href="#Handy_imports">Handy imports</a></li>
+    <li><a href="#Submitting_Runnable_Objects">Submitting Runnable Objects</a></li>
+  </ul></li>
+  <li><a href="#Dispatch_Sources">Dispatch Sources</a></li>
+  <li><ul style="list-style:none;">
+    <li><a href="#NIO_Dispatch_Source">NIO Dispatch Source</a></li>
+    <li><a href="#Custom_Dispatch_Source">Custom Dispatch Source</a></li>
+  </ul></li>
+  <li><a href="#Restrictions_on_Executed_Runnables">Restrictions on Executed Runnables</a></li>
+  <li><a href="#Common_Patterns">Common Patterns</a></li>
+  <li><ul style="list-style:none;">
+    <li><a href="#Protecting_Mutable_State">Protecting Mutable State</a></li>
+  </ul></li>
+  <li><a href="#Scala_Only_Features">Scala Only Features</a></li>
+  <li><ul style="list-style:none;">
+    <li><a href="#Using_Futures">Using Futures</a></li>
+    <li><a href="#Scala_Continuations">Scala Continuations</a></li>
+    <li><a href="#Rich_Executors">Rich Executors</a></li>
+    <li><a href="#Profiling_Hooks">Profiling Hooks</a></li>
+  </ul></li>
+  <li><a href="#References">References</a></li>
+  <li><a href="#Applications_Using_HawtDispatch">Applications Using HawtDispatch</a></li>
+</ul></div></p>
+
+<h2 id = "Overview">Overview</h2>
+
+<p>HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the <code>libdispatch</code> API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.</p>
+
+<h2 id = "Features">Features</h2>
+
+<ul>
+<li>Java 1.5 API</li>
+<li>Scala 2.8 API</li>
+<li>Thread Pooling</li>
+<li>Delayed Task Execution</li>
+<li>Priority Task Execution</li>
+<li>NIO Event Notifications</li>
+</ul>
+
+<h2 id = "The_DispatchQueue">The DispatchQueue</h2>
+
+<p>The most important objects in the HawtDispatch API, are the <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/DispatchQueue.html">DispatchQueue</a>
+objects.  They are Executor objects which will execute submitted runnable 
+objects at a later time.  They come in 2 flavors:</p>
+
+<ul>
+<li><p><strong>Global Dispatch Queue</strong>: The tasks submitted to the global dispatch queues will execute 
+concurrently and therefore must be thread safe.  The order of execution of the tasks
+is non deterministic.  There are only 3 global queues shared system wide.  One for
+each priority level and can be accessed using the <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/Dispatch.html#getGlobalQueue(org.fusesource.hawtdispatch.DispatchPriority)"><code>Dispatch.getGlobalQueue</code></a>
+method.</p>
+
+<p>Example:</p></li>
+</ul>
+
+<div class="wide">
+<div class="compare"><div class="compare-left"><h3>In Java</h3><div class="syntax"><pre name='code' class='brush: java; gutter: false;'><code>DispatchQueue queue = getGlobalQueue(HIGH);</code></pre></div></div><div class="compare-right"><h3>In Scala</h3><div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>val queue = getGlobalQueue(HIGH)
+</code></pre></div></div><br class="clear"/></div>
+
+</div>
+
+<ul>
+<li><p><strong>Serial Dispatch Queue</strong>: Execute the submitted runnable tasks in FIFO order. A serial dispatch queue will 
+only invoke one runnable at a time, but independent queues may each execute their 
+runnable objects concurrently with respect to each other.  Serial dispatch queues are created
+by the application using the <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/Dispatch.html#createQueue(java.lang.String)"><code>Dispatch.createQueue</code></a>
+method.  </p>
+
+<p>Example:</p></li>
+</ul>
+
+<div class="wide">
+<div class="compare"><div class="compare-left"><h3>In Java</h3><div class="syntax"><pre name='code' class='brush: java; gutter: false;'><code>DispatchQueue queue = createQueue(&quot;My queue&quot;);</code></pre></div></div><div class="compare-right"><h3>In Scala</h3><div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>val queue = createQueue(&quot;My Queue&quot;)
+</code></pre></div></div><br class="clear"/></div>
+
+</div>
+
+<h3 id = "Handy_imports">Handy imports</h3>
+
+<p>The examples in this document assume that you have 
+added the following imports:</p>
+
+<div class="wide">
+<div class="compare"><div class="compare-left"><h3>In Java</h3><div class="syntax"><pre name='code' class='brush: java; gutter: false;'><code>import org.fusesource.hawtdispatch.*;
+import static org.fusesource.hawtdispatch.Dispatch.*;</code></pre></div></div><div class="compare-right"><h3>In Scala</h3><div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>import _root_.org.fusesource.hawtdispatch._
+</code></pre></div></div><br class="clear"/></div>
+
+</div>
+
+<h3 id = "Submitting_Runnable_Objects">Submitting Runnable Objects</h3>
+
+<p>Once you have a reference to a queue object you can use it to 
+perform some asynchronous processing.  The Scala queue object is 
+enriched with several helpers to make enqueuing async tasks easier. 
+Example:</p>
+
+<div class="compare"><div class="compare-left"><h3>In Java</h3><div class="syntax"><pre name='code' class='brush: java; gutter: false;'><code>queue.execute(new Runnable(){
+  public void run() {
+    System.out.println(&quot;Hi!&quot;);
+  }
+});</code></pre></div></div><div class="compare-right"><h3>in Scala</h3><div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>queue {
+  System.out.println(&quot;Hi!&quot;);
+}
+// or
+queue.execute(^{
+  System.out.println(&quot;Hi!&quot;);
+})
+</code></pre></div></div><br class="clear"/></div>
+
+<p>The <code>^{ .... }</code> block syntax in the Scala example is browed from the GCD.  It produces
+a regular Java Runnable object.</p>
+
+<h2 id = "Dispatch_Sources">Dispatch Sources</h2>
+
+<p>A Dispatch Source is used trigger the execution of task on a queue based on an external event.  They are usually used to integrate
+with external IO events from NIO, but you can also use a custom Dispatch Source to coalesce multiple application generated events
+into a single event which triggers an async task.</p>
+
+<p>Dispatch sources are initially created in a suspended state.  Once its' created and you have configured it's event handler, you should
+call the <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/Suspendable.html#resume()"><code>DispatchSource.resume</code></a> method so that it is executed on the specified queue.  If you later
+want to stop processing events for a period of time, call the <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/Suspendable.html#suspend()"><code>DispatchSource.suspend</code></a> method.</p>
+
+<h3 id = "NIO_Dispatch_Source">NIO Dispatch Source</h3>
+
+<p>NIO integration is accomplished via a <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/DispatchSource.html">DispatchSource</a> object which is
+created using the <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/Dispatch.html#createSource(java.nio.channels.SelectableChannel,%20int,%20org.fusesource.hawtdispatch.DispatchQueue)"><code>Dispatch.createSource</code></a> method.  You supply it
+the <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/nio/channels/SelectableChannel.html"><code>SelectableChannel</code></a> and the operations your interested in receiving events for
+like <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/nio/channels/SelectionKey.html#OP&#95;READ"><code>OP_READ</code></a> or <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/nio/channels/SelectionKey.html#OP&#95;WRITE"><code>OP_WRITE</code></a> and when it's that NIO event is raised, 
+it will execute a runnable callback you configure on a dispatch queue 
+you specify. HawtDispatch takes care of setting up and managing the
+NIO selectors and selector keys for you.</p>
+
+<p>Example:</p>
+
+<div class="wide">
+<div class="compare"><div class="compare-left"><h3>In Java</h3><div class="syntax"><pre name='code' class='brush: java; gutter: false;'><code>SelectableChannel channel = ...
+DispatchQueue queue = createQueue()
+DispatchSource source = createSource(channel, OP_READ, queue);
+source.setEventHandler(new Runnable(){
+  public void run() {
+    ByteBuffer buffer = ByteBuffer.allocate(1024);
+    int count;
+    while( (c=channel.read(buffer)) &gt; 0 ) {
+      // just dump it to the console
+      System.out.write(buffer.array(), buffer.offset(), buffer.position());
+    }
+  }
+});
+source.resume();</code></pre></div></div><div class="compare-right"><h3>In Scala</h3><div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>val channel:SelectableChannel = ...
+val queue = createQueue
+val source = createSource(channel, OP_READ, queue)
+source.onEvent {
+  val buffer = ByteBuffer.allocate(1024)
+  var count=0
+  while( (c=channel.read(buffer)) &gt; 0 ) {
+    // just dump it to the console
+    System.out.write(buffer.array(), buffer.offset(), buffer.position())
+  }
+}
+source.resume
+</code></pre></div></div><br class="clear"/></div>
+
+</div>
+
+<h3 id = "Custom_Dispatch_Source">Custom Dispatch Source</h3>
+
+<p>A Custom Dispatch Source is used to coalesce multiple application generated events
+into a single event which triggers an async task.  By using a Custom Dispatch Source you
+reduce the amount of cross thread contention since multiple events generated by one thread
+are passed to the processing thread as a single batch.</p>
+
+<p>When you create a custom dispatch source, you provide it an aggregator which controls
+how events are coalesced.  The supplied aggregators are:</p>
+
+<ul>
+<li><strong><code>EventAggregators.INTEGER_ADD</code></strong> : Merges integer events by adding them</li>
+<li><strong><code>EventAggregators.LONG_ADD</code></strong> : Merges long events by adding them</li>
+<li><strong><code>EventAggregators.INTEGER_OR</code></strong> : Merges integer events by bit wise or'ing them</li>
+<li><strong><code>EventAggregators.linkedList()</code></strong> : Merges Object events by adding them to a LinkedList</li>
+</ul>
+
+<p>Event producers can call the <code>merge(event)</code> method on the custom dispatch source to 
+supply it data.  Calling the merge method will cause the event handler Runnable configured
+on the dispatch source to be executed.  When it is executed, it you should use the 
+custom dispatch source <code>getData()</code> method to access the merged event. The <code>getData()</code>
+should only be called from the configured event handler. </p>
+
+<div class="wide">
+<div class="compare"><div class="compare-left"><h3>In Java</h3><div class="syntax"><pre name='code' class='brush: java; gutter: false;'><code>final Semaphore done = new Semaphore(1-(1000*1000));
+
+DispatchQueue queue = createQueue();
+final CustomDispatchSource&lt;Integer, Integer&gt; source = createSource(EventAggregators.INTEGER_ADD, queue);
+source.setEventHandler(new Runnable() {
+  public void run() {
+    int count = source.getData();
+    System.out.println(&quot;got: &quot; + count);
+    done.release(count);
+  }
+});
+source.resume();
+
+// Produce 1,000,000 concurrent merge events
+for (int i = 0; i &lt; 1000; i++) {
+  getGlobalQueue().execute(new Runnable() {
+    public void run() {
+      for (int j = 0; j &lt; 1000; j++) {
+        source.merge(1);
+      }
+    }
+  });
+}
+
+// Wait for all the event to arrive.
+done.acquire();</code></pre></div></div><div class="compare-right"><h3>In Scala</h3><div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>val done = new Semaphore(1 - (1000 * 1000))
+
+val queue = createQueue()
+val source = createSource(EventAggregators.INTEGER_ADD, queue)
+source.onEvent {
+  val count = source.getData()
+  println(&quot;got: &quot; + count)
+  done.release(count.intValue)
+}
+source.resume();
+
+// Produce 1,000,000 concurrent merge events
+for (i &lt;- 0 until 1000) {
+  globalQueue {
+    for (j &lt;- 0 until 1000) {
+      source.merge(1)
+    }
+  }
+}
+
+// Wait for all the event to arrive.
+done.acquire()
+</code></pre></div></div><br class="clear"/></div>
+
+</div>
+
+<p>On an 8 core machine you would see output similar to:</p>
+
+<div class="syntax"><pre name='code' class='brush: text; gutter: false;'><code>
+got: 167000
+got: 103000
+got: 103000
+got: 163000
+got: 119000
+got: 109000
+got: 111000
+got: 125000
+</code></pre></div>
+
+<h2 id = "Restrictions_on_Executed_Runnables">Restrictions on Executed Runnables</h2>
+
+<p>All runnable actions executed asynchronously by HawtDispatch should be non-blocking
+and avoid waiting on any synchronized objects.  If a blocking call has to performed, it should be done 
+asynchronously in a new thread not managed by HawtDispatch.</p>
+
+<h2 id = "Common_Patterns">Common Patterns</h2>
+
+<h3 id = "Protecting_Mutable_State">Protecting Mutable State</h3>
+
+<p>A common pattern that shows up to use a serial queue to synchronize access to the mutable state of an 
+object.  Example:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+  class MyCounter {
+    val queue = createQueue()
+    var counter = 0;
+
+    def add(value:Int) = queue {
+      counter += value
+    } 
+
+    def sub(value:Int) = queue {
+      counter -= value
+    }
+  }
+</code></pre></div>
+
+<h2 id = "Scala_Only_Features">Scala Only Features</h2>
+
+<p>When you use the HawtDispatch Scala interface you gain several additional features such
+are the ability to capture asynchronous results in in Futures or the ability to 
+use Scala continuation.</p>
+
+<h3 id = "Using_Futures">Using Futures</h3>
+
+<p>With futures you can run an asynchronous computation and return a
+<a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch-scala/scaladocs/org/fusesource/hawtdispatch/Future.html">Future</a> instance which you can use to obtain the result of
+the future computation.</p>
+
+<p>Creating the future:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+val future:Future[Int] = queue.future {
+  var rc=0;
+  for( i &lt;- 0 until 100 ) {
+    rc = rc * i
+  }
+  rc
+}
+</code></pre></div>
+
+<p>Checking to see if the future has completed:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+if( future.completed ) {
+  println(&quot;computation completed&quot;)
+}
+</code></pre></div>
+
+<p>Setting a callback to be invoked once the future completes:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+future.onComplete {
+  println(&quot;computation completed&quot;)
+}
+</code></pre></div>
+
+<p>Getting the result of the future computation. </p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+val rc:Int = future() 
+</code></pre></div>
+
+<p>Warning: getting the result of the future blocks until the future completes.</p>
+
+<p>Sometimes you need to work with multiple futures concurrently.  Perhaps you 
+want to wait for them all to complete or wait for the first one to complete. </p>
+
+<p>Assuming you have created a few futures such as:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+val future1:Future[Int] = ...
+val future2:Future[Int] = ...
+val future3:Future[Int] = ...
+</code></pre></div>
+
+<p>Then you can create a future that gathers and then wait for the results using the 
+<a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch-scala/scaladocs/org/fusesource/hawtdispatch/Future$.html">Future companion object</a>. Example:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+val future = Future.all(List(future1,future2,future3))
+future().foreach { result:Int =&gt;
+  println(result)
+}
+</code></pre></div>
+
+<p>To just wait for the first result:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+val future:Future[Int] = Future.first(List(future1,future2,future3))
+println(&quot;first result was: &quot;+future())
+</code></pre></div>
+
+<p>To collect the results via a folding function:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+val future:Future[Int] = Future.fold(List(future1,future2,future3), 0) { (sum, value)=&gt;
+  sum+value
+}
+println(&quot;future sum was: &quot;+future())
+</code></pre></div>
+
+<h3 id = "Scala_Continuations">Scala Continuations</h3>
+
+<p>Since blocking operations are not allowed in HawtDispatch executed tasks, when one
+dispatch queue task needs to get a result of a computation from another task
+that is asynchronously executed you typically have to use callback or continuation
+passing style API.  Example:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+object Foo {
+  val a = createQueue()
+  var held:Int = 0;
+
+  def hold(v:Int)(result: (Int)=&gt;Unit) = a {
+    val rc = held
+    held = v
+    result( rc )
+  }
+}
+</code></pre></div>
+
+<p>Notice that the example above executes the computation on dispatch queue <code>a</code> to guard
+access to the <code>held</code> variable. Next you will find and example of what a caller to that
+<code>hold</code> method looks like.</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+object Bar {
+  val b = createQueue()
+  var sum:Int = 0;
+
+  def test = b {
+    Foo.hold(sum+5) { result=&gt;
+      b {
+        sum += result
+        println(&quot;sum is at: &quot;+sum)
+      }
+    }
+  }
+}
+</code></pre></div>
+
+<p>In the case of the <code>Bar</code> object above, access to the <code>sum</code> variable is being guarded by
+the <code>b</code> dispatch queue.  It calls the <code>Foo.hold</code> method and passes the callback function.
+Notice that two <code>b { ... }</code> blocks are required to protect access to the sum variable.</p>
+
+<p>When you use HawtDispatch's scala continuation support, the previous example is simplified
+by eliminating the need to pass the callback parameter. Example:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+import util.continuations._
+
+object Foo {
+  var held:Int = 0;
+  val a = createQueue()
+
+  def hold(v:Int) = a ! {
+    val rc = held
+    held = v
+    rc
+  }
+}
+</code></pre></div>
+
+<p>When you use dispatch queue's '!' method, it's function block will get executed 
+asynchronously on the dispatch queue and the result of the function will be passed
+to the continuation that gets passed in implicitly by the Scala compiler's continuation
+plugin.</p>
+
+<p>On the calling side of the method, you must use the <code>reset { ... }</code> to delimit what defines
+the continuation. Every operation after the <code>hold</code> method call will be re-written into a
+continuation block and passed as the implicit continuation of <code>hold</code> method. Once the hold
+method completes it calls back to the implicit continuation.</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+object Bar {
+  var sum:Int = 0;
+  val b = createQueue()
+
+  def test = b {
+    reset {
+      val result = Foo.hold(sum+5)
+      sum += result
+      println(&quot;sum is at: &quot;+sum)
+    }
+  }
+}
+</code></pre></div>
+
+<p>Note that in this version, we did not need the 2nd <code>b { }</code> block to guard access when we
+assign the sum variable. This is because the '!' method stores the original dispatch queue
+it was called from and executes the continuation as a task on the original dispatch queue.</p>
+
+<p>To make resetting even easier and to pass back a future result of the async call, the previous 
+test method simplified using the <code>!!</code> method as the following example shows:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+object Bar {
+  def test:Future[Int] = b !! {
+    val result = Foo.hold(sum+5)
+    sum += result
+    println(&quot;sum is at: &quot;+sum)
+    sum
+  }  
+}
+</code></pre></div>
+
+<p>The <code>!!</code> method executes the given block within a reset and captures it's result in a Future which 
+can be used by the caller to examine the future result of the computation.</p>
+
+<h3 id = "Rich_Executors">Rich Executors</h3>
+
+<p>Once you import <code>import _root_.org.fusesource.hawtdispatch._</code> all Executor implementations
+get most extra syntax sugar that dispatch queues enjoy.  For example:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+val executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+
+executor {
+  println(&quot;This block is run async on the exectutor&quot;);
+}
+</code></pre></div>
+
+<p>For more details see the <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch-scala/scaladocs/RichExecutor.html">RichExecutor</a> documentation.</p>
+
+<h3 id = "Profiling_Hooks">Profiling Hooks</h3>
+
+<p>Every dispatch queue now has a <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/DispatchQueue.html#metrics%28%29"><code>metrics</code></a>
+method that allows you to collect the usage <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/Metrics.html"><code>Metric</code></a>s of the
+queue since the method was last called if profiling is enabled for the dispatch queue. If
+profiling is not enabled on the queue then the method returns null. To enable or disable
+profiling on a queue you can call the queue's
+<a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/DispatchQueue.html#profile%28boolean%29"><code>profile</code></a> method. If you want to
+enable profiling on all queues by default then set the <code>hawtdispatch.profile</code> System
+property on the JVM.</p>
+
+<p>If you want to get the metrics for all the queues currently being used in the JVM, then you
+can call the <a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/Dispatch.html#metrics%28%29"><code>Dispatch.metrics()</code></a> method to get a
+list of metrics of all the queues.</p>
+
+<p>The collected metrics can come in handy to trouble shoot misbehaving applications. You can
+setup a periodic task to check for dispatch queues which who's tasks either wait for a long
+time before executing or take a long time to execute.  Example:</p>
+
+<div class="syntax"><pre name='code' class='brush: scala; gutter: false;'><code>
+  def monitor_hawtdispatch:Unit = {
+
+    import java.util.TimeUnit._
+    import collection.JavaConversions._
+
+    // do the actual check in 1 second..
+    getGlobalQueue().after(1, SECONDS) {
+
+      Dispatch.metrics.foreach{ metric=&gt;
+        if( metric.totalWaitTimeNS &gt; MILLISECONDS.toNanos(10)) {
+          println(&quot;Dispatch queue haveing slow wait time: &quot;+metric)
+        }
+        if( metric.totalRunTimeNS &gt; MILLISECONDS.toNanos(10)) {
+          println(&quot;Dispatch queue haveing long rune time: &quot;+metric)
+        }
+      }
+
+      // to check again...
+      monitor_hawtdispatch
+    }
+  }
+</code></pre></div>
+
+<h2 id = "References">References</h2>
+
+<ul>
+<li><a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/org/fusesource/hawtdispatch/package-summary.html">Java API</a></li>
+<li><a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch-scala/scaladocs/index.html">Scala API</a></li>
+<li><a href="http://github.com/chirino/hawtdispatch/blob/master/hawtdispatch-example/src/main/scala/org/fusesource/hawtdispatch/example/EchoServer.scala#L34">Echo Server Example</a> Source code for a simple TCP based echo server.</li>
+</ul>
+
+<h2 id = "Applications_Using_HawtDispatch">Applications Using HawtDispatch</h2>
+
+<ul>
+<li><a href="http://activemq.apache.org/apollo">ActiveMQ Apollo</a> Apollo is an reliable messaging server built 
+using the HawtDispatch threading architecture.</li>
+<li><a href="http://http://akka.io/">Akka</a> Is an Erlang style Actor framework for Scala.  It's fastest dispatcher is implemented with HawtDispatch.</li>
+<li><a href="https://github.com/derekjw/fyrie-redis">fyrie-redis</a> A Redis client written Scala, using Akka actors, HawtDispath and non-blocking IO. Supports Redis 2.0+</li>
+</ul>
+        <div></div>
+      </div>
+    </div>
+  </body>
+</html>

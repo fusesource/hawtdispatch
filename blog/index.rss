@@ -1,0 +1,415 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<rss version="2.0">
+        <channel>
+          <title>The HawtDispatch Blog</title>
+          <link>http://hawtdispatch.fusesource.org/blog/</link>
+          <description>The libdispatch style API for Java and Scala</description>
+          <pubDate>Wed, 7 May 2014 16:28:02 -0400</pubDate>
+          <lastBuildDate>Wed, 7 May 2014 16:28:02 -0400</lastBuildDate>
+          <generator>Scalate - http://scalate.fusesource.org/</generator>
+          <item>
+              <title>HawtDispatch 1.12 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-12.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.12.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.12 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Custom dispatch sources will now return null after the event has been received to avoid accidentally double processing events.&lt;/li&gt;
+&lt;li&gt;Make sure we only return false from the offer method when the transport is also full()&lt;/li&gt;
+&lt;li&gt;Add a closeOnCancel option to disable closing the socket when the transport is stopped.&lt;/li&gt;
+&lt;li&gt;Rename the SecuredTransport interface to SecuredSession and now both the SSLProtocolCodec and SslTransport implement it.&lt;/li&gt;
+&lt;li&gt;You can now handle SSL/TLS encoding/decoding via a wrapping protocol codec.  ProtocolCodec and Transport interfaces needs a couple of adjustments to properly support the co&lt;/li&gt;
+&lt;li&gt;Better handling of getting the local host address.&lt;/li&gt;
+&lt;li&gt;Protocol codec decoding optimizations.&lt;/li&gt;
+&lt;li&gt;Move all the connect logic into the start method.&lt;/li&gt;
+&lt;li&gt;Do host name resolutions on a blocking executor to avoid stalling the hawtdispatch threads.&lt;/li&gt;
+&lt;li&gt;Resize the read buffer after reading from the channel if to avoid to avoid holding on to large buffers.&lt;/li&gt;
+&lt;li&gt;Support changing the socket send/recv buffer size on started transports and servers.&lt;/li&gt;
+&lt;li&gt;Do at least a non blocking select when we notice that another thread requested the NIO manager wakeup.  This should allow us to pickup any new IO events that have occurred&lt;/li&gt;
+&lt;li&gt;Dropped the continuations example, added a SSL transport client example&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.11 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-11.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.11.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.11 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Support buffer pooling in the abstract protocol codec.&lt;/li&gt;
+&lt;li&gt;Adding a TransportAware interface which codecs can implement to be injected with their associated codec.&lt;/li&gt;
+&lt;li&gt;Make it easy to configure the client auth mode on the ssl transport server.&lt;/li&gt;
+&lt;li&gt;Fixes SSL transport bug where inbound data was not delivered after SSL handshake completed.&lt;/li&gt;
+&lt;li&gt;Allow a SslTransportServer to be created just using the constructor.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.10 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-10.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.10.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.10 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Fix assertion error message.&lt;/li&gt;
+&lt;li&gt;Switch to using 'Task' abstract base instead of the Runnable interface, in many cases it improves perf by 20% since virtual invocations are cheaper then interface invocation&lt;/li&gt;
+&lt;li&gt;Adding a UDP based transport.&lt;/li&gt;
+&lt;li&gt;Support configuring the client auth mode.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.9 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-9.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.9.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.9 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Fixes LOW priority global queue was being created with a high thread priority.&lt;/li&gt;
+&lt;li&gt;Distribute work load spikes fairly to the worker threads.&lt;/li&gt;
+&lt;li&gt;Support updating the transport's dispatch queue.&lt;/li&gt;
+&lt;li&gt;Add assertion that catches the following error: queue.setTargetQueue(queue)&lt;/li&gt;
+&lt;li&gt;Adding a SecureTransport interface and removing many of the leaky abstractions in the transport package.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.8 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-8.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.8.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.8 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Fixes CPU spin that occurred when a peer disconnected while SSL handshake is in progress.&lt;/li&gt;
+&lt;li&gt;Could not create a client initiated SSL connection.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.7 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-7.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.7.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.7 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Cleaning up the transport interfaces. Added an abstract protocol codec that makes it easier to implement them.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.6 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-6.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.6.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.6 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Support using a system property to configure the number of dispatch threads.&lt;/li&gt;
+&lt;li&gt;Added a hawtdispatch-transport module which provides nice Transport abstraction for working with Sockets and HawtDispatch.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.5 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-5.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.5.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.5 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;HawtDispatch threads are now in a thread group.  Setting the UnchaughtExceptionHandler on one of the HawtDispatch threads set the handler for all the threads in the pool.&lt;/li&gt;
+&lt;li&gt;Pass an uncaught exceptions to the UncaughtExceptionHandler configured on the HawtDispatch threads.&lt;/li&gt;
+&lt;li&gt;Added UDP example&lt;/li&gt;
+&lt;li&gt;Fix race condition that was occurring when a serial dispatch queue was suspended.&lt;/li&gt;
+&lt;li&gt;Switch to new scalate version which fixes build problems when on OS X Lion.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.4 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-4.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.4.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.4 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Support ordered EventAggregators&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.3 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-3.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.3.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.3 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Added an assertExecuting method to the DispatchQueue interface.&lt;/li&gt;
+&lt;li&gt;Protect against exceptions from the event dispatch source handlers.&lt;/li&gt;
+&lt;li&gt;Upgrade to Scala 2.9.0-1&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.2 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-2.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.2.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.2 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;New await methods on Futures.&lt;/li&gt;
+&lt;li&gt;OSGi Support&lt;/li&gt;
+&lt;li&gt;New !^ method hides the scala continuations reset block.&lt;/li&gt;
+&lt;li&gt;Scala API enriches dispatch sources&lt;/li&gt;
+&lt;li&gt;New HawtServerSocketChannel and HawtSocketChannel simplifies doing non blocking IO by wrapping
+IO operations in scala continuations.&lt;/li&gt;
+&lt;li&gt;NIO bug fixes!&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.1 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-1.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.1.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.1 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Profiler Hooks&lt;/li&gt;
+&lt;li&gt;Upgraded to Scala 2.8.1&lt;/li&gt;
+&lt;li&gt;Scala continuations support&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item><item>
+              <title>HawtDispatch 1.0 Released</title>
+              <link>http://hawtdispatch.fusesource.org/blog/releases/release-1-0.html</link>
+              <description>&lt;p&gt;&lt;a href=&quot;http://fusesource.com&quot;&gt;FuseSource&lt;/a&gt; is pleased to announce the availability of
+HawtDispatch 1.0.&lt;/p&gt;
+
+&lt;p&gt;HawtDispatch is a small ( less than 100k ) thread pooling and NIO event
+notification framework API modeled after the &lt;code&gt;libdispatch&lt;/code&gt; API that Apple
+created to power the Grand Central Dispatch (GCD) technology in OS X. It
+allows you to easily develop multi-threaded applications without having to
+deal with the problems that traditionally plague multi-threaded application
+development.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;HawtDispatch 1.0 Highlights&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Initial release.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Further information:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/download.html&quot;&gt;Download&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/fusesource/hawtdispatch/blob/master/changelog.md&quot;&gt;Change Log&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org&quot;&gt;Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://hawtdispatch.fusesource.org/community/index.html&quot;&gt;Feedback&lt;/a&gt; is always welcome!&lt;/p&gt;</description>
+            </item>
+        </channel>
+      </rss>

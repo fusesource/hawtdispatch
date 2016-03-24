@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML Basic 1.1//EN" "http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd"> 
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  Architecture
+-->
+<html lang="en">
+  <head>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+    <meta content="The libdispatch style API for Java and Scala" name="description"/>
+    <meta content="dispatch,executor,java,scala,libdispatch,gcd,actor,thread,pool" name="keywords"/>
+    <meta content="HawtDispatch" name="author"/>
+    <link type="text/css" rel="stylesheet" href="styles/impact/css/pygmentize.css"/>
+    <link type="text/css" rel="stylesheet" href="styles/impact/css/site.css"/>
+    <title>HawtDispatch Stomp Example</title>
+  </head>
+  <body>
+    <div id="navigation">
+      <div class="wrapper">
+<ul>
+<li><a href="index.html">HawtDispatch 1.16</a></li>
+<li><a href="download.html">Download</a></li>
+<li><a href="community/source.html">Source</a></li>
+<li><a href="community/index.html">Community</a></li>
+<li><a href="http://hawtdispatch.fusesource.org/versions/1.16/maven/hawtdispatch/apidocs/index.html">API</a></li>
+</ul>        <div></div>
+      </div>
+    </div>
+    <div id="overview">
+      <div class="wrapper">
+        <div class="logo">
+          <img src="images/project-logo.png" alt="HawtDispatch logo"/>
+        </div>
+        <div class="message">
+<h1>HawtDispatch</h1>
+The libdispatch style API for Java and Scala
+
+          <div></div>
+        </div>
+      </div>
+    </div>
+    <div id="content">
+      <div class="wrapper">
+<h2 id = "Overview">Overview</h2>
+
+<p>HawtDispatch makes it easy to create multi-threaded NIO based applications.
+To illustrate this, the source distribution includes an example messaging server 
+that implements the main parts of the 
+<a href="http://activemq.apache.org/stomp/stomp10/specification.html">STOMP</a> protocol.  The 
+server supports topics and 'simplistic' queues.</p>
+
+<p>You can browse it's source code online at: <a href="http://github.com/fusesource/hawtdispatch/blob/master/hawtdispatch-example/src/main/scala/org/fusesource/hawtdispatch/example/stomp">github</a></p>
+
+<h2 id = "Trying_it_Out">Trying it Out</h2>
+
+<p>Once you <a href="community/building.html">build the code</a>, start 2 terminals in
+the <a href="http://github.com/chirino/hawtdispatch/blob/master/hawtdispatch-example/"><code>hawtdispatch/hawtdispatch-example</code></a> 
+directory.  In both terminals execute the <code>mvn scala:console</code> command to start a 
+Scala interactive interpreter.</p>
+
+<h3 id = "Starting_the_Broker">Starting the Broker</h3>
+
+<p>The first terminal will be used to run the STOMP based message broker. Execute the 
+following statements in that terminal:</p>
+
+<div class="syntax"><pre name='code' class='brush: text; gutter: false;'><code>
+val broker = org.fusesource.hawtdispatch.example.stomp.StompBroker
+broker.run
+</code></pre></div>
+
+<p>You should see output similar to the following:</p>
+
+<div class="syntax"><pre name='code' class='brush: text; gutter: false;'><code>
+scala&gt; val broker = org.fusesource.hawtdispatch.example.stomp.StompBroker
+broker: org.fusesource.hawtdispatch.example.stomp.StompBroker.type = 
+--------------------------------------
+StompBroker Properties
+--------------------------------------
+bindAddress      = 0.0.0.0
+port             = 61613
+
+
+scala&gt; broker.run
+Starting stomp broker...
+Startup complete.
+</code></pre></div>
+
+<h3 id = "Starting_the_Clients">Starting the Clients</h3>
+
+<p>The second terminal will be used to run a performance sampling STOMP 
+producer and consumer.  Execute the following statements in that terminal: </p>
+
+<div class="syntax"><pre name='code' class='brush: text; gutter: false;'><code>
+val client = org.fusesource.hawtdispatch.example.stomp.StompLoadClient
+</code></pre></div>
+
+<p>You should see output similar to the following:</p>
+
+<div class="syntax"><pre name='code' class='brush: text; gutter: false;'><code>
+scala&gt; val client = org.fusesource.hawtdispatch.example.stomp.StompLoadClient
+client: org.fusesource.hawtdispatch.example.stomp.StompLoadClient.type = 
+--------------------------------------
+StompLoadClient Properties
+--------------------------------------
+uri              = stomp://127.0.0.1:61613
+producers        = 1
+consumers        = 1
+destinationType  = queue
+destinationCount = 1
+messageSize      = 1024
+producerSleep    = 0
+consumerSleep    = 0
+bufferSize       = 77056
+useContentLength = true
+sampleInterval   = 5000
+
+</code></pre></div>
+
+<p>The client object allows you to configure several parameters of the load test.  For example, 
+you can control the number consumer and producer connections, the type of destination used.
+If we wanted to test out a pub/sub fan out scenario where 10 consumers are receiving message
+broadcasts from one producer, you would execute the following statements:</p>
+
+<div class="syntax"><pre name='code' class='brush: text; gutter: false;'><code>
+client.destinationType = &quot;topic&quot;
+client.producers = 1
+client.consumers = 10
+</code></pre></div>
+
+<p>Once you are happy with the client configuration, you just need to execute <code>client.run</code> for
+it to start executing. Pressing enter will end the execution and allow you to tweak the
+configuration before running it again.</p>
+
+<p>When run, you should see output similar to the following:</p>
+
+<div class="syntax"><pre name='code' class='brush: text; gutter: false;'><code>
+scala&gt; client.destinationType = &quot;topic&quot;
+
+scala&gt; client.producers = 1
+
+scala&gt; client.consumers = 10
+
+scala&gt; client.run
+=======================
+Press ENTER to shutdown
+=======================
+
+Producer rate: 22,708.520 per second
+Consumer rate: 226,332.781 per second
+Producer rate: 24,306.738 per second
+Consumer rate: 242,921.375 per second
+Producer rate: 24,907.004 per second
+Consumer rate: 249,344.063 per second
+=======================
+Shutdown
+=======================
+</code></pre></div>
+
+<p>The client was implemented using traditional blocking IO and java threads.  If time allows,
+we should also implement this using HawtDispatch.</p>
+
+<h3 id = "Interesting_Implementation_Notes">Interesting Implementation Notes</h3>
+
+<ul>
+<li><p>Not a single synchronized keyword was used</p></li>
+<li><p>Each connection is assigned 1 HawtDispatch serial queue and that serial
+dispatch queue is pined to 1 thread queue by setting the serial
+queue's target to be a random thread queue.</p></li>
+<li><p>Producer connections send message to consumer connection using a credit
+based transfer window. This allows producer connections to send many
+messages to a consumer connection without much blocking or contention.</p></li>
+<li><p>When there is credit in the transfer window, a custom dispatch source is
+used so that the messages 'batch' up and transferred from the producer
+thread to a consumer thread in as a batch.</p></li>
+<li><p>Broker will periodically &ldquo;colocate&rdquo; producer connections with consumer
+connections by re-pinning the producer's serial queue to match the thread
+queue of the consumer connection.  This allows the producer to avoid
+cross thread contention.</p></li>
+</ul>
+        <div></div>
+      </div>
+    </div>
+  </body>
+</html>
