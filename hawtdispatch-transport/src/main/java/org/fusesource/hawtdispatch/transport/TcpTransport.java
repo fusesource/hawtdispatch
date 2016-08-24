@@ -129,7 +129,8 @@ public class TcpTransport extends ServiceBase implements Transport {
         }
         void onCanceled() {
             trace("CANCELING.onCanceled");
-            remaining--;
+            // it could be zero when neither readSource nor writeSource has been initialized yet
+            if (remaining > 0) remaining--;
             if( remaining!=0 ) {
                 return;
             }
@@ -463,6 +464,10 @@ public class TcpTransport extends ServiceBase implements Transport {
                                 public void run() {
                                     // No need to complete if we have been canceled.
                                     if( ! socketState.is(CONNECTING.class) ) {
+                                        // fire onCanceled() for CANCELLING state. otherwise, it will never be triggered
+                                        if ( socketState.is(CANCELING.class)) {
+                                    		socketState.onCanceled();
+                                    	}
                                         return;
                                     }
                                     try {
