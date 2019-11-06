@@ -34,7 +34,7 @@
   <description>HawtDispatch: Examples</description>
 
   <properties>
-    <scala-version>2.10.0</scala-version>
+    <scala-version>2.13.1</scala-version>
     <scalatest-version>1.8</scalatest-version>
   </properties>
 
