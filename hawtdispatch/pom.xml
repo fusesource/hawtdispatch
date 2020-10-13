@@ -36,7 +36,7 @@
   <description>HawtDispatch: The libdispatch style API for Java</description>
 
   <properties>
-    <junit-version>4.7</junit-version>
+    <junit-version>4.13.1</junit-version>
     <asm-version>3.1</asm-version>
     <log4j-version>1.2.14</log4j-version>
     <osgi-version>4.2.0</osgi-version>
